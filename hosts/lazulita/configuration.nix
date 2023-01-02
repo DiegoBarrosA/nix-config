@@ -21,6 +21,7 @@ homebrew.casks = [
 { name = "firefox"; }
 { name = "keepassxc"; }
 { name = "syncthing"; }
+{ name = "android-file-transfer"; }
 ];
   # Used for backwards compatibility, please read the changelog before changing.
   # $ darwin-rebuild changelog
