@@ -66,7 +66,7 @@
         HDMI-A-1 = {
           scale = "1";
           bg =
-            "/storage/var/lib/syncthing/Pictures/Anime/Landscape/butterfly.jpg fill";
+            "/storage/var/lib/syncthing/Pictures/Anime/Landscape/wallhaven-pkrv6j.jpg fill";
         };
       };
       keybindings = let mod = config.wayland.windowManager.sway.config.modifier;

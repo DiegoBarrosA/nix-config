@@ -3,5 +3,6 @@
 { pkgs }: {
   plymouth-themes = pkgs.callPackage ./plymouth-themes { };
   lyrics = pkgs.callPackage ./lyrics { };
+  plymouth-spinner-monochrome = pkgs.callPackage ./plymouth-spinner-monochrome { };
   #  swayshot = pkgs.callPackage ./sway-interactive-screenshot{ };
 }

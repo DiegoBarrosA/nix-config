@@ -10,9 +10,9 @@
         layer = "top";
         margin = "0";
         width = 1;
-        position = "left";
+        position = "top";
         modules-left = [ "sway/workspaces" ];
-        modules-center = [ ];
+        modules-center = [ "sway/window" ];
         modules-right = [
           # "bluetooth"
           # "pulseaudio"
@@ -33,8 +33,7 @@
         };
         clock = {
           format = ''
-            {:%H
-            %M}'';
+            {:%H:%M}'';
           tooltip-format = ''
             <big>{:%Y %B}</big>
             <tt><small>{calendar}</small></tt>'';
@@ -75,7 +74,31 @@
           "scroll-step" = 1;
           "on-click" = "pavucontrol";
         };
-
+mpd = {
+    "format" = "{stateIcon} {consumeIcon}{randomIcon}{repeatIcon}{singleIcon}{artist} - {album} - {title} ({elapsedTime:%M:%S}/{totalTime:%M:%S}) ";
+    "format-disconnected" = "Disconnected ";
+    "format-stopped" = "{consumeIcon}{randomIcon}{repeatIcon}{singleIcon}Stopped ";
+    "interval" = 10;
+    "consume-icons" = {
+      "on" =" ";
+    };
+    "random-icons" = {
+        "off"= "<span color=\"#f53c3c\"></span> ";
+        "on"= " ";
+    };
+    "repeat-icons" = {
+      "on"= " ";
+    };
+    "single-icons" = {
+        "on" = "1 ";
+    };
+    "state-icons" = {
+        "paused"= "";
+        "playing"= "";
+    };
+    "tooltip-format"= "MPD (connected)";
+    "tooltip-format-disconnected"= "MPD (disconnected)";
+};
         "sway/workspaces" = {
 
           sort-by-coordinates = false;
@@ -123,10 +146,10 @@
     style = let inherit (config.colorscheme) colors;
     in ''
                               * {
-                                 min-width: 43px;
+                                 min-width: 45px;
                               }
                               #window {
-                                padding: 5px 0px 5px 5px;
+                                padding: 5px 5px 0px 5px;
       	background: transparent;
       }
                               tooltip {
@@ -140,16 +163,15 @@
                                  background-color: #${colors.base00};
                                  color: #${colors.base05};
                                  margin: 2px;
-                                 padding:11px 0px 11px 0px;
+
+                                 padding:0px 0px 0px 0px;
                               }
                   #idle_inhibitor,
                   #pulseaudio,
                   #network
             #language
             {
-
-
-                                 padding:11px 0px 11px 0px;
+                                 padding:10px 0px 10px 0px;
                   }
                               #workspaces button.hidden {
                                  background-color: #${colors.base00};
@@ -158,14 +180,13 @@
                               #workspaces button.focused,
                               #workspaces button.active {
                                  background-color: #${colors.base01};
-                                 color: #${colors.base05};
-                                 border-left: 2px solid  #${colors.base0D};
+                                 color: #${colors.base0D};
                                  border-radius: 10px;
                               }
                               #clock {
                                 background-color: #${colors.base00};
                                 color: #${colors.base0D};
-                                padding:10px 5px 10px 5px;
+                                padding:5px 10px 5px 10px;
                                  font: ${
                                    toString (config.gtk.font.size + 3)
                                  }pt "${config.fontProfiles.monospace.family}";
@@ -175,6 +196,15 @@
                                  font-family: "Font Awesome 6 Free Solid";
 
                         }
+#mpd {
+
+                                 font-family: "Jost*","Font Awesome 6 Free Solid";
+}
+
+
+
+
+
     '';
   };
 }
