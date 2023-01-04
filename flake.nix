@@ -6,8 +6,15 @@
     hardware.url = "github:nixos/nixos-hardware";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-22.11";
     musnix.url = "github:musnix/musnix";
-    darwin.url = "github:lnl7/nix-darwin/master";
-    darwin.inputs.nixpkgs.follows = "nixpkgs";
+    darwin =  {
+      url = "github:lnl7/nix-darwin/master";
+    inputs.nixpkgs.follows = "nixpkgs";
+           };
+    nix-on-droid = {
+      url = "github:t184256/nix-on-droid/release-22.11";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     hyprland.url = "github:hyprwm/hyprland/v0.19.2beta";
     hyprwm-contrib.url = "github:hyprwm/contrib";
     impermanence.url = "github:nix-community/impermanence";
@@ -25,7 +32,7 @@
     nix-colors.url = "github:misterio77/nix-colors";
   };
 
-  outputs = { self, nixpkgs, darwin, home-manager, ... }@inputs:
+  outputs = { self, nixpkgs, darwin, nix-on-droid, home-manager, ... }@inputs:
     let
       inherit (self) outputs;
       inherit (nixpkgs.lib) filterAttrs traceVal;
@@ -93,6 +100,16 @@
 
         };
       };
+      nixOnDroidConfigurations = {
+        indigo = nix-on-droid.lib.nixOnDroidConfiguration {
+      modules = [ ./hosts/indigo ]
+
+            ++ (builtins.attrValues darwinModules);
+
+          specialArgs = { inherit inputs outputs; };
+      };};
+
+
       homeConfigurations = {
         # FIXME replace with your username@hostname
         "diego@cobalto" = home-manager.lib.homeManagerConfiguration {
