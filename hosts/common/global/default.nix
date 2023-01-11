@@ -7,7 +7,6 @@
       # Activate home-manager environment, if not already
       [ -d "$HOME/.nix-profile" ] || /nix/var/nix/profiles/per-user/$USER/home-manager/activate &> /dev/null
     '';
-
     # Add terminfo files
     enableAllTerminfo = true;
   };

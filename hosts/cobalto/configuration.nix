@@ -8,6 +8,8 @@
     #Sound server
     ../common/optional/pipewire.nix
 
+    ../common/optional/print.nix
+
     
 
 #    ../common/optional/emacs.nix
@@ -19,12 +21,12 @@
     ../common/optional/environment.nix
 
     ../common/optional/mus.nix
-    ../common/optional/qt.nix
+#    ../common/optional/qt.nix
        ../common/optional/nodejs.nix
     ../common/optional/wportals.nix
     ../common/optional/virtmanager.nix
     ../common/optional/droidcam.nix
-    ../common/users/diego.nix
+    ../common/users/diego
     ##Boot options
     ../common/optional/systemdboot.nix
     ../common/optional/silentboot.nix
@@ -61,6 +63,7 @@ networking.firewall = {
     kernelPackages = pkgs.linuxKernel.packages.linux_zen;
 
     extraModulePackages = [ pkgs.linuxKernel.packages.linux_zen.v4l2loopback ];
+    kernelModules = ["vfio" "vfio_iommu_type1" "vfio_pci" "vfio_virqfd"];
   };
   hardware = {
     opengl = {
@@ -85,10 +88,11 @@ networking.firewall = {
   };
 
   services.dbus.packages = [ pkgs.gcr ];
-
+  boot.extraModprobeConfig ="options vfio-pci ids=10ec:818b";
   hardware.i2c.enable = true;
   hardware.openrgb.enable = true;
   boot = { kernelParams = [ "amdgpu" ]; };
   security.sudo.wheelNeedsPassword = false;
   system.stateVersion = "22.11";
+
 }

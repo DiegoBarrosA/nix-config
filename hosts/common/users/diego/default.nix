@@ -26,13 +26,12 @@ in {
 "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOXblym20SD75es2z5Qay0mfW+g2zvKPBVMsUFakIyBK diegobarrosaraya@outlook.com"
       ];
     };
-
   };
   security.pam.services = { swaylock = { }; };
   services.geoclue2.enable = true;
   sops.secrets.diego-password = {
-    sopsFile = ../secrets.yaml;
+    sopsFile = ../../secrets.yaml;
     neededForUsers = true;
   };
- # home-manager.users.diego = import ../../../home/diego/${config.networking.hostName}.nix;
+  #home-manager.users.diego = import ../../../../home/diego/${config.networking.hostName}.nix;
 }

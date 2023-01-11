@@ -14,7 +14,7 @@
     stow
     wget
     yt-dlp
+    zip
     zoxide
-    stow
   ];
 }

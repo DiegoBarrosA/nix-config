@@ -21,7 +21,8 @@
         "type:keyboard" = {
           xkb_layout = "us,es";
           xkb_capslock = "disabled";
-          xkb_options = "grp:alt_space_toggle,shift:both_capslock,caps:ctrl_modifier";
+          xkb_options =
+            "grp:alt_space_toggle,shift:both_capslock,caps:ctrl_modifier";
         };
         "type:touchpad" = {
           tap = "enabled";
@@ -69,13 +70,20 @@
             "/storage/var/lib/syncthing/Pictures/Anime/Landscape/wallhaven-pkrv6j.jpg fill";
         };
       };
-      keybindings = let mod = config.wayland.windowManager.sway.config.modifier;
+      keybindings = let
+        mod = config.wayland.windowManager.sway.config.modifier;
+        launchOrChange = pkgs.writeShellScript "launchOrChange" ''
+             #!/bin/sh
+          if swaymsg -t get_tree | grep $1
+          then swaymsg "workspace $2"
+          else
+          exec $3 & swaymsg "workspace $2"
+          fi
+        '';
       in {
         "${mod}+Return" = "exec ${terminal}";
         "${mod}+q" = "kill";
         "${mod}+Space" = "exec ${menu}";
-        "${mod}+d" = "exec emacsclient -c -a 'emacs'";
-        "${mod}+e" = "exec pcmanfm";
         "${mod}+c" = ''
           exec clipman pick -t CUSTOM --tool-args="tofi --prompt-text=' Pick:'"
         '';
@@ -83,7 +91,6 @@
         "XF86MonBrightnessUp" = "light -A 10";
 
         "XF86MonBrightnessDown" = "light -U 10";
-        "${mod}+f" = "exec firefox";
         "${mod}+s" = "exec flameshot gui";
         "${mod}+Shift+e" = "exec tofi-powermenu";
         "${mod}+${left}" = "focus left";
@@ -94,16 +101,17 @@
         "${mod}+Shift+${down}" = "move down";
         "${mod}+Shift+${up}" = "move up";
         "${mod}+Shift+${right}" = "move right";
-            "${mod}+r" = "mode resize";
+        "${mod}+r" = "mode resize";
         "${mod}+b" = "splith";
         "${mod}+v" = "splitv";
         "${mod}+a" = "focus parent";
-        "${mod}+t" = "focus mode_toggle";
+        "${mod}+Shift+t" = "focus mode_toggle";
         "${mod}+p" = "sticky toggle";
-            "${mod}+m" = "fullscreen toggle";
+        "${mod}+m" = "fullscreen toggle";
         "${mod}+Shift+space" = "floating toggle";
         "${mod}+Ctrl+l" = "workspace next";
-       "${mod}+Ctrl+h" = "workspace prev";
+        "${mod}+Ctrl+h" = "workspace prev";
+
         "${mod}+1" = "workspace number 1";
         "${mod}+2" = "workspace number 2";
         "${mod}+3" = "workspace number 3";
@@ -114,6 +122,12 @@
         "${mod}+8" = "workspace number 8";
         "${mod}+9" = "workspace number 9";
         "${mod}+0" = "workspace number 10";
+
+        "${mod}+f" = "exec ${launchOrChange} firefox  firefox";
+        "${mod}+e" = "exec ${launchOrChange} pcmanfm  pcmanfm";
+        "${mod}+d" =
+          ''exec ${launchOrChange} emacs  "emacsclient -c -a 'emacs'" '';
+        "${mod}+t" = "workspace ";
         "${mod}+Shift+1" = "move container to workspace number 1";
         "${mod}+Shift+2" = "move container to workspace number 2";
         "${mod}+Shift+3" = "move container to workspace number 3";
@@ -128,23 +142,20 @@
         "${mod}+underscore" = "move container to scratchpad";
 
       };
-      modes={
+      modes = {
 
-
-resize = {
-            h = "resize shrink width";
-            l = "resize grow width";
-            j = "resize shrink height";
-            k = "resize grow height";
-            Return = "mode default";
-            Escape = "mode default";
-          };
+        resize = {
+          h = "resize shrink width";
+          l = "resize grow width";
+          j = "resize shrink height";
+          k = "resize grow height";
+          Return = "mode default";
+          Escape = "mode default";
+        };
 
       };
       startup = [
-
         { command = "mako"; }
-
         { command = "dbus-sway-environment"; }
         { command = "autotiling"; }
         { command = "keepassxc"; }
@@ -155,17 +166,27 @@ resize = {
           command =
             "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
         }
+        { command = "systemctl --user restart waybar"; always = true; }
         {
           command =
             "wl-paste -p -t text --watch clipman store -P --histpath='~/.local/state/clipman-primary.json'";
         }
+  {
+    command = ''
+exec swayidle -w \
+	timeout 1800 'swaylock -f' \
+	timeout 1805 'swaymsg "output * dpms off"' \
+	resume 'swaymsg "output * dpms on"' \
+before-sleep 'swaylock'        '';
+
+        }
+
       ];
       assigns = {
-        "3" = [{ app_id = "emacs"; }];
-        "5" = [{ app_id = "signal"; }];
-        "1" = [{ app_id = "firefox"; }];
-        "4" = [{ app_id = "pcmanfm"; }];
-        "10" = [{ app_id = "transmission-remote-gtk"; }];
+        "" = [{ app_id = "emacs"; }];
+        "" = [{ app_id = "firefox"; }];
+        "" = [{ app_id = "pcmanfm"; }];
+        "" = [{ app_id = "transmission-remote-gtk"; }];
       };
       floating.criteria = [{ title = "Picture-in-Picture"; }];
       window.commands = [
@@ -182,10 +203,8 @@ resize = {
             app_id = "zoom";
             title = "^zoom$";
           };
-
           command = "border none, floating enable";
         }
-
         {
           criteria = {
             app_id = "zoom";
@@ -206,10 +225,12 @@ resize = {
             title = "Zoom Meeting(.*)?";
           };
           command =
-            " workspace next_on_output --create, move container to workspace current, floating disable, inhibit_idle open";
+            "workspace next_on_output --create, move container to workspace current, floating disable, inhibit_idle open";
 
         }
-      ];
+            ];
     };
   };
+
+
 }

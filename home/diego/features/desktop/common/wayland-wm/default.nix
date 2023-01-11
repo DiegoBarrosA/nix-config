@@ -55,19 +55,19 @@ in {
     xdg-utils
     gcolor3
     zathura
-    uget
-uget-integrator
+libappindicator
     android-studio
+    libnotify
   ];
   home.sessionVariables = {
-    MOZ_ENABLE_WAYLAND = true;
+    MOZ_ENABLE_WAYLAND = 1;
     LIBSEAT_BACKEND = "logind";
     CLUTTER_BACKEND = "wayland";
     SDL_VIDEODRIVER = "wayland";
     QT_QPA_PLATFORM = "wayland";
     BROWSER = "firefox";
-    NO_AT_BRIDGE = true;
-    _JAVA_AWT_WM_NONREPARENTING = true;
+    NO_AT_BRIDGE = 1;
+    _JAVA_AWT_WM_NONREPARENTING = 1;
     ECORE_EVAS_ENGINE = "wayland_egl";
     ELM_ENGINE = "wayland_egl";
     XDG_SESSION_DESKTOP = "sway";

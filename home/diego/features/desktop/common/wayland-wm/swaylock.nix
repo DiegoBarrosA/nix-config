@@ -1,8 +1,7 @@
 { config, pkgs, ... }:
 
 let inherit (config.colorscheme) colors;
-in
-{
+in {
   home.packages = [ pkgs.swaylock-effects ];
   programs.swaylock = {
     settings = {
@@ -11,19 +10,17 @@ in
       screenshots = true;
       font = config.fontProfiles.regular.family;
       font-size = 48;
-      grace=1;
-
-      
+      grace = 1;
+      clock = true;
       line-uses-inside = true;
       disable-caps-lock-text = true;
       indicator-caps-lock = true;
       indicator-radius = 150;
-      indicator-thickness=10;
+      indicator-thickness = 10;
       indicator-idle-visible = true;
-      effect-vignette="0.5:0.5";
+      effect-vignette = "0.5:0.5";
       hide-keyboard-layout = true;
-
-      ring-color = "#${colors.base02}";
+      ring-color = "#${colors.base01}";
       inside-wrong-color = "#${colors.base08}";
       ring-wrong-color = "#${colors.base08}";
       key-hl-color = "#${colors.base0B}";

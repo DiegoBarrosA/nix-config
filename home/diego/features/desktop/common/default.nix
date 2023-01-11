@@ -11,7 +11,6 @@
     ./libreoffice.nix
     ./gimp.nix
     ./playerctl.nix
-    ./discord.nix
     ./flameshot.nix
     ./mime.nix
   ];

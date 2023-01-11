@@ -12,6 +12,7 @@
   };
 fonts.fontconfig.enable = true;
 home.packages = with pkgs; [
+  (nerdfonts.override { fonts = [ "FantasqueSansMono"]; })
   cascadia-code
   font-awesome
   noto-fonts-cjk-sans

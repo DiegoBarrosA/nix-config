@@ -2,7 +2,6 @@
   description = "Your new nix config";
 
   inputs = {
-
     hardware.url = "github:nixos/nixos-hardware";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-22.11";
     musnix.url = "github:musnix/musnix";
@@ -14,13 +13,9 @@
       url = "github:t184256/nix-on-droid/release-22.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    hyprland.url = "github:hyprwm/hyprland/v0.19.2beta";
-    hyprwm-contrib.url = "github:hyprwm/contrib";
     impermanence.url = "github:nix-community/impermanence";
     home-manager = {
       url = "github:nix-community/home-manager/release-22.11";
-
       inputs.nixpkgs.follows = "nixpkgs";
     };
     sops-nix = {

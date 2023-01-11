@@ -12,8 +12,46 @@ in {
         "gfx.webrender.all" = true;
         "svg.context-properties.content.enabled" = true;
         "toolkit.tabbox.switchByScrolling" = true;
-        "ui.key.menuAccessKeyFocuses"= false;
+        "ui.key.menuAccessKeyFocuses" = false;
+        "layout.spellcheckDefault" = 2;
+        "browser.urlbar.quickactions.enabled" = true;
+        "mousewheel.with_control.action" = 5;
+        "browser.sessionstore.resume_from_crash" = false;
       };
+      search
+
+        = {
+          default = "DuckDuckGoLite";
+          engines = {
+            "Nix Packages" = {
+              urls = [{
+                template = "https://search.nixos.org/packages";
+                params = [
+                  {
+                    name = "type";
+                    value = "packages";
+                  }
+                  {
+                    name = "query";
+                    value = "{searchTerms}";
+                  }
+                ];
+              }];
+
+              icon =
+                "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+              definedAliases = [ "@np" ];
+            };
+            "DuckDuckGoLite" = {
+              urls = [{
+                template = "https://duckduckgo.com/lite/?q={searchTerms}";
+              }];
+
+              definedAliases = [ "@ddgl" ];
+            };
+
+          };
+        };
       userChrome = ''
             @media (prefers-color-scheme: dark) { :root {
 
@@ -459,16 +497,8 @@ in {
 
       '';
       userContent = ''
-
-
-                        /* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/content/dark_settings_pages.css made available under Mozilla Public License v. 2.0
-                        See the above repository for updates as well as full license text. */
-
-                        /* Recolors addons manager, preferences page and new about:config */
-
                         @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
                         @namespace html url("http://www.w3.org/1999/xhtml");
-
                         @-moz-document url-prefix("about:addons"),
                           url-prefix("about:preferences"),
                           url-prefix("about:config"),
@@ -487,9 +517,7 @@ in {
                               scrollbar-color: var(--in-content-text-color) var(--in-content-page-background) !important;
                               color:var(--in-content-text-color) !important;
                             }
-
                           menulist > menupopup{ background-color: var(--in-content-page-background) !important; }
-
                           .updateSettingCrossUserWarningContainer,
                           .info-panel,
                           .extension-controlled,
@@ -519,10 +547,7 @@ in {
                           }
                           html|div.addon,html|div.Notice{ background-color: rgba(255,255,255,0.1) !important; }
                         }
-        /* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/content/newtab_background_color.css made available under Mozilla Public License v. 2.0
-        See the above repository for updates as well as full license text. */
-
-        @namespace url("http://www.w3.org/1999/xhtml");
+            @namespace url("http://www.w3.org/1999/xhtml");
 
         @-moz-document url("about:home"),url("about:blank"),url("about:newtab"),url("about:privatebrowsing"){
           body{background-color: #${colors.base00} !important;}
@@ -531,6 +556,7 @@ in {
           .search-handoff-button{ background-color: rgba(100,100,100,0.1) !important; }
           .fake-textbox{ color: rgb(200,200,200) !important }
         }
+
       '';
     };
   };

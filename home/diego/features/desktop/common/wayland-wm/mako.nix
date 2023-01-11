@@ -16,7 +16,7 @@ in {
     defaultTimeout = 12000;
     borderRadius = 10;
     backgroundColor = "#${colors.base00}fe";
-    borderColor = "#${colors.base0D}fe";
+    borderColor = "#${colors.base01}fe";
     textColor = "#${colors.base05}fe";
   };
 }
