@@ -24,7 +24,6 @@
     "microsoft-office"
     "alfred"
     "logi-options-plus"
-    "docker"
     "vanilla"
     "monitorcontrol"
     "logitune"
