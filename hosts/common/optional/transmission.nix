@@ -1,0 +1,15 @@
+{ config, pkgs, ... }: {
+  services.transmission = {
+    enable = true;
+    home = "/storage/var/lib/transmission";
+    downloadDirPermissions = "770";
+    settings = {
+      watch-dir-enabled = true;
+      openRPCPort = true;
+      watch-dir = "/home/diego/Downloads";
+      trash-original-torrent-files = true;
+      rpc-bind-address = "::";
+      rpc-whitelist-enabled = false;
+    };
+  };
+}

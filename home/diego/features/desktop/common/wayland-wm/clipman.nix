@@ -1,0 +1,1 @@
+{ services.clipman.enable = true; }
