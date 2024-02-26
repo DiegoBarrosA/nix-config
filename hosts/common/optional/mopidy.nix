@@ -1,4 +1,4 @@
-{ pkgs, config, ... }: {
+{ pkgs,config, ... }: {
   services.mopidy = {
     enable = true;
     extensionPackages = with pkgs; [
@@ -27,6 +27,6 @@
       [audio]
       output=pulsesink
 
-    '';
+'';
   };
 }

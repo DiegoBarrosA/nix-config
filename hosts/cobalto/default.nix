@@ -9,30 +9,25 @@
     inputs.hardware.nixosModules.common-pc-ssd
     ./hardware-configuration.nix
     ../common/optional/devices.nix
-    ../common/optional/pipewire.nix
     ../common/optional/print.nix
-    ../common/optional/droidcam.nix
     #Login manager
-    ../common/optional/greetd.nix
     #networking utils
-    #    ../common/optional/tailscale.nix
+    ../common/optional/tailscale.nix
     ../common/optional/hosts.nix
-    #Containers
-    #   ../common/optional/oci
 
-    #   ../common/optional/jellyfin.nix 
+    ../common/optional/cockpit.nix
+    #Containers
+    ../common/optional/oci
+
+    ../common/optional/jellyfin.nix
     #  ../common/optional/syncthing.nix
     ../common/optional/environment.nix
-    # ../common/optional/nodejs.nix
-    ../common/optional/wportals.nix
     ../common/optional/virtmanager.nix
-
     ##Boot options
     ../common/optional/systemdboot.nix
-    ../common/optional/silentboot.nix
+    #    ../common/optional/uxplay.nix
 
   ];
-
   security.polkit.enable = true;
   services.dbus.enable = true;
   nix = {
@@ -49,10 +44,13 @@
   networking = {
     hostName = "cobalto";
     useDHCP = false;
-    interfaces.enp5s0 = {
-      useDHCP = true;
-      wakeOnLan.enable = true;
+    interfaces = {
+      enp7s0 = {
+        useDHCP = true;
+        wakeOnLan.enable = true;
 
+      };
+      wlp6s0.useDHCP = true;
     };
   };
   boot = {
@@ -68,19 +66,7 @@
       driSupport32Bit = true;
     };
   };
-  programs = {
-    gamemode = {
-      enable = true;
-      settings.gpu = {
-        apply_gpu_optimisations = "accept-responsibility";
-        gpu_device = 0;
-        amd_performance_level = "high";
-      };
-    };
-    kdeconnect.enable = true;
-    dconf.enable = true;
-    adb.enable = true;
-  };
+  programs = { dconf.enable = true; };
   services.dbus.packages = [ pkgs.gcr ];
   boot.extraModprobeConfig = "options vfio-pci ids=10ec:818b";
   networking.nameservers = [ "1.1.1.1" "9.9.9.9" ];
@@ -88,5 +74,4 @@
   boot = { kernelParams = [ "amdgpu" ]; };
   security.sudo.wheelNeedsPassword = false;
   system.stateVersion = "22.11";
-
 }

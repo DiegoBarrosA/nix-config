@@ -1,5 +1,7 @@
 { pkgs, config, ... }: {
-  console = { useXkbConfig = true; };
+  console = {
+    useXkbConfig = true;
+  };
   boot = {
     plymouth = {
       enable = true;

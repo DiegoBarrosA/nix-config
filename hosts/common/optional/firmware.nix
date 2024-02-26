@@ -1,1 +1,6 @@
-{ pkgs, ... }: { environment.systemPackages = with pkgs; [ linux-firmware ]; }
+ 
+ {pkgs,...}:
+{  environment.systemPackages = with pkgs; [
+ linux-firmware
+  ];
+}

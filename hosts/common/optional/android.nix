@@ -1,5 +1,8 @@
-{ config, lib, pkgs, ... }: {
-  programs.adb.enable = true;
-  services.udev.packages = [ pkgs.android-udev-rules ];
+{ config, lib, pkgs, ... }:
+{
+    programs.adb.enable = true;
+  services.udev.packages = [
+    pkgs.android-udev-rules
+  ];
 
 }

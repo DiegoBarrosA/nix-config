@@ -18,11 +18,11 @@
     options kvm ignore_msrs=1
   '';
   environment.variables = { LIBVIRT_DEFAULT_URI = "qemu:///system"; };
-  virtualisation.libvirtd.qemu.verbatimConfig = ''
-        nvram = [
-    "/nix/store/mz1mbkhwjw6wqz2jvpqna4jchxrkmzl1-OVMF-202205-fd/FV/OVMF.fd"
+virtualisation.libvirtd.qemu.verbatimConfig = ''
+    nvram = [
+"/nix/store/mz1mbkhwjw6wqz2jvpqna4jchxrkmzl1-OVMF-202205-fd/FV/OVMF.fd"
 
-        ]
+    ]
   '';
 
 }

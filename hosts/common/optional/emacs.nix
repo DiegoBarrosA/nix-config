@@ -1,1 +1,6 @@
-{ config, ... }: { services.emacs = { enable = true; }; }
+{config, ...}:
+{
+services.emacs = {
+     enable = true;
+};
+}

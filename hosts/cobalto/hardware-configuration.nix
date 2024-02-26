@@ -28,28 +28,11 @@ in {
     options = [ "subvol=nix" "compress=zstd" "noatime" ];
   };
 
-  fileSystems."/storage" = {
+  fileSystems."/nix/storage" = {
     device = "/dev/disk/by-label/storage";
     fsType = "btrfs";
     options = [ "compress=zstd" ];
   };
-  fileSystems."/storage/var/lib/vols" = {
-    device = "/dev/disk/by-label/oci-volumes";
-    fsType = "btrfs";
-    options = [ "compress=zstd" ];
-  };
-
-  fileSystems."/storage/var/lib/syncthing" = {
-    device = "/dev/disk/by-label/storage";
-    fsType = "btrfs";
-    options = [ "subvol=var/lib/syncthing" ];
-  };
-  fileSystems."/storage/var/lib/onedrive" = {
-    device = "/dev/disk/by-label/onedrive";
-    fsType = "btrfs";
-    options = [ "compress=zstd" ];
-  };
-
   fileSystems."/boot" = {
     device = "/dev/disk/by-label/BOOT";
     fsType = "vfat";

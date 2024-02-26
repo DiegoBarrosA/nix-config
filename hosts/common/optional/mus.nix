@@ -4,7 +4,7 @@
     enable = true;
     das_watchdog.enable = true;
   };
-  environment.systemPackages = with pkgs; [
+environment.systemPackages = with pkgs; [
     ##Plugins
     ##LV2
     aether-lv2
