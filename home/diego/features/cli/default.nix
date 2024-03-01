@@ -1,12 +1,12 @@
 { pkgs, ... }: {
   imports = [
     ./zellij.nix
-    ./eza.nix
     ./zoxide.nix
     ./helix.nix
     ./vim.nix
     ./pfetch.nix
     ./fish.nix
+    ./nushell.nix
     ./git.nix
     ./starship.nix
   ];

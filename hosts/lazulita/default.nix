@@ -19,6 +19,9 @@
   };
   homebrew.enable = true;
   homebrew.casks = [
+    "google-drive"
+    "google-chrome"
+    "zed"
     "insomnia"
     "obs"
     "microsoft-office"
@@ -27,11 +30,13 @@
     "vanilla"
     "monitorcontrol"
     "logitune"
-    "firefox"
+    "firefox-esr"
     "steam"
     "flameshot"
     "zoom"
+    "citrix-workspace"
   ];
+
   fonts.fontDir.enable = true;
   fonts.fonts = with pkgs; [ fantasque-sans-mono jost ];
   system.stateVersion = 4;

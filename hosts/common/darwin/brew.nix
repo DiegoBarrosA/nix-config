@@ -8,15 +8,14 @@
     };
   };
   homebrew.taps = [
-
     "homebrew/cask-versions"
     "homebrew/cask-fonts"
     "homebrew/services"
+    "homebrew/cask"
   ];
-  homebrew.brews = [
-    ];
+  homebrew.brews = [ ];
   homebrew.casks = [
-  
+
   ];
   homebrew.masApps = { };
 }
