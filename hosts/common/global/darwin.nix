@@ -1,13 +1,8 @@
 # This file (and the global directory) holds config that i use on all hosts
 { lib, inputs, outputs, pkgs, config, ... }: {
   imports = [ inputs.home-manager.darwinModules.home-manager ];
-  #FIXME: what does it do?
-  # ++ (builtins.attrValues outputs.nixosModules);
-
-  # networking.domain = "luxus.ai";
-
   environment = {
-    loginShell = pkgs.fish;
+    loginShell = pkgs.nushell;
     # pathsToLink = [ "/share/zsh" ];
   };
   home-manager = {
@@ -17,18 +12,13 @@
 
   nix = {
     settings = {
-      #TODO: change to mine
-
       trusted-users = [ "diego" "@wheel" ];
       auto-optimise-store = lib.mkDefault true;
       experimental-features = [ "nix-command" "flakes" "repl-flake" ];
       warn-dirty = false;
     };
     package = pkgs.nix;
-    gc = {
-      automatic = true;
-      #interval = "weekly";
-    };
+    gc = { automatic = true; };
 
     # Add each flake input as a registry
     # To make nix3 commands consistent with the flake
@@ -40,6 +30,5 @@
       config.nix.registry;
   };
   # Allows users to allow others on their binds
-
   system.stateVersion = lib.mkDefault 4;
 }

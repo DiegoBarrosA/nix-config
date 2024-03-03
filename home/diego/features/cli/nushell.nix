@@ -5,7 +5,6 @@
       vim = "hx";
       top = "btm";
     };
-
     extraEnv = ''
       mkdir ~/.cache/starship
       ${pkgs.starship}/bin/starship init nu | save -f ~/.cache/starship/init.nu

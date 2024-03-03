@@ -1,14 +1,10 @@
 { config, inputs, home-manager, pkgs, lib, ... }: {
   networking.hostName = "lazulita";
-  imports = [ ../common/darwin ../common/global/fish.nix ];
-  programs.fish = { enable = true; };
-  programs.zsh = {
-    enable = true; # default shell on catalina
-    loginShellInit = "fish";
-  };
+  imports = [ ../common/darwin ];
+  programs.zsh = { enable = true; loginShellInit = "nu"; };
   users.users.diego = {
     name = "diego";
-    shell = pkgs.fish;
+    shell = "${pkgs.nushell}/bin/nu";
     home = "/Users/diego";
   };
   system.defaults = {

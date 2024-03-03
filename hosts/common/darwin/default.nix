@@ -27,11 +27,10 @@
   #   serviceConfig.ProcessType = "Background";
   # };
   environment.loginShell = "${pkgs.zsh}/bin/zsh";
-  environment.shells = [ pkgs.fish ];
-  environment.variables.SHELL = "${pkgs.fish}/bin/fish";
+  environment.shells = [ pkgs.nushell ];
+  environment.variables.SHELL = "${pkgs.nushell}/bin/nu";
   environment.variables.LANG = "en_US.UTF-8";
   system.defaults = {
-    loginwindow = { LoginwindowText = "God is dead"; };
     alf = {
       allowdownloadsignedenabled = 0;
       allowsignedenabled = 1;
