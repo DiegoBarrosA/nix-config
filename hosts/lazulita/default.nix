@@ -33,7 +33,6 @@
     "firefox-esr"
     "steam"
     "flameshot"
-    "zoom"
     "citrix-workspace"
   ];
 
