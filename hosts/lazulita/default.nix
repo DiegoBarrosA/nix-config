@@ -1,7 +1,10 @@
 { config, inputs, home-manager, pkgs, lib, ... }: {
   networking.hostName = "lazulita";
   imports = [ ../common/darwin ];
-  programs.zsh = { enable = true; loginShellInit = "nu"; };
+  programs.zsh = {
+    enable = true;
+    loginShellInit = "nu";
+  };
   users.users.diego = {
     name = "diego";
     shell = "${pkgs.nushell}/bin/nu";
@@ -16,17 +19,16 @@
   homebrew.enable = true;
   homebrew.casks = [
     "google-drive"
-    "google-chrome"
     "zed"
     "insomnia"
-    "obs"
     "microsoft-office"
     "alfred"
     "logi-options-plus"
     "vanilla"
     "monitorcontrol"
     "logitune"
-    "firefox-esr"
+    "firefox"
+    "brave"
     "steam"
     "flameshot"
     "citrix-workspace"

@@ -8,6 +8,8 @@
     ./nushell.nix
     ./git.nix
     ./starship.nix
+    ./fzf.nix
+    ./bat.nix
   ];
   home.packages = with pkgs; [
     bottom # System viewer
