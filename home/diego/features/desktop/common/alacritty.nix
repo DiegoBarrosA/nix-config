@@ -5,6 +5,21 @@ in {
   programs.alacritty = {
     enable = true;
     settings = {
+      window = {
+        option_as_alt = "OnlyLeft";
+        startup_mode = "Fullscreen";
+        decorations = "buttonless";
+        padding = {
+          x = 15;
+          y = 15;
+        };
+      };
+      mouse.hide_when_typing = true;
+      keyboard.bindings = [{
+        key = "F";
+        mods = "Command|Shift";
+        action = "ToggleFullscreen";
+      }];
       font = {
         normal.family = "Fantasque Sans Mono";
         size = 19;

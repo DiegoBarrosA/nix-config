@@ -8,5 +8,4 @@ in {
     package = mkIf stdenv.isDarwin pkgs.iina;
     enable = true;
   };
-  #  home.packages = [ pkgs.jellyfin-mpv-shim];
 }

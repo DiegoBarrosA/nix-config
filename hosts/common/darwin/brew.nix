@@ -11,12 +11,8 @@
       require_sha = true;
     };
 
-    taps = [
-      "homebrew/cask-versions"
-      "homebrew/cask-fonts"
-      "homebrew/services"
-      "homebrew/cask"
-    ];
+    taps =
+      [ "homebrew/cask-versions" "homebrew/cask-fonts" "homebrew/services" ];
 
     brews = [ ];
     casks = [

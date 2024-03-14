@@ -1,6 +1,6 @@
+(add-to-list 'default-frame-alist '(undecorated . t))
 (setq default-frame-alist '((font . "Fantasque Sans Mono 22")))
 (scroll-bar-mode -1)
-(tool-bar-mode -1)
 (tooltip-mode -1)
 (menu-bar-mode 1)
 (set-fringe-mode 10)

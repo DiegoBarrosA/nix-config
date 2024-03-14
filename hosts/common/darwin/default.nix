@@ -31,6 +31,7 @@
   environment.variables.SHELL = "${pkgs.nushell}/bin/nu";
   environment.variables.LANG = "en_US.UTF-8";
   system.defaults = {
+
     alf = {
       allowdownloadsignedenabled = 0;
       allowsignedenabled = 1;

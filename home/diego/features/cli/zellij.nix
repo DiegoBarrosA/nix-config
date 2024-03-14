@@ -5,6 +5,7 @@ in {
     enable = true;
     settings = {
       pane_frames = false;
+      mouse_mode = true;
       simplified_ui = true;
       theme = "default";
       copy_command = "pbcopy";

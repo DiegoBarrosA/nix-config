@@ -18,6 +18,7 @@
   };
   homebrew.enable = true;
   homebrew.casks = [
+    "pika"
     "google-drive"
     "zed"
     "insomnia"
@@ -28,13 +29,20 @@
     "monitorcontrol"
     "logitune"
     "firefox"
-    "brave"
     "steam"
-    "flameshot"
     "citrix-workspace"
+    "zoom"
   ];
-
   fonts.fontDir.enable = true;
   fonts.fonts = with pkgs; [ fantasque-sans-mono jost ];
   system.stateVersion = 4;
+
+  environment.systemPackages = with pkgs; [ flameshot ];
+  system.defaults.dock.persistent-apps = [
+    "/Users/diego/Applications/Firefox.app"
+    "/Users/diego/Applications/Zed.app"
+    "/Users/diego/Applications/Insomnia.app"
+    "/Users/diego/Applications/Home Manager Apps/Alacritty.app"
+  ];
+
 }
