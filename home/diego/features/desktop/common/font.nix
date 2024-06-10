@@ -1,4 +1,6 @@
-{ pkgs, ... }: {
+{ pkgs, inputs, ... }:
+let apple-fonts = inputs.apple-fonts.packages.${pkgs.system};
+in {
   fontProfiles = {
     enable = true;
     monospace = {

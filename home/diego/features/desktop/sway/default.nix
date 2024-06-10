@@ -8,16 +8,24 @@
     '';
   };
   home.packages = with pkgs; [ autotiling swayr ];
+  xdg.portal = {
+    enable = true;
+    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+  };
   wayland.windowManager.sway = {
     enable = true;
     wrapperFeatures.gtk = true;
-    systemdIntegration = true;
+    systemd = {
+      xdgAutostart = true;
+      enable = true;
+    };
     extraConfig = "seat seat0 xcursor_theme ${config.gtk.cursorTheme.name} '${
         toString config.gtk.cursorTheme.size
       }' ";
     config = rec {
       terminal = "! (alacritty msg create-window) && alacritty";
       modifier = "Mod4";
+      bars = [ ];
       menu =
         "${pkgs.tofi}/bin/tofi-drun  --prompt-text=' Launch:' | xargs swaymsg exec";
 
@@ -25,11 +33,6 @@
       down = "j";
       up = "k";
       right = "l";
-      bars = [
-
-        { command = "${pkgs.waybar}/bin/waybar"; }
-      ];
-
       fonts = {
         names = [ "${config.fontProfiles.monospace.family}" "Source Han Mono" ];
         size = 18.0;
@@ -79,6 +82,7 @@
       window = {
         border = 3;
         hideEdgeBorders = "smart";
+        titlebar = false;
       };
 
       keybindings = let
@@ -213,45 +217,43 @@
         "20" = [{ app_id = "transmission-remote-gtk"; }];
         "19" = [ { app_id = "mpv"; } { app_id = "ario"; } ];
       };
-      workspaceOutputAssign = [
+      workspaceOutputAssign = let
+        output-1 = "Samsung Electric Company LS27A600U HCJW500005";
+        output-2 = "LG Electronics LG ULTRAWIDE 0x0002A4C3";
+      in [
 
         {
-          output = "HDMI-A-1";
+          output = output-1;
           workspace = "1";
         }
 
         {
-          output = "HDMI-A-1";
+          output = output-1;
           workspace = "2";
         }
 
         {
-          output = "HDMI-A-1";
+          output = output-1;
           workspace = "3";
         }
 
         {
-          output = "HDMI-A-1";
+          output = output-1;
           workspace = "4";
         }
 
         {
-          output = "HDMI-A-1";
-          workspace = "11";
-        }
-
-        {
-          output = "HDMI-A-1";
+          output = output-1;
           workspace = "13";
         }
 
         {
-          output = "HDMI-A-1";
+          output = output-1;
           workspace = "14";
         }
 
         {
-          output = "DVI-D-1";
+          output = output-2;
           workspace = "19";
         }
 

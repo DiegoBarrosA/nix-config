@@ -8,14 +8,15 @@ in {
   services.openssh = {
     enable = true;
     # Harden
-    passwordAuthentication = false;
-    permitRootLogin = "no";
+
+    settings.PasswordAuthentication = false;
+    settings.PermitRootLogin = "no";
     # Automatically remove stale sockets
     extraConfig = ''
       StreamLocalBindUnlink yes
     '';
     # Allow forwarding ports to everywhere
-    gatewayPorts = "clientspecified";
+    settings.GatewayPorts = "clientspecified";
 
     hostKeys = [{
       path = "${prefix}/etc/ssh/ssh_host_ed25519_key";
@@ -30,5 +31,5 @@ in {
     }) hosts;
   };
   # Passwordless sudo when SSH'ing with keys
-  security.pam.enableSSHAgentAuth = true;
+  security.pam.sshAgentAuth.enable = true;
 }

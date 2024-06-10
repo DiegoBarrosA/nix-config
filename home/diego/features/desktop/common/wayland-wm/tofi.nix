@@ -344,7 +344,7 @@ in {
   xdg.configFile."tofi/config".text = ''
     selection-color=#${colors.base0D}
     text-colo=#${colors.base06}
-    font="Jost*, Font Awesome 6 Free Solid"
+    font="${config.fontProfiles.regular.family}, Font Awesome 6 Free Solid"
     font-size=28
     hide-cursor=true
     background-color=#${colors.base00}ee

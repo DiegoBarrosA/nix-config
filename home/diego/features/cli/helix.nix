@@ -21,120 +21,6 @@
         space.space = "file_picker";
         space.w = ":w";
         space.q = ":q";
-        y = {
-          y = [
-            "extend_to_line_bounds"
-            "yank_main_selection_to_clipboard"
-            "normal_mode"
-            "collapse_selection"
-          ];
-        };
-        esc = [ "collapse_selection" "keep_primary_selection" ];
-        # Muscle memory
-        "{" = [ "goto_prev_paragraph" "collapse_selection" ];
-        "}" = [ "goto_next_paragraph" "collapse_selection" ];
-        "0" = "goto_line_start";
-        "$" = "goto_line_end";
-        "^" = "goto_first_nonwhitespace";
-        G = "goto_file_end";
-        "%" = "match_brackets";
-        V = [ "select_mode" "extend_to_line_bounds" ];
-        C = [
-          "extend_to_line_end"
-          "yank_main_selection_to_clipboard"
-          "delete_selection"
-          "insert_mode"
-        ];
-        D = [
-          "extend_to_line_end"
-          "yank_main_selection_to_clipboard"
-          "delete_selection"
-        ];
-        S = "surround_add";
-        x = "delete_selection";
-        p = [ "paste_clipboard_after" "collapse_selection" ];
-        P = [ "paste_clipboard_before" "collapse_selection" ];
-        Y = [
-          "extend_to_line_end"
-          "yank_main_selection_to_clipboard"
-          "collapse_selection"
-        ];
-        u = [ "undo" "collapse_selection" ];
-        j = "move_line_down";
-        k = "move_line_up";
-        d = {
-          d = [
-            "extend_to_line_bounds"
-            "yank_main_selection_to_clipboard"
-            "delete_selection"
-          ];
-          t = [ "extend_till_char" ];
-          s = [ "surround_delete" ];
-          i = [ "select_textobject_inner" ];
-          a = [ "select_textobject_around" ];
-          j = [
-            "select_mode"
-            "extend_to_line_bounds"
-            "extend_line_below"
-            "yank_main_selection_to_clipboard"
-            "delete_selection"
-            "normal_mode"
-          ];
-          down = [
-            "select_mode"
-            "extend_to_line_bounds"
-            "extend_line_below"
-            "yank_main_selection_to_clipboard"
-            "delete_selection"
-            "normal_mode"
-          ];
-          k = [
-            "select_mode"
-            "extend_to_line_bounds"
-            "extend_line_above"
-            "yank_main_selection_to_clipboard"
-            "delete_selection"
-            "normal_mode"
-          ];
-          up = [
-            "select_mode"
-            "extend_to_line_bounds"
-            "extend_line_above"
-            "yank_main_selection_to_clipboard"
-            "delete_selection"
-            "normal_mode"
-          ];
-          G = [
-            "select_mode"
-            "extend_to_line_bounds"
-            "goto_last_line"
-            "extend_to_line_bounds"
-            "yank_main_selection_to_clipboard"
-            "delete_selection"
-            "normal_mode"
-          ];
-          w = [
-            "move_next_word_start"
-            "yank_main_selection_to_clipboard"
-            "delete_selection"
-          ];
-          W = [
-            "move_next_long_word_start"
-            "yank_main_selection_to_clipboard"
-            "delete_selection"
-          ];
-          g = {
-            g = [
-              "select_mode"
-              "extend_to_line_bounds"
-              "goto_file_start"
-              "extend_to_line_bounds"
-              "yank_main_selection_to_clipboard"
-              "delete_selection"
-              "normal_mode"
-            ];
-          };
-        };
       };
     };
     languages = with pkgs; {
@@ -331,6 +217,13 @@
             "ltex-ls"
             "efm-lsp-prettier"
           ];
+
+          auto-format = true;
+        }
+
+        {
+          name = "nu";
+          language-servers = [ { name = "nu"; } "nu --lsp" ];
 
           auto-format = true;
         }

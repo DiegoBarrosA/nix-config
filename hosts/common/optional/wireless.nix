@@ -1,27 +1,17 @@
-{ config, lib, ... }: {
-  # Wireless secrets stored through sops
-  sops.secrets."wireless.env" = {
-    sopsFile = ../secrets.yaml;
-    neededForUsers = true;
-  };
-
+{ pkgs, ... }: {
+  environment.systemPackages = [ pkgs.wpa_supplicant_gui ];
   networking.wireless = {
     enable = true;
-    # Declarative
-    environmentFile = config.sops.secrets."wireless.env".path;
-    networks = { "@home_uuid@" = { pskRaw = "@home_psk@"; }; };
-
-    # Imperative
-    #   allowAuxiliaryImperativeNetworks = true;
     userControlled = {
       enable = true;
       group = "network";
     };
+
+    allowAuxiliaryImperativeNetworks = true;
     extraConfig = ''
       update_config=1
     '';
   };
-
   # Ensure group exists
   users.groups.network = { };
 }

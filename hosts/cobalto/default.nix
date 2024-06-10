@@ -8,24 +8,27 @@
     inputs.hardware.nixosModules.common-gpu-amd
     inputs.hardware.nixosModules.common-pc-ssd
     ./hardware-configuration.nix
+    ../common/optional/pipewire.nix
+    ../common/optional/mus.nix
+    ../common/optional/transmission.nix
+    ../common/optional/silentboot.nix
     ../common/optional/devices.nix
     ../common/optional/print.nix
+    #    ../common/optional/wportals.nix
     #Login manager
     #networking utils
     ../common/optional/tailscale.nix
     ../common/optional/hosts.nix
-
+    ../common/optional/wireless.nix
     ../common/optional/cockpit.nix
     #Containers
     ../common/optional/oci
-
-    ../common/optional/jellyfin.nix
     #  ../common/optional/syncthing.nix
     ../common/optional/environment.nix
     ../common/optional/virtmanager.nix
+    ../common/optional/greetd.nix
     ##Boot options
     ../common/optional/systemdboot.nix
-    #    ../common/optional/uxplay.nix
 
   ];
   security.polkit.enable = true;
@@ -44,14 +47,7 @@
   networking = {
     hostName = "cobalto";
     useDHCP = false;
-    interfaces = {
-      enp7s0 = {
-        useDHCP = true;
-        wakeOnLan.enable = true;
-
-      };
-      wlp6s0.useDHCP = true;
-    };
+    interfaces = { wlp6s0.useDHCP = true; };
   };
   boot = {
     kernelPackages = pkgs.linuxKernel.packages.linux_zen;

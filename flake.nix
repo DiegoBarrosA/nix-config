@@ -5,6 +5,15 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     musnix.url = "github:musnix/musnix";
     nixpkgs-firefox-darwin.url = "github:bandithedoge/nixpkgs-firefox-darwin";
+    apple-fonts = {
+      url = "github:DiegoBarrosA/apple-fonts.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+
+    };
     darwin = {
       url = "github:lnl7/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -30,8 +39,8 @@
     nix-doom-emacs.url = "github:nix-community/nix-doom-emacs";
     nix-colors.url = "github:misterio77/nix-colors";
   };
-  outputs = { self, nixpkgs, darwin, nix-on-droid, home-manager
-    , nixpkgs-firefox-darwin, nix-doom-emacs, ... }@inputs:
+  outputs = { self, disko, apple-fonts, nixpkgs, darwin, nix-on-droid
+    , home-manager, nixpkgs-firefox-darwin, nix-doom-emacs, ... }@inputs:
     let
       inherit (self) outputs;
       inherit (nixpkgs.lib) filterAttrs traceVal;
@@ -91,7 +100,7 @@
           pkgs = legacyPackages."x86_64-linux";
           extraSpecialArgs = { inherit inputs outputs; };
           modules = (builtins.attrValues homeManagerModules)
-            ++ [ ./home/diego/cobalto.nix ];
+            ++ [ ./home/diego/cobalto.nix ./home/diego/nixpkgs.nix ];
         };
         "diego@amatista" = home-manager.lib.homeManagerConfiguration {
           pkgs = legacyPackages."x86_64-linux";

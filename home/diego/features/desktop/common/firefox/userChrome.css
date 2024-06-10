@@ -39,8 +39,7 @@
   /*  Global Border Radius
    *  applied to ALL UI elements
    */
-  --uc-border-radius: 0px;
-
+  --uc-border-radius: 5px;
   /*  The distance the Statuspanel floats
    *  away from the window border
    *  0 places directly in the corner
@@ -223,10 +222,6 @@
 }
 
 #sidebar-header {
-  display: none;
-}
-
-#TabsToolbar {
   display: none;
 }
 

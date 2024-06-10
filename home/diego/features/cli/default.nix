@@ -5,7 +5,8 @@
     ./helix.nix
     ./vim.nix
     ./pfetch.nix
-    ./nushell.nix
+    ./fish.nix
+    ./eza.nix
     ./git.nix
     ./starship.nix
     ./fzf.nix

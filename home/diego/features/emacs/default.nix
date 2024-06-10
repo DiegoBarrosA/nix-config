@@ -12,45 +12,47 @@ in {
     };
     extraPackages = epkgs:
       with epkgs; [
-        org-modern
-        company
-        projectile
+        #org-modern
+        #company
+        #projectile
         lsp-mode
-        doom-modeline
-        js2-mode
-        cask
+        #doom-modeline
+        #js2-mode
+        #cask
+
         nix-theme
-        treemacs
-        treemacs-magit
-        treemacs-tab-bar
-        nix-mode
-        treemacs-evil
-        magit
-        lsp-mode
+        #treemacs
+        #treemacs-magit
+        #treemacs-tab-bar
+        #nix-mode
+        #treemacs-evil
+        #magit
+        #lsp-mode
         which-key
-        mmm-mode
-        rust-mode
-        typescript-mode
+        #mmm-mode
+        #rust-mode
+        #typescript-mode
         evil
         evil-org
         evil-collection
         evil-surround
-        format-all
-        vterm
-        evil-collection
-        undo-tree
-        zen-mode
-        org-roam
-        org-roam-ui
-        org-roam-timestamps
-        org-roam-bibtex
-        sqlite3
-        groovy-mode
-        general
-        nerd-icons
-        python-mode
-        python
-      ];
+        #format-all
+        #vterm
+        #evil-collection
+        #undo-tree
+        #zen-mode
+        #org-roam
+        #org-roam-ui
+        #org-roam-timestamps
+        #org-roam-bibtex
+        #sqlite3
+        #groovy-mode
+        #general
+        #nerd-icons
+        #python-mode
+        #python
+        #fzf
+      ]++ [pkgs.nil];
     package = if pkgs.stdenv.isDarwin then
       emacs-overlay.emacs-pgtk.overrideAttrs (old: {
         patches = (old.patches or [ ]) ++ [
@@ -81,7 +83,7 @@ in {
         ];
       })
     else
-      emacs-overlay.emacs-ptgk;
+      emacs-overlay.emacs-pgtk;
     extraConfig = builtins.readFile ./init.el;
   };
   services.emacs = mkIf stdenv.isLinux {

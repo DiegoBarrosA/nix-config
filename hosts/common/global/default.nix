@@ -1,7 +1,15 @@
 # This file (and the global directory) holds config that i use on all hosts
-{ lib, inputs, outputs, ... }: {
-  imports = [ ./openssh.nix ./fish.nix ./locale.nix ./sops.nix ];
+{ inputs, outputs, ... }: {
+  imports = [
+    inputs.home-manager.nixosModules.home-manager
+    ./openssh.nix
+    ./fish.nix
+    ./locale.nix
+  ];
   networking.domain = "minerales.network";
+
+  home-manager.useGlobalPkgs = true;
+  home-manager.extraSpecialArgs = { inherit inputs outputs; };
   environment = {
     loginShellInit = ''
       # Activate home-manager environment, if not already

@@ -1,6 +1,6 @@
 { pkgs, lib, outputs, config, ... }: {
   imports = [
-    ./firefox.nix
+    ./firefox
     ./font.nix
     ./gtk.nix
     ./qt.nix
@@ -18,5 +18,5 @@
   xdg.enable = true;
   xdg.userDirs.enable = true;
   xdg.userDirs.createDirectories = true;
-  home.packages = with pkgs; [ solaar ];
+  home.packages = with pkgs; [ bitwarden solaar ];
 }

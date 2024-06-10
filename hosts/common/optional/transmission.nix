@@ -1,7 +1,8 @@
-{ config, pkgs, ... }: {
+{
   services.transmission = {
     enable = true;
-    home = "/storage/var/lib/transmission";
+    group = "transmission";
+    home = "/nix/storage/var/lib/transmission";
     downloadDirPermissions = "770";
     settings = {
       watch-dir-enabled = true;

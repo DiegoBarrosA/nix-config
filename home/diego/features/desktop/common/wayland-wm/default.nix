@@ -1,6 +1,7 @@
 { pkgs, ... }: {
   imports = [
-    ./alacritty.nix
+    ../alacritty.nix
+    ./wpaperd.nix
     ./mako.nix
     ./zathura.nix
     ./tofi.nix
@@ -9,14 +10,15 @@
     ./transmission-remote.nix
     ./gammastep.nix
     ./imv.nix
-    ./swaylock.nix
-    ./swayidle.nix
+    ./xdg.nix
+    # ./swaylock.nix
+    # ./swayidle.nix
     ./kanshi.nix
     ../.
   ];
   home.packages = with pkgs; [
     waynergy
-    #    helvum
+    helvum
     android-studio
     solaar
     scrcpy

@@ -1,4 +1,4 @@
-{ config, lib, pkgs, outputs, ... }:
+{ config, pkgs, ... }:
 let
   ifTheyExist = groups:
     builtins.filter (group: builtins.hasAttr group config.users.groups) groups;
@@ -7,7 +7,6 @@ in {
   users.users = {
     diego = {
       isNormalUser = true;
-      passwordFile = config.sops.secrets.diego-password.path;
       packages = [ pkgs.home-manager ];
       extraGroups = [ "wheel" "audio" "storage" "input" "video" ]
         ++ ifTheyExist [
@@ -29,8 +28,4 @@ in {
   };
   security.pam.services = { swaylock = { }; };
   services.geoclue2.enable = true;
-  sops.secrets.diego-password = {
-    sopsFile = ../../secrets.yaml;
-    neededForUsers = true;
-  };
 }
