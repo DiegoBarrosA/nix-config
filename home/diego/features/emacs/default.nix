@@ -12,31 +12,19 @@ in {
     };
     extraPackages = epkgs:
       with epkgs; [
-        org-modern
-        company
-        projectile
         lsp-mode
         doom-modeline
-        js2-mode
-        cask
         nix-theme
         treemacs
         treemacs-magit
         treemacs-tab-bar
-        nix-mode
         treemacs-evil
         magit
-        lsp-mode
         which-key
-        mmm-mode
-        rust-mode
-        typescript-mode
         evil
         evil-org
         evil-collection
         evil-surround
-        format-all
-        vterm
         evil-collection
         undo-tree
         zen-mode
@@ -47,9 +35,6 @@ in {
         sqlite3
         groovy-mode
         general
-        nerd-icons
-        python-mode
-        python
       ];
     package = if pkgs.stdenv.isDarwin then
       emacs-overlay.emacs-pgtk.overrideAttrs (old: {
@@ -57,13 +42,13 @@ in {
           # Fix OS window role (needed for window managers like yabai)
           (pkgs.fetchpatch {
             url =
-              "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-28/fix-window-role.patch";
+              "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-30/fix-window-role.patch";
             sha256 = "sha256-+z/KfsBm1lvZTZNiMbxzXQGRTjkCFO4QPlEK35upjsE=";
           })
           # Use poll instead of select to get file descriptors
           (pkgs.fetchpatch {
             url =
-              "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-29/poll.patch";
+              "https://raw.githubusercontent.com/d12frosted/homebrew-emacs-plus/master/patches/emacs-30/poll.patch";
             sha256 = "sha256-jN9MlD8/ZrnLuP2/HUXXEVVd6A+aRZNYFdZF8ReJGfY=";
           })
           # Enable rounded window with no decoration

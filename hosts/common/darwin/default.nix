@@ -14,6 +14,8 @@
   fonts = {
     fontDir.enable = true;
     fonts = with pkgs; [
+      jost
+      terminus_font
       fantasque-sans-mono
       font-awesome
       (nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
@@ -28,10 +30,9 @@
   # };
   environment.loginShell = "${pkgs.zsh}/bin/zsh";
   environment.shells = [ pkgs.nushell ];
-  environment.variables.SHELL = "${pkgs.nushell}/bin/nu";
+  environment.variables.SHELL = "${pkgs.fish}/bin/fish";
   environment.variables.LANG = "en_US.UTF-8";
   system.defaults = {
-
     alf = {
       allowdownloadsignedenabled = 0;
       allowsignedenabled = 1;
@@ -56,6 +57,7 @@
       showhidden = true;
       static-only = false;
       tilesize = 48;
+      largesize = 64;
     };
     finder = {
       AppleShowAllExtensions = true;
@@ -89,6 +91,8 @@
       PMPrintingExpandedStateForPrint = true;
       PMPrintingExpandedStateForPrint2 = true;
       _HIHideMenuBar = lib.mkDefault false;
+      AppleWindowTabbingMode = "always";
+      "com.apple.mouse.tapBehavior" = 1;
       "com.apple.keyboard.fnState" = false;
       "com.apple.sound.beep.feedback" = 0;
       "com.apple.springing.delay" = 0.1;

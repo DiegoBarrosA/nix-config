@@ -9,14 +9,11 @@
       url = "github:lnl7/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    #TODO: 
     nix-on-droid = {
       url = "github:t184256/nix-on-droid/release-22.11";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
     };
-    hyprland.url = "github:hyprwm/hyprland/v0.20.1beta";
-    hyprwm-contrib.url = "github:hyprwm/contrib";
     impermanence.url = "github:nix-community/impermanence";
     home-manager = {
       url = "github:nix-community/home-manager";

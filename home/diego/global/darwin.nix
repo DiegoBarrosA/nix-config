@@ -8,7 +8,6 @@ in {
     username = lib.mkDefault "diego";
     homeDirectory = "/Users/${config.home.username}";
     stateVersion = lib.mkDefault "22.11";
-
   };
   nix = {
     package = pkgs.nix;

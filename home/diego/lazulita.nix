@@ -2,9 +2,9 @@
   imports = [
     ./features/cli
     ./features/desktop/common/alacritty.nix
+    #    ./features/emacs
     ./global/darwin.nix
     ./features/desktop/common/firefox
-    ./features/emacs
     ./features/desktop/common/mpv.nix
   ];
   home.packages = with pkgs; [
@@ -15,7 +15,9 @@
     openssl
     inkscape
     zstd
-    vscodium
+    ripgrep
+    findutils
+    fd
   ];
   colorscheme = inputs.nix-colors.colorSchemes.material-darker;
 }

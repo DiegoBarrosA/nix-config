@@ -1,6 +1,7 @@
-{ pkgs, ... }: {
+{
   programs.starship = {
     enable = true;
+    enableFishIntegration = true;
     settings = {
       format = "$all$directory$character";
       add_newline = false;
@@ -16,10 +17,7 @@
         vicmd_symbol = "[Vi](bold green)";
       };
       directory = { home_symbol = ""; };
-      time = {
-
-        disabled = true;
-      };
+      time = { disabled = true; };
       git_commit = { tag_symbol = " tag "; };
       git_status = {
         ahead = ">";
@@ -27,62 +25,24 @@
         diverged = "<>";
         renamed = "r";
         deleted = "x";
-
       };
       aws = { symbol = "aws "; };
       c = { symbol = "C "; };
       cobol = { symbol = "cobol "; };
       conda = { symbol = "conda "; };
-
       directory = { read_only = " ro"; };
-      docker_context = {
-
-        symbol = "docker ";
-      };
-
-      git_branch = {
-
-        symbol = "git ";
-      };
-
-      java = {
-
-        symbol = "java ";
-      };
-
-      lua = {
-
-        symbol = "lua ";
-      };
-
+      docker_context = { symbol = "docker "; };
+      git_branch = { symbol = "git "; };
+      java = { symbol = "java "; };
+      lua = { symbol = "lua "; };
       memory_usage = { symbol = "memory "; };
-
-      nix_shell = {
-
-        symbol = "nix ";
-      };
-      package = {
-
-        symbol = "pkg ";
-
-      };
-
+      nix_shell = { symbol = "nix "; };
+      package = { symbol = "pkg "; };
       python = { symbol = "py "; };
-
-      rust = {
-
-        symbol = "rs ";
-      };
-      ruby = {
-
-        symbol = "rb ";
-      };
-      sudo = {
-        symbol = "sudo ";
-
-      };
+      rust = { symbol = "rs "; };
+      ruby = { symbol = "rb "; };
+      sudo = { symbol = "sudo "; };
       hostname = { ssh_only = true; };
     };
-
   };
 }

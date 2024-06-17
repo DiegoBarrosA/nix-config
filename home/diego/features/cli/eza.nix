@@ -1,8 +1,7 @@
 { config, lib, ... }: {
-
   programs.eza = {
     enable = true;
-    #    enableAliases = true;
+    enableFishIntegration = true;
     extraOptions = [ "--group-directories-first" "--header" ];
   };
 }

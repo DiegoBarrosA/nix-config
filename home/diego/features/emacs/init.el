@@ -24,7 +24,6 @@
 (setq org-directory "~/Documents/Org")
 (setq org-agenda-files (directory-files-recursively org-directory "\\.org$"))
 (require 'lsp-mode)
-(add-hook 'nix-mode-hook #'lsp)
 (require 'which-key)
 (use-package which-key
   :init
@@ -42,19 +41,7 @@
         which-key-max-description-length 25
         which-key-allow-imprecise-window-fit t
         which-key-separator " -> " ))
-(prettify-symbols-mode)
-(require 'mmm-mode)
-(setq mmm-global-mode 't)
-(mmm-add-classes
- '((nix-block
-    :front " \/\* \\([a-zA-Z0-9_-]+\\) \*\/ '''[^']"
-    :back "''';"
-    ;; :save-matches 1
-    ;; :delimiter-mode nil
-    ;; :match-submode identity
-    :submode org
-    )))
-(mmm-add-mode-ext-class 'nix-mode nil 'nix-block)
+
 (setq evil-want-keybinding nil)
 (setq evil-want-C-u-scroll t)
 (require 'evil)
@@ -72,48 +59,4 @@
 (setq org-fold-core-style  'overlay)
 (doom-modeline-mode 1)
 (setq doom-modeline-icon nil)
-(setq org-fold-core-style  'overlay)
-(setq org-roam-directory (file-truename "~/Documents/Org/Roam"))
-(org-roam-db-autosync-mode)
-;; Minimal UI
-(package-initialize)
 
-;; Choose some fonts
-;; (set-face-attribute 'default nil :family "Iosevka")
-;; (set-face-attribute 'variable-pitch nil :family "Iosevka Aile")
-(set-face-attribute 'org-modern-symbol nil :family "Fantaque Sans Mono")
-
-;; Add frame borders and window dividers
-(modify-all-frames-parameters
- '((right-divider-width . 25)
-   (internal-border-width . 25)))
-(dolist (face '(window-divider
-                window-divider-first-pixel
-                window-divider-last-pixel))
-  (face-spec-reset-face face)
-  )
-
-(setq
- ;; Edit settings
- org-auto-align-tags nil
- org-tags-column 0
- org-catch-invisible-edits 'show-and-error
- org-special-ctrl-a/e t
- org-insert-heading-respect-content t
-
- ;; Org styling, hide markup etc.
- org-hide-emphasis-markers t
- org-pretty-entities t
- org-ellipsis "…"
-
- ;; Agenda styling
- org-agenda-tags-column 0
- org-agenda-block-separator ?─
- org-agenda-time-grid
- '((daily today require-timed)
-   (800 1000 1200 1400 1600 1800 2000)
-   " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄")
- org-agenda-current-time-string
- "◀── now ─────────────────────────────────────────────────")
-
-(global-org-modern-mode)

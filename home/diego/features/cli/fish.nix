@@ -6,7 +6,7 @@ in {
   programs.fish = {
     enable = true;
     shellAbbrs = {
-      top = "btm";
+      top = "${pkgs.bottom}/bin/btm";
       jqless = "jq -C | less -r";
       n = "nix";
       nd = "nix develop -c $SHELL";
@@ -15,19 +15,18 @@ in {
       nb = "nix build";
       nbn = "nix build nixpkgs#";
       nf = "nix flake";
-
       nr = "nixos-rebuild --flake .";
       nrs = "nixos-rebuild --flake . switch";
       snr = "sudo nixos-rebuild --flake .";
       snrs = "sudo nixos-rebuild --flake . switch";
       hm = "home-manager --flake .";
       hms = "home-manager --flake . switch";
-      moe = "mpv https://listen.moe/stream";
+      moe = "iina https://listen.moe/stream";
       up =
         "home-manager switch -b backup --flake  /Users/diego/Documents/Repos/nix-config";
       e = "emacsclient -t";
-      v = "v";
-      vi = "vim";
+      v = "hx";
+      vi = "hx";
     };
     shellAliases = {
       # Get ip

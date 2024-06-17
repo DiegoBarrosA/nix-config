@@ -3,16 +3,16 @@
     ./zellij.nix
     ./zoxide.nix
     ./helix.nix
-    ./vim.nix
     ./pfetch.nix
-    ./nushell.nix
     ./git.nix
     ./starship.nix
     ./fzf.nix
     ./bat.nix
+    ./fish.nix
+    #./nushell.nix
+    ./yazi.nix
   ];
   home.packages = with pkgs; [
-    bottom # System viewer
     comma # Install and run programs by sticking a , before them
     fd # Better find
     gping
@@ -25,5 +25,4 @@
     yt-dlp
     zip
   ];
-
 }

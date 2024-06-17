@@ -6,18 +6,11 @@
       upgrade = true;
       cleanup = "uninstall";
     };
-    caskArgs = {
-      appdir = "~/Applications";
-      require_sha = true;
-    };
-
+    caskArgs = { appdir = "~/Applications"; };
     taps =
       [ "homebrew/cask-versions" "homebrew/cask-fonts" "homebrew/services" ];
-
     brews = [ ];
-    casks = [
-
-    ];
+    casks = [ ];
     masApps = { };
   };
 }
