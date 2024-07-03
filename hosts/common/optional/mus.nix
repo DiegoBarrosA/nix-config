@@ -60,6 +60,6 @@
     carla
     hydrogen
     tenacity
-    renoise
+    renoise-latest
   ];
 }

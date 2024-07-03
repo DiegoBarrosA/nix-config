@@ -3,6 +3,7 @@
     #Common
     ../common/global
     ../common/users/diego
+    #../common/optional/ollama.nix
     #hardware
     inputs.hardware.nixosModules.common-cpu-amd
     inputs.hardware.nixosModules.common-gpu-amd

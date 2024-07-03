@@ -14,6 +14,7 @@
     ./mime.nix
     ./mpv.nix
     ./obs.nix
+    ../other/zoom.nix
   ];
   xdg.enable = true;
   xdg.userDirs.enable = true;

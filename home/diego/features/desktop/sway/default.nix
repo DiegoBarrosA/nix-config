@@ -39,7 +39,7 @@
       };
       input = {
         "type:keyboard" = {
-          xkb_layout = "us,es";
+          xkb_layout = "us,latam";
           xkb_capslock = "disabled";
           xkb_options =
             "grp:alt_space_toggle,shift:both_capslock,caps:ctrl_modifier";

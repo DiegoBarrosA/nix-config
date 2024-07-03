@@ -5,4 +5,5 @@
   lyrics = pkgs.callPackage ./lyrics { };
   plymouth-spinner-monochrome =
     pkgs.callPackage ./plymouth-spinner-monochrome { };
+  renoise-latest = pkgs.callPackage ./renoise { };
 }
