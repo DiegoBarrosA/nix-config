@@ -1,9 +1,28 @@
+    ;; if you want to change prefix for lsp-mode keybindings.
+(require 'lsp-mode)
+(use-package lsp-mode
+  :ensure t)
+
+(use-package lsp-nix
+  :ensure lsp-mode
+  :after (lsp-mode)
+  :demand t
+  :custom
+  (lsp-nix-nil-formatter ["nixfmt"]))
+
+(use-package nix-mode
+  :hook (nix-mode . lsp-deferred)
+  :ensure t)
+
 (setq default-frame-alist '((font . "Fantasque Sans Mono 22")))
+
 (scroll-bar-mode -1)
 (tool-bar-mode -1)
 (tooltip-mode -1)
 (menu-bar-mode 1)
 (set-fringe-mode 10)
+
+
 (setq visible-bell nil
       ring-bell-function 'double-flash-mode-line)
 (defun double-flash-mode-line ()
@@ -20,7 +39,6 @@
 (global-set-key "\C-ca" 'org-agenda)
 (setq org-directory "~/Documents/Org")
 (setq org-agenda-files (directory-files-recursively org-directory "\\.org$"))
-(require 'lsp-mode)
 (require 'which-key)
 (use-package which-key
   :init
@@ -51,3 +69,10 @@
 (evil-org-agenda-set-keys)
 (evil-collection-init)
 (global-evil-surround-mode 1)
+
+
+;; Setup visual guidelines for LSP
+
+(setq lsp-ui-peek-enable t)
+(setq lsp-ui-doc-enable t)
+(setq lsp-ui-doc-position 'at-point)

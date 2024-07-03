@@ -1,4 +1,6 @@
-{ lib, pkgs, ... }: {
+{ pkgs, ... }: {
+  modules = [ arion.nixosModules.arion ];
+  environment.systemPackages = [ pkgs.arion ];
   virtualisation = {
     containers.storage.settings = {
       storage = {
@@ -18,7 +20,6 @@
       dockerCompat = true;
       dockerSocket.enable = false;
     };
-
   };
   networking.firewall = {
     enable = true;
@@ -27,5 +28,4 @@
       allowedUDPPorts = [ 2376 49999 9001 8098 ];
     };
   };
-
 }

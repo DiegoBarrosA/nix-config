@@ -1,5 +1,5 @@
 # iso.nix
-{ config, pkgs, ... }: {
+{ pkgs, ... }: {
   imports = [
     # installation-cd-graphical-plasma5-new-kernel.nix uses pkgs.linuxPackages_latest
     # instead of the default kernel.

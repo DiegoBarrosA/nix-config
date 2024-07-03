@@ -11,48 +11,46 @@ in {
       buildInputs = final.buildInputs ++ [ final.jansson final.harfbuzz ];
     };
     extraPackages = epkgs:
-      with epkgs; [
-        #org-modern
-        #company
-        #projectile
-        lsp-mode
-        #doom-modeline
-        #js2-mode
+      with epkgs;
+      [
         #cask
-
+        #company
+        #doom-modeline
+        evil
+        evil-collection
+        evil-org
+        evil-surround
+        fzf
+        #groovy-mode
+        #js2-mode
+        lsp-mode
+        lsp-ui
+        #magit
+        #mmm-mode
+        #nerd-icons
+        #nix-mode
+        nix-mode
         nix-theme
-        #treemacs
+        #org-modern
+        #org-roam
+        #org-roam-bibtex
+        #org-roam-timestamps
+        #org-roam-ui
+        #projectile
+        #python
+        #python-mode
+        #rust-mode
+        #sqlite3
+        treemacs
+        treemacs-evil
         #treemacs-magit
         #treemacs-tab-bar
-        #nix-mode
-        #treemacs-evil
-        #magit
-        #lsp-mode
-        which-key
-        #mmm-mode
-        #rust-mode
         #typescript-mode
-        evil
-        evil-org
-        evil-collection
-        evil-surround
-        #format-all
-        #vterm
-        #evil-collection
         #undo-tree
+        #vterm
+        which-key
         #zen-mode
-        #org-roam
-        #org-roam-ui
-        #org-roam-timestamps
-        #org-roam-bibtex
-        #sqlite3
-        #groovy-mode
-        #general
-        #nerd-icons
-        #python-mode
-        #python
-        #fzf
-      ]++ [pkgs.nil];
+      ] ++ [ pkgs.nil pkgs.nixfmt-rfc-style ];
     package = if pkgs.stdenv.isDarwin then
       emacs-overlay.emacs-pgtk.overrideAttrs (old: {
         patches = (old.patches or [ ]) ++ [

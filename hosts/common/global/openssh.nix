@@ -8,7 +8,6 @@ in {
   services.openssh = {
     enable = true;
     # Harden
-
     settings.PasswordAuthentication = false;
     settings.PermitRootLogin = "no";
     # Automatically remove stale sockets

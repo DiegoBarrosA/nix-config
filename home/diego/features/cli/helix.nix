@@ -1,4 +1,4 @@
-{ config, inputs, pkgs, ... }: {
+{ pkgs, ... }: {
   programs.helix = {
     enable = true;
     extraPackages = with pkgs; [
@@ -12,6 +12,7 @@
     settings = {
       theme = "material_darker";
       editor = {
+        popup-border = "all";
         line-number = "relative";
         lsp.display-messages = true;
         true-color = true;
@@ -70,7 +71,6 @@
             };
           };
         };
-
         typescript-language-server = {
           command =
             "${nodePackages.typescript-language-server}/bin/typescript-language-server";

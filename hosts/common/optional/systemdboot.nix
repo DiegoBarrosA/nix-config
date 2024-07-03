@@ -4,7 +4,7 @@
       enable = true;
       consoleMode = "max";
       editor = false;
-      graceful = true;
+      graceful = false;
     };
     timeout = 0;
     efi.canTouchEfiVariables = true;

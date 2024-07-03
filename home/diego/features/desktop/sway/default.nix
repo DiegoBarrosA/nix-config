@@ -10,11 +10,13 @@
   home.packages = with pkgs; [ autotiling swayr ];
   xdg.portal = {
     enable = true;
+    configPackages = [ pkgs.gnome.gnome-session ];
     extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
   };
   wayland.windowManager.sway = {
     enable = true;
     wrapperFeatures.gtk = true;
+    wrapperFeatures.base = true;
     systemd = {
       xdgAutostart = true;
       enable = true;

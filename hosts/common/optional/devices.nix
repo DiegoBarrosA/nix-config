@@ -14,5 +14,4 @@
     mtpfs
     android-tools
   ];
-
 }

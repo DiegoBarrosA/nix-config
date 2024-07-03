@@ -72,7 +72,6 @@ in {
           };
         };
       };
-
       storage = {
         type = "disk";
         device = "/dev/disk/by-id/ata-ST3000DM001-1CH166_W1F20M0B";

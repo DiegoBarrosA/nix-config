@@ -9,25 +9,19 @@
     inputs.hardware.nixosModules.common-gpu-amd
     inputs.hardware.nixosModules.common-pc-ssd
     ./hardware-configuration.nix
-    ../common/optional/pipewire.nix
-    ../common/optional/mus.nix
     ../common/optional/transmission.nix
-    ../common/optional/silentboot.nix
     ../common/optional/devices.nix
-    ../common/optional/print.nix
-    #    ../common/optional/wportals.nix
+    #../common/optional/print.nix
     #Login manager
     #networking utils
     ../common/optional/tailscale.nix
     ../common/optional/hosts.nix
-    ../common/optional/wireless.nix
     ../common/optional/cockpit.nix
     #Containers
     ../common/optional/oci
-    #  ../common/optional/syncthing.nix
+    ../common/optional/syncthing.nix
     ../common/optional/environment.nix
     ../common/optional/virtmanager.nix
-    ../common/optional/greetd.nix
     ##Boot options
     ../common/optional/systemdboot.nix
 
@@ -48,12 +42,7 @@
   networking = {
     hostName = "cobalto";
     useDHCP = false;
-    interfaces = { wlp6s0.useDHCP = true; };
-  };
-  boot = {
-    kernelPackages = pkgs.linuxKernel.packages.linux_zen;
-    extraModulePackages = [ pkgs.linuxKernel.packages.linux_zen.v4l2loopback ];
-    kernelModules = [ "vfio" "vfio_iommu_type1" "vfio_pci" "vfio_virqfd" ];
+    interfaces = { enp7s0.useDHCP = true; };
   };
   hardware = {
     opengl = {
@@ -63,8 +52,6 @@
       driSupport32Bit = true;
     };
   };
-  programs = { dconf.enable = true; };
-  services.dbus.packages = [ pkgs.gcr ];
   boot.extraModprobeConfig = "options vfio-pci ids=10ec:818b";
   networking.nameservers = [ "1.1.1.1" "9.9.9.9" ];
   hardware.openrgb.enable = true;

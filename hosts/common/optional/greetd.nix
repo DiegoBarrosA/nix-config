@@ -1,4 +1,4 @@
-{ pkgs, lib, config, outputs, ... }:
+{ pkgs, lib, config, ... }:
 let
   sway-kiosk = command:
     "${lib.getExe pkgs.sway} --config ${
@@ -14,7 +14,7 @@ let
 in {
   users.extraUsers.greeter = {
     packages = with pkgs; [
-      materia-theme
+      pantheon.elementary-gtk-theme
       papirus-icon-theme
       capitaine-cursors
       jost
@@ -28,7 +28,7 @@ in {
     settings = {
       GTK = {
         icon_theme_name = "Papirus";
-        theme_name = "Materia-dark";
+        theme_name = "Elementary";
         cursor_theme_name = "capitaine-cursors";
         font_name = "Jost* 15";
       };
