@@ -1,4 +1,6 @@
-{config,...}:
 {
-    services.tailscale.enable = true;
+  services.tailscale = {
+    enable = true;
+    authKeyFile = "/nix/storage/run/secrets/tailscale_key";
+  };
 }

@@ -1,7 +1,7 @@
 { inputs, lib, pkgs, config, outputs, ... }:
 let inherit (inputs.nix-colors) colorSchemes;
 in {
-  imports = [ inputs.nix-colors.homeManagerModule ../features/emacs ];
+  imports = [ inputs.nix-colors.homeManagerModule ];
   colorscheme = lib.mkDefault colorSchemes.spaceduck;
   home.file.".colorscheme".text = config.colorscheme.slug;
   home = {

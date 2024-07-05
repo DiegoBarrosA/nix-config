@@ -15,6 +15,8 @@
     #Login manager
     #networking utils
     ../common/optional/tailscale.nix
+
+    ../common/optional/homepage.nix
     ../common/optional/hosts.nix
     ../common/optional/cockpit.nix
     #Containers
@@ -42,13 +44,28 @@
   networking = {
     hostName = "cobalto";
     useDHCP = false;
-    interfaces = { enp7s0.useDHCP = true; };
+
+    interfaces = {
+      enp7s0 = {
+        useDHCP = true;
+        ipv4.addresses = [
+          {
+            address = "10.0.0.1";
+            prefixLength = 16;
+          }
+          {
+            address = "192.168.1.85";
+            prefixLength = 24;
+          }
+        ];
+      };
+
+    };
   };
   hardware = {
     opengl = {
       enable = true;
       extraPackages = with pkgs; [ amdvlk ];
-      driSupport = true;
       driSupport32Bit = true;
     };
   };

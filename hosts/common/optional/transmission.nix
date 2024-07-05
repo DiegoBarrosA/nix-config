@@ -1,6 +1,6 @@
 {
   services.transmission = {
-    enable = true;
+    enable = false;
     group = "transmission";
     home = "/nix/storage/var/lib/transmission";
     downloadDirPermissions = "770";
