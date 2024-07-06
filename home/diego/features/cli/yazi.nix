@@ -1,8 +1,6 @@
 {
-  programs.zoxide = {
+  programs.yazi = {
     enable = true;
     enableNushellIntegration = true;
-    options = [ "--cmd cd" ];
   };
-
 }

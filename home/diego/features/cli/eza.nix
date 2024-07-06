@@ -1,7 +1,7 @@
 {
   programs.eza = {
     enable = true;
-    enableFishIntegration = true;
+    enableNushellIntegration = true;
     extraOptions = [ "--group-directories-first" "--header" "--all" "--long" ];
   };
 }

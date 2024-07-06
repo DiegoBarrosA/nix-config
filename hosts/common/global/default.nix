@@ -3,7 +3,6 @@
   imports = [
     inputs.home-manager.nixosModules.home-manager
     ./openssh.nix
-    ./fish.nix
     ./locale.nix
   ];
   networking.domain = "minerales.network";

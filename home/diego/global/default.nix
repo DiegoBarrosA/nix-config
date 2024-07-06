@@ -1,4 +1,4 @@
-{ inputs, lib, pkgs, config, outputs, ... }:
+{ inputs, lib, pkgs, config, ... }:
 let inherit (inputs.nix-colors) colorSchemes;
 in {
   imports = [ inputs.nix-colors.homeManagerModule ];

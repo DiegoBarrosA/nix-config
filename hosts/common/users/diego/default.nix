@@ -19,7 +19,7 @@ in {
           "libvirtd"
           "adbusers"
         ];
-      shell = pkgs.fish;
+      shell = pkgs.nushell;
       description = "Diego Barros";
       openssh.authorizedKeys.keys = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOXblym20SD75es2z5Qay0mfW+g2zvKPBVMsUFakIyBK diegobarrosaraya@outlook.com"
