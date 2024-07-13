@@ -9,7 +9,8 @@
     caskArgs = { appdir = "~/Applications"; };
     taps =
       [ "homebrew/cask-versions" "homebrew/cask-fonts" "homebrew/services" ];
-    brews = [{
+    brews = [ ];
+    casks = [{
 
       name = "alfred";
       greedy = true;
