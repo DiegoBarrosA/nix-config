@@ -11,15 +11,17 @@
   system.keyboard.enableKeyMapping = true;
   system.keyboard.remapCapsLockToEscape = true;
   security.pam.enableSudoTouchIdAuth = true;
-  fonts = {
-    fontDir.enable = true;
-    fonts = with pkgs; [
-      fantasque-sans-mono
-      font-awesome
-      (nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
-    ];
-  };
-  #TODO: have to change
+  # fonts = {
+  #   fontDir.enable = true;
+  #   fonts = with pkgs; [
+  #     jost
+  #     terminus_font
+  #     fantasque-sans-mono
+  #     font-awesome
+  #     (nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
+  #   ];
+  # };
+  # TODO: have to change
   # launchd.user.agents.mailsync = {
   #   serviceConfig.Program = "${pkgs.lnl.letty}/bin/letty-blink";
   #   serviceConfig.WatchPaths = ["/var/mail/lnl"];
@@ -49,12 +51,13 @@
       minimize-to-application = true;
       mouse-over-hilite-stack = true;
       mru-spaces = false;
-      orientation = "left";
+      orientation = "bottom";
       show-process-indicators = true;
       show-recents = false;
       showhidden = true;
       static-only = false;
       tilesize = 48;
+      largesize = 64;
     };
     finder = {
       AppleShowAllExtensions = true;
@@ -88,6 +91,8 @@
       PMPrintingExpandedStateForPrint = true;
       PMPrintingExpandedStateForPrint2 = true;
       _HIHideMenuBar = lib.mkDefault false;
+      AppleWindowTabbingMode = "always";
+      "com.apple.mouse.tapBehavior" = 1;
       "com.apple.keyboard.fnState" = false;
       "com.apple.sound.beep.feedback" = 0;
       "com.apple.springing.delay" = 0.1;

@@ -1,4 +1,4 @@
-{ inputs, lib, pkgs, config, outputs, builtins, ... }:
+{ inputs, lib, pkgs, config, ... }:
 let inherit (inputs.nix-colors) colorSchemes;
 in {
   imports = [ inputs.nix-colors.homeManagerModule ];
@@ -8,7 +8,6 @@ in {
     username = lib.mkDefault "diego";
     homeDirectory = "/Users/${config.home.username}";
     stateVersion = lib.mkDefault "22.11";
-
   };
   nix = {
     package = pkgs.nix;

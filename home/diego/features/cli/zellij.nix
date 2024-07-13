@@ -1,10 +1,12 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, ... }:
 let inherit (config.colorscheme) colors;
 in {
+  #  home.packages = [ pkgs.zjstatus ];
   programs.zellij = {
     enable = true;
     settings = {
       pane_frames = false;
+      mouse_mode = true;
       simplified_ui = true;
       theme = "default";
       copy_command = "pbcopy";

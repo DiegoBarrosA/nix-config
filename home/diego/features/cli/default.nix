@@ -1,31 +1,27 @@
 { pkgs, ... }: {
   imports = [
-    ./bat.nix
-    ./bottom.nix
-    ./broot.nix
-    ./eza.nix
-    ./fd.nix
-    ./fzf.nix
-    ./git.nix
-    ./helix.nix
-    ./nushell.nix
-    ./pfetch.nix
-    ./ripgrep.nix
-    ./starship.nix
-    ./yazi.nix
     ./zellij.nix
     ./zoxide.nix
+    ./helix.nix
+    ./pfetch.nix
+    ./git.nix
+    ./starship.nix
+    ./fzf.nix
+    ./bat.nix
+    ./nushell.nix
+    ./yazi.nix
   ];
   home.packages = with pkgs; [
     comma # Install and run programs by sticking a , before them
+    fd # Better find
     gping
     jq # JSON pretty printer and manipulator
     nixfmt
     pv
+    ripgrep # Better grep
     stow
     wget
     yt-dlp
     zip
   ];
-
 }
