@@ -28,7 +28,14 @@
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     nix-doom-emacs.url = "github:nix-community/nix-doom-emacs";
     nix-colors.url = "github:misterio77/nix-colors";
+
+    disko = {
+
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
+
   outputs = { self, nixpkgs, darwin, nix-on-droid, home-manager
     , nixpkgs-firefox-darwin, nix-doom-emacs, zjstatus, ... }@inputs:
     let

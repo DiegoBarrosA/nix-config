@@ -46,7 +46,6 @@
   networking = {
     hostName = "cobalto";
     useDHCP = false;
-
     interfaces = {
       enp7s0 = {
         useDHCP = true;
@@ -61,7 +60,6 @@
           }
         ];
       };
-
     };
   };
   hardware = {
