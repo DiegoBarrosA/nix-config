@@ -1,8 +1,9 @@
 { config, pkgs, ... }:
-let inherit (config.colorscheme) colors;
+let inherit (config.colorScheme) palette;
 in {
   home = { sessionVariables = { TERMINAL = "alacritty"; }; };
   programs.alacritty = {
+    package = if !pkgs.stdenv.isDarwin then pkgs.alacritty else pkgs.dummy;
     enable = true;
     settings = {
       window = {
@@ -20,22 +21,23 @@ in {
         action = "ToggleFullscreen";
       }];
       font = {
-        normal.family = "Fantasque Sans Mono";
+        normal.family = "FantasqueSansM Nerd Font Mono";
         size = 19;
       };
       cursor.style.shape = "Beam";
       colors = {
-        primary.foreground = "#${colors.base05}";
-        primary.background = "#${colors.base00}";
+        primary.foreground = "#${palette.base05}";
+        primary.background = "#${palette.base00}";
         normal = {
-          blue = "#${colors.base0D}";
-          red = "#${colors.base0F}";
-          yellow = "#${colors.base0A}";
-          green = "#${colors.base0B}";
-          magenta = "#${colors.base0E}";
-          cyan = "#${colors.base04}";
+          blue = "#${palette.base0D}";
+          red = "#${palette.base0F}";
+          yellow = "#${palette.base0A}";
+          green = "#${palette.base0B}";
+          magenta = "#${palette.base0E}";
+          cyan = "#${palette.base04}";
         };
       };
     };
   };
 }
+

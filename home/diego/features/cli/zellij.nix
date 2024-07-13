@@ -1,8 +1,8 @@
 { config, pkgs, ... }:
 let inherit (config.colorscheme) colors;
 in {
+  #  home.packages = [ pkgs.zjstatus ];
   programs.zellij = {
-    enableFishIntegration = true;
     enable = true;
     settings = {
       pane_frames = false;

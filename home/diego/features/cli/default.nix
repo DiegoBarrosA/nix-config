@@ -8,8 +8,7 @@
     ./starship.nix
     ./fzf.nix
     ./bat.nix
-    ./fish.nix
-    #./nushell.nix
+    ./nushell.nix
     ./yazi.nix
   ];
   home.packages = with pkgs; [

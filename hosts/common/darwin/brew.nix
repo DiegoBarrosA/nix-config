@@ -9,8 +9,11 @@
     caskArgs = { appdir = "~/Applications"; };
     taps =
       [ "homebrew/cask-versions" "homebrew/cask-fonts" "homebrew/services" ];
-    brews = [ ];
-    casks = [ ];
+    brews = [{
+
+      name = "alfred";
+      greedy = true;
+    }];
     masApps = { };
   };
 }

@@ -3,7 +3,7 @@
   imports = [ ../common/darwin ];
   programs.zsh = {
     enable = true;
-    loginShellInit = "fish";
+    loginShellInit = "zellij";
   };
   users.users.diego = {
     name = "diego";
@@ -21,25 +21,31 @@
   };
   homebrew.enable = true;
   homebrew.casks = [
-    "microsoft-remote-desktop"
-    "pika"
-    "google-drive"
-    "insomnia"
-    "microsoft-office"
-    "alfred"
-    "logi-options-plus"
-    "vanilla"
-    "monitorcontrol"
-    "logitune"
-    "firefox"
+    "alacritty"
     "citrix-workspace"
-    "zoom"
-    "obsidian"
+    "firefox"
     "flameshot"
+    "google-drive"
+    "google-chrome"
+    "insomnia"
+    "logi-options-plus"
+    "logitune"
+    "microsoft-office-businesspro"
+    "microsoft-remote-desktop"
+    "monitorcontrol"
+    "obsidian"
+    "pika"
+    "syncthing"
+    "vanilla"
     "vscodium"
+    "zoom"
+    "amethyst"
   ];
-  fonts.fontDir.enable = true;
-  fonts.fonts = with pkgs; [ fantasque-sans-mono jost ];
+
+  fonts.packages = with pkgs; [
+    (nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
+    jost
+  ];
   system.stateVersion = 4;
   system.defaults.dock.persistent-apps = [
     "${config.homebrew.caskArgs.appdir}/Firefox.app"

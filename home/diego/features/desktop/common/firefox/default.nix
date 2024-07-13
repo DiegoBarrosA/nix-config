@@ -1,5 +1,5 @@
-{ lib, pkgs, config, inputs, ... }:
-let inherit (config.colorscheme) colors;
+{ pkgs, config, ... }:
+let inherit (config.colorScheme) palette;
 in {
   programs.firefox = {
     enable = true;
@@ -21,7 +21,7 @@ in {
         "browser.tabs.tabmanager.enabled" = false;
       };
 
-      userChrome = builtins.readFile ./userChrome.css;
+      userChrome = "";
     };
   };
 }

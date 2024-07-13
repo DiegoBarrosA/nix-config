@@ -1,3 +1,4 @@
+# { inputs, ... }:
 # This file defines overlays
 {
   # This one brings our custom packages from the 'pkgs' directory
@@ -15,7 +16,6 @@
     # xdg-utils-spawn-terminal = prev.xdg-utils.overrideAttrs (oldAttrs: {
     #   patches = (oldAttrs.patches or [ ]) ++ [ ./xdg-open-spawn-terminal.diff ];
     # });
-
     pfetch = prev.pfetch.overrideAttrs (oldAttrs: {
       version = "unstable-2021-12-10";
       src = final.fetchFromGitHub {
@@ -31,4 +31,8 @@
     # Sane default values and crash avoidance (https://github.com/k-vernooy/trekscii/pull/1)
 
   };
+
+  # zjstatus = final: prev: {
+  #   zjstatus = inputs.zjstatus.packages.${prev.system}.default;
+  # };
 }

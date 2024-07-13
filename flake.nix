@@ -19,6 +19,8 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    zjstatus = { url = "github:dj95/zjstatus"; };
     sops-nix = {
       url = "github:mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -28,7 +30,7 @@
     nix-colors.url = "github:misterio77/nix-colors";
   };
   outputs = { self, nixpkgs, darwin, nix-on-droid, home-manager
-    , nixpkgs-firefox-darwin, nix-doom-emacs, ... }@inputs:
+    , nixpkgs-firefox-darwin, nix-doom-emacs, zjstatus, ... }@inputs:
     let
       inherit (self) outputs;
       inherit (nixpkgs.lib) filterAttrs traceVal;

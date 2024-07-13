@@ -11,17 +11,17 @@
   system.keyboard.enableKeyMapping = true;
   system.keyboard.remapCapsLockToEscape = true;
   security.pam.enableSudoTouchIdAuth = true;
-  fonts = {
-    fontDir.enable = true;
-    fonts = with pkgs; [
-      jost
-      terminus_font
-      fantasque-sans-mono
-      font-awesome
-      (nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
-    ];
-  };
-  #TODO: have to change
+  # fonts = {
+  #   fontDir.enable = true;
+  #   fonts = with pkgs; [
+  #     jost
+  #     terminus_font
+  #     fantasque-sans-mono
+  #     font-awesome
+  #     (nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
+  #   ];
+  # };
+  # TODO: have to change
   # launchd.user.agents.mailsync = {
   #   serviceConfig.Program = "${pkgs.lnl.letty}/bin/letty-blink";
   #   serviceConfig.WatchPaths = ["/var/mail/lnl"];
@@ -30,7 +30,7 @@
   # };
   environment.loginShell = "${pkgs.zsh}/bin/zsh";
   environment.shells = [ pkgs.nushell ];
-  environment.variables.SHELL = "${pkgs.fish}/bin/fish";
+  environment.variables.SHELL = "${pkgs.nushell}/bin/nu";
   environment.variables.LANG = "en_US.UTF-8";
   system.defaults = {
     alf = {
@@ -51,7 +51,7 @@
       minimize-to-application = true;
       mouse-over-hilite-stack = true;
       mru-spaces = false;
-      orientation = "left";
+      orientation = "bottom";
       show-process-indicators = true;
       show-recents = false;
       showhidden = true;
