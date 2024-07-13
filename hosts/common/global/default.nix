@@ -5,7 +5,7 @@
     ./openssh.nix
     ./locale.nix
   ];
-  networking.domain = "minerales.network";
+  networking.domain = "mineral.network";
 
   home-manager.useGlobalPkgs = true;
   home-manager.extraSpecialArgs = { inherit inputs outputs; };

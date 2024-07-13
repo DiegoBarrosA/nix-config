@@ -30,6 +30,25 @@
     ../common/optional/systemdboot.nix
 
   ];
+  services.nginx = {
+    enable = true;
+    recommendedTlsSettings = true;
+    recommendedOptimisation = true;
+    recommendedGzipSettings = true;
+    recommendedProxySettings = true;
+
+    virtualHosts = {
+      "mineral.network" = { serverAliases = [ "cobalto.local" ]; };
+
+      "cobalto.mineral.network" = {
+        locations."/".proxyPass = "http://localhost:8082";
+      };
+
+      "cobalto.syncthing.mineral.network" = {
+        locations."/".proxyPass = "http://localhost:8384";
+      };
+    };
+  };
   security.polkit.enable = true;
   services.dbus.enable = true;
   nix = {
@@ -70,6 +89,7 @@
     };
   };
   boot.extraModprobeConfig = "options vfio-pci ids=10ec:818b";
+  networking.firewall.allowedTCPPorts = [ 80 443 ]
   networking.nameservers = [ "1.1.1.1" "9.9.9.9" ];
   hardware.openrgb.enable = true;
   boot = { kernelParams = [ "amdgpu" ]; };
