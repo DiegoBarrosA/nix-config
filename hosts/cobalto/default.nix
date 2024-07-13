@@ -16,6 +16,8 @@
     #networking utils
     ../common/optional/tailscale.nix
 
+    ../common/optional/jellyfin.nix
+
     ../common/optional/homepage.nix
     ../common/optional/hosts.nix
     ../common/optional/cockpit.nix

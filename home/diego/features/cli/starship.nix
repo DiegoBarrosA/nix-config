@@ -82,7 +82,10 @@
         symbol = "sudo ";
 
       };
-      hostname = { ssh_only = true; };
+      hostname = {
+        ssh_only = true;
+        ssh_symbol = "SSH ";
+      };
     };
 
   };
