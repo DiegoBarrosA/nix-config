@@ -1,2 +1,3 @@
-# Personal Nix Config + homemanager 
-Heavely inspired on Misterio77's nix-config
+# Personal Nix Config + home-manager
+
+- Heavily inspired on Misterio77's nix-config
