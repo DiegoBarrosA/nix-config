@@ -40,6 +40,7 @@
     "vscodium"
     "zoom"
     "amethyst"
+    "qutebrowser"
   ];
 
   fonts.packages = with pkgs; [

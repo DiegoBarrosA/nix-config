@@ -2,7 +2,7 @@
   programs.helix = {
     enable = true;
     extraPackages = with pkgs; [
-      python311Packages.python-lsp-server
+      ruff-lsp
       marksman
       nil
       vscode-langservers-extracted
@@ -26,6 +26,7 @@
     };
     languages = with pkgs; {
       language-server = {
+
         efm-lsp-prettier = {
           command = "${efm-langserver}/bin/efm-langserver";
           config = {
@@ -107,6 +108,7 @@
             experimental.procAttrMacros = true;
           };
         };
+        ruff-lsp = { command = "ruff-lsp"; };
         omnisharp = {
           command = "omnisharp";
           args = [ "-l" "Error" "--languageserver" "-z" ];
@@ -237,6 +239,12 @@
             args =
               [ "--input-format" "xml" "--output-format" "xml" "--indent" "2" ];
           };
+        }
+        {
+
+          name = "python";
+          auto-format = true;
+          language-servers = [{ name = "ruff-lsp"; }];
         }
         # {
         #   name = "markdown";
