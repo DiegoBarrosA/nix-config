@@ -1,0 +1,87 @@
+theme: jekyll-theme-minimal
+title: Nix Config Documentation
+description: Personal NixOS and Home Manager configuration
+show_downloads: false
+
+# Collections
+collections:
+  docs:
+    output: true
+    permalink: /:name/
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# Navigation
+navigation:
+  - title: Home
+    url: /
+  - title: Getting Started
+    url: /getting-started/
+  - title: Deployment
+    url: /deployment/
+  - title: Hosts
+    url: /hosts/
+  - title: Modules
+    url: /modules/
+  - title: Home Manager
+    url: /home-manager/
+  - title: Overlays
+    url: /overlays/
+  - title: Packages
+    url: /packages/
+  - title: Structure
+    url: /structure/
+  - title: Coding Standards
+    url: /coding-standards/
+  - title: Dependencies
+    url: /dependencies/
+  - title: Testing
+    url: /testing/
+  - title: Examples
+    url: /examples/
+  - title: Troubleshooting
+    url: /troubleshooting/
+  - title: Changelog
+    url: /changelog/
+  - title: Contributing
+    url: /contributing/
+  - title: Glossary
+    url: /glossary/
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor/
+  - .bundle/
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+
+# Include files
+include:
+  - _pages
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+
+# Custom theme assets
+theme_assets:
+  css: "https://diegobarrosa.github.io/diegobarrosaraya-assets/shared-theme.css"
+  footer_css: "https://diegobarrosa.github.io/diegobarrosaraya-assets/shared-footer.css"
+  js: "https://diegobarrosa.github.io/diegobarrosaraya-assets/shared-theme.js"
+
+# SEO and social
+author: Diego Barros
+social:
+  github: DiegoBarrosA
+  twitter: diegobarrosa
+
+# Custom variables
+repository: DiegoBarrosA/nix-config
+branch: main

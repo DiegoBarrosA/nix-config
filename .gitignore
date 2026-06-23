@@ -1,0 +1,221 @@
+# =============================================================================
+# Nix/NixOS Configuration - Best Practices .gitignore
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# CRITICAL SECURITY - Never commit these!
+# -----------------------------------------------------------------------------
+# SOPS Age private keys (public keys in .sops.yaml are OK)
+.sops/age/keys.txt
+**/age/keys.txt
+# Broader key.txt patterns (catches hosts/*/keys.txt which **/age/keys.txt misses)
+hosts/**/keys.txt
+**/keys.txt
+**/.sops/
+
+# SSH private keys (public keys are OK with !*.pub)
+*.key
+!*.pub
+id_*
+*_key
+ssh_host_*
+
+# Secrets and sensitive files
+secrets/
+**/secrets.yaml
+!**/secrets.yaml.example
+.env
+.env.local
+.env.*.local
+
+# -----------------------------------------------------------------------------
+# Nix/NixOS Specific
+# -----------------------------------------------------------------------------
+# Nix build results
+result
+result-*
+
+# Nix repl history
+.repl-history
+
+# direnv
+.direnv/
+.envrc.local
+
+# Lorri
+.lorri/
+
+# NixOS VM images
+*.qcow2
+*.vdi
+*.vmdk
+
+# NixOS ISO images
+*.iso
+iso/
+
+# -----------------------------------------------------------------------------
+# Development Tools & IDEs
+# -----------------------------------------------------------------------------
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+.emacs.desktop
+.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+/.emacs.desktop
+/.emacs.desktop.lock
+*.~undo-tree~
+
+# Org-mode
+.org-id-locations
+*_archive
+
+# -----------------------------------------------------------------------------
+# Build Artifacts & Cache
+# -----------------------------------------------------------------------------
+# General build artifacts
+build/
+dist/
+target/
+*.o
+*.so
+*.dylib
+
+# Cache directories
+.cache/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# -----------------------------------------------------------------------------
+# Syncthing
+# -----------------------------------------------------------------------------
+# Conflict files created by Syncthing during sync conflicts
+*.sync-conflict-*
+.stfolder/
+.stignore
+
+# -----------------------------------------------------------------------------
+# OS Generated Files
+# -----------------------------------------------------------------------------
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.AppleDouble
+.LSOverride
+Icon
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+\#*\#
+.directory
+.Trash-*
+
+# -----------------------------------------------------------------------------
+# Documentation & Web
+# -----------------------------------------------------------------------------
+# Jekyll (docs)
+docs/_site/
+docs/.jekyll-cache/
+docs/.jekyll-metadata
+.jekyll-cache/
+
+# -----------------------------------------------------------------------------
+# Data Files & Common I/O Formats
+# -----------------------------------------------------------------------------
+# CSV and data files
+*.csv
+*.tsv
+*.jsonl
+*.parquet
+*.feather
+
+# Log files
+*.log
+logs/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary data files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+*.rej
+
+# -----------------------------------------------------------------------------
+# Project Specific (Review and adjust as needed)
+# -----------------------------------------------------------------------------
+# Flycheck
+flycheck_*.el
+
+# Projectile
+.projectile
+
+# Dir locals
+.dir-locals.el
+
+# Network security
+/network-security.data
+
+# Server auth
+/server/
+
+# -----------------------------------------------------------------------------
+# AI/Editor Tools
+# -----------------------------------------------------------------------------
+# OpenCode AI agent plans (ephemeral)
+.opencode/plans/
+
+# AI tool ephemeral state directories
+.claude/
+.omo/
+.superpowers/
+.cursor/
+docs/superpowers/
+
+# -----------------------------------------------------------------------------
+# Legacy entries (consider removing if not needed)
+# -----------------------------------------------------------------------------
+home/diego/secrets/
+**/mcp-env.nu
