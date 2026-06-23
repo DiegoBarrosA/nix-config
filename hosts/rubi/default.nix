@@ -38,6 +38,9 @@
     # OpenCode remote access (API + web UI)
     ../common/optional/opencode-server.nix
 
+    # Local LLM inference (Vulkan on AMD 680M APU — model cache at /var/lib/llama-cpp)
+    ../common/optional/llama-cpp-server.nix
+
     # libvirt/KVM + virt-manager (Windows 11 VM with virtio-gpu)
     ../common/optional/virtualization.nix
     inputs.nixvirt.nixosModules.default
@@ -187,6 +190,19 @@
       TEMPO_JIRA_BASE_URL = config.sops.secrets."tempo-jira-base-url".path;
       GITHUB_TOKEN = config.sops.secrets."github-token".path;
     };
+  };
+
+  # llama.cpp local inference for OpenCode subagents
+  # AMD 680M APU: Vulkan via RADV, shared system memory
+  # Models download from HuggingFace on first start (~5GB for qwen2.5-coder-7b)
+  services.llama-cpp-server = {
+    enable = true;
+    model = "bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K_M";
+    port = 11435;
+    contextSize = 8192;
+    gpuLayers = 99;
+    modelsDirectory = "/var/lib/llama-cpp";
+    extraArgs = [ "--alias" "qwen2.5-coder-7b" ];
   };
 
   # Security
