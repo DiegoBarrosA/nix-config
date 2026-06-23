@@ -13,10 +13,13 @@
   ];
 
   programs.opencode-config = {
+    enable = true;
     opencodeGo.enable = true;
     opencodeZen.enable = true;
     provider.enable = false;
     extraConfig = (import ./features/ai/opencode-personal.nix).config;
+    agents = (import ./features/ai/gsd-core-agents.nix).agents;
+    commands = (import ./features/ai/gsd-core-agents.nix).commands;
     secretEnv = {
       OPENCODE_API_KEY = "/run/secrets/opencode-api-key";
       GROQ_API_KEY = "/run/secrets/groq-api-key";
