@@ -232,9 +232,6 @@ let
   defaultModel =
     if cfg.opencodeGo.enable then "opencode-go/deepseek-v4-flash" else cfg.provider.defaultModel;
 
-  # Build plugin list
-  pluginList = lib.optional cfg.ohMyOpencode.enable "oh-my-opencode";
-
   # Build the full opencode.json config.
   # Use recursiveUpdate so cfg.extraConfig.provider merges with (instead of
   # replacing) the providers built from opencodeGo/opencodeZen options.
@@ -245,8 +242,7 @@ let
   // lib.optionalAttrs (providerConfig != { } || defaultModel != null) {
     provider = providerConfig;
     model = defaultModel;
-  }
-  // lib.optionalAttrs (pluginList != [ ]) { plugin = pluginList; };
+  };
 
   # Merge baseConfig with extraConfig, ensuring plugin lists are concatenated
   opencodeConfig =
@@ -414,36 +410,6 @@ in
       description = "Files whose contents should be exported into the environment before running opencode.";
     };
 
-    ohMyOpencode = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = ''
-          Enable oh-my-opencode plugin for multi-agent orchestration.
-          Provides: 11 discipline agents, Team Mode, ultrawork command,
-          hash-anchored edits, built-in MCPs (Exa, Context7, grep.app).
-        '';
-      };
-
-      agentConfig = lib.mkOption {
-        type = lib.types.nullOr (lib.types.attrsOf lib.types.anything);
-        default = null;
-        description = ''
-          When set, manages oh-my-openagent.jsonc declaratively.
-          Keys map directly to the JSON object (e.g. { agents = { ... }; }).
-          The $schema field is added automatically.
-        '';
-        example = lib.literalExpression ''
-          {
-            agents = {
-              hephaestus = { model = "nvidia-inference/deepseek-ai/deepseek-r1"; allow_non_gpt_model = true; };
-              plan       = { model = "nvidia-inference/deepseek-ai/deepseek-r1"; allow_non_gpt_model = true; };
-            };
-          }
-        '';
-      };
-    };
-
     # Named profiles — each generates an opencode-{name} wrapper script with its own config dir
     profiles = lib.mkOption {
       type = lib.types.attrsOf (
@@ -459,11 +425,6 @@ in
               default = { };
               description = "opencode.json content for this profile. MCP servers and plugins are inherited from the shared config.";
             };
-            agentConfig = lib.mkOption {
-              type = lib.types.nullOr (lib.types.attrsOf lib.types.anything);
-              default = null;
-              description = "oh-my-openagent.jsonc content for this profile. The \$schema field is added automatically.";
-            };
           };
         }
       );
@@ -472,7 +433,7 @@ in
         Named opencode profiles. Each profile gets its own config dir under
         ~/.config/opencode-profiles/<name>/ (separate sessions/history) and a
         wrapper script opencode-<name> that launches opencode with that profile.
-        MCP servers and plugins are shared from the main config.
+        MCP servers are shared from the main config.
       '';
       example = lib.literalExpression ''
         {
@@ -487,7 +448,6 @@ in
               model = "opencode/big-pickle";
               provider.groq = { ... };
             };
-            agentConfig.agents.hephaestus = { model = "opencode/big-pickle"; allow_non_gpt_model = true; };
           };
         }
       '';
@@ -514,6 +474,26 @@ in
             Instructions here...
           ''';
         }
+      '';
+    };
+
+    agents = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      description = ''
+        OpenCode agents to install. Keys are agent filenames (without .md),
+        values are the markdown content.
+        Deployed to ~/.config/opencode/agents/<name>.md
+      '';
+    };
+
+    commands = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      description = ''
+        OpenCode commands to install. Keys are command filenames (without .md),
+        values are the markdown content.
+        Deployed to ~/.config/opencode/commands/<name>.md
       '';
     };
   };
@@ -544,10 +524,9 @@ in
             ];
           };
 
-      # Build the shared base (MCP + plugins) used by all profiles
+      # Build the shared base (MCP) used by all profiles
       sharedBase =
-        lib.optionalAttrs (mcpServers != { }) { mcp = mcpServers; }
-        // lib.optionalAttrs (pluginList != [ ]) { plugin = pluginList; };
+        lib.optionalAttrs (mcpServers != { }) { mcp = mcpServers; };
 
       # Generate a wrapper script for each profile (name defaults to opencode-{profileName})
       profileScripts = lib.mapAttrsToList (
@@ -571,7 +550,7 @@ in
         ''
       ) cfg.profiles;
 
-      # Generate xdg.configFile entries for each profile (opencode.json + oh-my-openagent.jsonc)
+      # Generate xdg.configFile entries for each profile (opencode.json)
       profileConfigFiles = lib.foldlAttrs (
         acc: profileName: profileCfg:
         let
@@ -584,18 +563,6 @@ in
           "opencode-profiles/${profileName}/opencode/opencode.json" = {
             source = jsonFormat.generate "opencode-${profileName}.json" profileJson;
             force = true;
-          };
-        }
-        // lib.optionalAttrs (profileCfg.agentConfig != null) {
-          "opencode-profiles/${profileName}/opencode/oh-my-openagent.jsonc" = {
-            force = true;
-            text = builtins.toJSON (
-              {
-                "$schema" =
-                  "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/oh-my-opencode.schema.json";
-              }
-              // profileCfg.agentConfig
-            );
           };
         }
         // lib.mapAttrs' (
@@ -626,18 +593,18 @@ in
             text = content;
           }
         ) cfg.skills
-        // lib.optionalAttrs (cfg.ohMyOpencode.agentConfig != null) {
-          "opencode/oh-my-openagent.jsonc" = {
-            force = true;
-            text = builtins.toJSON (
-              {
-                "$schema" =
-                  "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/oh-my-opencode.schema.json";
-              }
-              // cfg.ohMyOpencode.agentConfig
-            );
-          };
-        }
+        // lib.mapAttrs' (
+          name: content:
+          lib.nameValuePair "opencode/agents/${name}.md" {
+            text = content;
+          }
+        ) cfg.agents
+        // lib.mapAttrs' (
+          name: content:
+          lib.nameValuePair "opencode/commands/${name}.md" {
+            text = content;
+          }
+        ) cfg.commands
         // profileConfigFiles;
       }
 

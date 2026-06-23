@@ -49,15 +49,6 @@
   programs.opencode-config = {
     enable = true;
 
-    # Enable oh-my-opencode plugin for multi-agent orchestration
-    ohMyOpencode = {
-      enable = true;
-      # Manage oh-my-openagent.jsonc declaratively — all free NVIDIA NIM models
-      agentConfig = {
-        agents = privateConfig.rubiOhMyAgents or { };
-      };
-    };
-
     # Work machine: NVIDIA inference only — no Go/Zen (personal resources)
     opencodeGo.enable = false;
     opencodeZen.enable = false;
@@ -106,7 +97,6 @@
               };
             };
           };
-          agentConfig.agents = (import ./features/ai/opencode-personal.nix).agents;
         };
       };
 
