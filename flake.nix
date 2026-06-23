@@ -134,6 +134,8 @@
             hostname = "cobalto"; # Use Tailscale hostname
             fastConnection = false;
             remoteBuild = false; # Build locally, then copy to remote
+            magicRollback = false; # network (tailscaled) restarts mid-activation sever the confirm SSH
+            autoRollback = false;
             profiles = {
               system = {
                 sshUser = "root";
@@ -146,6 +148,8 @@
             hostname = "204.168.253.49";
             fastConnection = true;
             remoteBuild = true;
+            magicRollback = false; # network restarts mid-activation sever the confirm SSH
+            autoRollback = false;
             profiles = {
               system = {
                 sshUser = "root";
