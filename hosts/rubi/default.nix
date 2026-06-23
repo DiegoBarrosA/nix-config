@@ -199,6 +199,8 @@
     enable = true;
     model = "bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K_M";
     port = 11435;
+    host = "127.0.0.1";
+    openFirewall = false;
     contextSize = 8192;
     gpuLayers = 99;
     modelsDirectory = "/var/lib/llama-cpp";

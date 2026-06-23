@@ -115,7 +115,7 @@
             # Override light agent tasks to use local model — saves credits
             agent = (import ./features/ai/opencode-personal.nix).config.agent // {
               title.model = "local-llm/qwen2.5-coder-7b";
-              summary.model = "local-llm/gemma3-4b";
+              summary.model = "local-llm/qwen2.5-coder-7b";
             };
           };
         };
@@ -130,6 +130,7 @@
     skills = { };
     agents = (import ./features/ai/gsd-core-agents.nix).agents;
     commands = (import ./features/ai/gsd-core-agents.nix).commands;
+    references = (import ./features/ai/gsd-core-agents.nix).references;
   };
 
   programs.ai-skills.opencodeProfiles = [

@@ -496,6 +496,16 @@ in
         Deployed to ~/.config/opencode/commands/<name>.md
       '';
     };
+
+    references = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      description = ''
+        OpenCode GSD-Core reference files to install. Keys are filenames,
+        values are the file content.
+        Deployed to ~/.config/opencode/gsd-core/references/<name>
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable (
@@ -571,6 +581,33 @@ in
             text = content;
           }
         ) cfg.skills
+        // lib.mapAttrs' (
+          name: content:
+          lib.nameValuePair "opencode-profiles/${profileName}/opencode/agents/${name}.md" {
+            text = builtins.replaceStrings
+              ["/tmp/gsd-capture/opencode/"]
+              ["${config.xdg.configHome}/opencode/"]
+              content;
+            force = true;
+          }
+        ) cfg.agents
+        // lib.mapAttrs' (
+          name: content:
+          lib.nameValuePair "opencode-profiles/${profileName}/opencode/commands/${name}.md" {
+            text = builtins.replaceStrings
+              ["/tmp/gsd-capture/opencode/"]
+              ["${config.xdg.configHome}/opencode/"]
+              content;
+            force = true;
+          }
+        ) cfg.commands
+        // lib.mapAttrs' (
+          name: content:
+          lib.nameValuePair "opencode-profiles/${profileName}/opencode/gsd-core/references/${name}" {
+            text = content;
+            force = true;
+          }
+        ) cfg.references
       ) { } cfg.profiles;
     in
     lib.mkMerge [
@@ -596,15 +633,30 @@ in
         // lib.mapAttrs' (
           name: content:
           lib.nameValuePair "opencode/agents/${name}.md" {
-            text = content;
+            text = builtins.replaceStrings
+              ["/tmp/gsd-capture/opencode/"]
+              ["${config.xdg.configHome}/opencode/"]
+              content;
+            force = true;
           }
         ) cfg.agents
         // lib.mapAttrs' (
           name: content:
           lib.nameValuePair "opencode/commands/${name}.md" {
-            text = content;
+            text = builtins.replaceStrings
+              ["/tmp/gsd-capture/opencode/"]
+              ["${config.xdg.configHome}/opencode/"]
+              content;
+            force = true;
           }
         ) cfg.commands
+        // lib.mapAttrs' (
+          name: content:
+          lib.nameValuePair "opencode/gsd-core/references/${name}" {
+            text = content;
+            force = true;
+          }
+        ) cfg.references
         // profileConfigFiles;
       }
 
