@@ -96,6 +96,27 @@
                 name = "Big Pickle";
               };
             };
+            provider."local-llm" = {
+              npm = "@ai-sdk/openai-compatible";
+              name = "Local LLM (llama.cpp)";
+              options = {
+                baseURL = "http://localhost:11435/v1";
+                apiKey = "local";
+              };
+              models = {
+                "qwen2.5-coder-7b" = {
+                  name = "Qwen2.5 Coder 7B (local)";
+                };
+                "gemma3-4b" = {
+                  name = "Gemma 3 4B (local)";
+                };
+              };
+            };
+            # Override light agent tasks to use local model — saves credits
+            agent = (import ./features/ai/opencode-personal.nix).config.agent // {
+              title.model = "local-llm/qwen2.5-coder-7b";
+              summary.model = "local-llm/gemma3-4b";
+            };
           };
         };
       };
@@ -107,6 +128,8 @@
 
     # Skills are sourced from the vault via programs.ai-skills (all prompts migrated there).
     skills = { };
+    agents = (import ./features/ai/gsd-core-agents.nix).agents;
+    commands = (import ./features/ai/gsd-core-agents.nix).commands;
   };
 
   programs.ai-skills.opencodeProfiles = [
