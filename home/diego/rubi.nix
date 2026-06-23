@@ -123,7 +123,6 @@
 
     secretEnv = (privateConfig.rubiSecretEnv or { }) // {
       NVIDIA_API_KEY = "/run/secrets/nvidia-api-key";
-      GROQ_API_KEY = "/run/secrets/groq-api-key";
     };
 
     # Skills are sourced from the vault via programs.ai-skills (all prompts migrated there).

@@ -1,38 +1,20 @@
-# Shared "personal" OpenCode definition (Big Pickle + Groq + agent map).
+# Shared "personal" OpenCode definition (Big Pickle + local LLM).
 # Imported as data: let personal = import ./opencode-personal.nix; in ...
+# rubi overrides title/summary/compaction to local-llm in rubi.nix.
 {
   config = {
     model = "opencode/big-pickle";
-    small_model = "groq/llama-3.1-8b-instant";
-    provider.groq = {
-      npm = "@ai-sdk/openai-compatible";
-      name = "Groq";
-      options = {
-        baseURL = "https://api.groq.com/openai/v1";
-        apiKey = "{env:GROQ_API_KEY}";
-      };
-      models = {
-        "llama-3.3-70b-versatile" = {
-          name = "Llama 3.3 70B";
-        };
-        "llama-3.1-8b-instant" = {
-          name = "Llama 3.1 8B Instant";
-        };
-        "qwen/qwen3-32b" = {
-          name = "Qwen 3 32B";
-        };
-      };
-    };
+    small_model = "opencode/big-pickle";
     agent = {
-      title.model = "groq/llama-3.1-8b-instant";
-      summary.model = "groq/llama-3.1-8b-instant";
-      compaction.model = "groq/llama-3.1-8b-instant";
-      explore.model = "groq/llama-3.3-70b-versatile";
-      librarian.model = "groq/llama-3.3-70b-versatile";
-      oracle.model = "groq/llama-3.3-70b-versatile";
-      prometheus.model = "groq/llama-3.3-70b-versatile";
-      metis.model = "groq/llama-3.3-70b-versatile";
-      momus.model = "groq/llama-3.3-70b-versatile";
+      title.model = "opencode/big-pickle";
+      summary.model = "opencode/big-pickle";
+      compaction.model = "opencode/big-pickle";
+      explore.model = "opencode/big-pickle";
+      librarian.model = "opencode/big-pickle";
+      oracle.model = "opencode/big-pickle";
+      prometheus.model = "opencode/big-pickle";
+      metis.model = "opencode/big-pickle";
+      momus.model = "opencode/big-pickle";
       plan.model = "opencode/big-pickle";
       build.model = "opencode/big-pickle";
       general.model = "opencode/big-pickle";

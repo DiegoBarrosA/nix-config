@@ -23,7 +23,6 @@
     references = (import ./features/ai/gsd-core-agents.nix).references;
     secretEnv = {
       OPENCODE_API_KEY = "/run/secrets/opencode-api-key";
-      GROQ_API_KEY = "/run/secrets/groq-api-key";
       OBSIDIAN_API_KEY = "/run/secrets/obsidian-api-key";
       GITHUB_TOKEN = "/run/secrets/github-token";
     };
