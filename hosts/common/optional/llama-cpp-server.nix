@@ -214,8 +214,11 @@ in
       };
     };
 
-    # Ensure models directory exists with correct permissions
+    # Ensure models directory exists with correct permissions.
+    # The "z" line fixes ownership on existing directories (e.g. created as root:root
+    # by the impermanence module before the llama user was configured).
     systemd.tmpfiles.rules = [
+      "z ${cfg.modelsDirectory} 0755 ${cfg.user} ${cfg.group} -"
       "d ${cfg.modelsDirectory} 0755 ${cfg.user} ${cfg.group} -"
       "d ${cfg.modelsDirectory}/huggingface 0755 ${cfg.user} ${cfg.group} -"
       "d ${cfg.modelsDirectory}/huggingface/hub 0755 ${cfg.user} ${cfg.group} -"
