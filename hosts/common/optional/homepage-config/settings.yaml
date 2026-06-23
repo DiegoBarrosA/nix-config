@@ -1,0 +1,36 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/latest/configs/settings
+
+title: Cobalto Media & AI Server
+
+theme: dark
+
+color: Material Darker
+
+headerStyle: boxed
+
+layout:
+  Media:
+    style: row
+    columns: 2
+  Downloads:
+    style: row
+    columns: 2
+  Synchronization:
+    style: row
+    columns: 2
+  Management:
+    style: row
+    columns: 3
+  AI/ML:
+    style: row
+    columns: 3
+
+providers:
+  glances: http://localhost:61208
+
+quicklaunch:
+  searchDescriptions: true
+  hideInternetSearch: true
+  hideVisitURL: true

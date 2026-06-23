@@ -1,0 +1,44 @@
+services:
+  - Media:
+      - Jellyfin:
+          href: https://jellyfin.minerales.network
+          description: Media server with hardware acceleration
+          icon: jellyfin.png
+          widget:
+            type: jellyfin
+            url: http://localhost:8096
+            key: {{HOMEPAGE_VAR_JELLYFIN_API_KEY}}
+      
+  - Downloads:
+      - Transmission:
+          href: https://transmission.minerales.network
+          description: Torrent client
+          icon: transmission.png
+          widget:
+            type: transmission
+            url: http://localhost:9091
+
+- Synchronization:
+      - Syncthing:
+          href: https://syncthing.minerales.network
+          description: File synchronization
+          icon: syncthing.png
+          widget:
+            type: syncthing
+            url: http://localhost:8384
+
+  - AI/ML:
+      - LLM Hub:
+          href: https://llm.minerales.network
+          description: Large Language Models interface
+          icon: openai.png
+      
+      - Text Generation:
+          href: https://textgen.minerales.network
+          description: Advanced text generation WebUI
+          icon: huggingface.png
+      
+      - Jupyter Lab:
+          href: https://jupyter.minerales.network
+          description: Machine Learning notebooks
+          icon: jupyter.png

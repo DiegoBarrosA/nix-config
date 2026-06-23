@@ -1,0 +1,35 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/latest/configs/widgets
+
+- resources:
+    # change backend to 'netdata' 'glances' or 'gotop' etc.
+    backend: glances
+    expanded: true
+    cpu: true
+    memory: true
+    disk: /
+
+- search:
+    provider: duckduckgo
+    target: _blank
+
+- datetime:
+    text_size: xl
+    format:
+      timeStyle: short
+      dateStyle: short
+      hourCycle: h23
+
+- openmeteo:
+    label: Santiago, Chile
+    latitude: -33.4489
+    longitude: -70.6693
+    timezone: America/Santiago
+    units: metric
+    cache: 5
+
+- glances:
+    url: http://localhost:61208
+    version: 4
+    metric: info
