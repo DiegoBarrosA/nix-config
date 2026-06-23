@@ -182,14 +182,14 @@
 
   # deploy-rs and Nix commands on the remote expect a properly laid-out store.
   # Ensure these exist at boot (e.g. after impermanence or minimal store).
+  # NOTE: /nix/store is normally a read-only filesystem, so these writes will
+  # fail harmlessly; guard with `|| true` so activation never aborts here.
   system.activationScripts.ensureNixStoreLayout = ''
     if [ ! -e /nix/store/version ]; then
-      echo '7' > /nix/store/version
-      chmod 444 /nix/store/version
+      (echo '7' > /nix/store/version && chmod 444 /nix/store/version) || true
     fi
     if [ ! -d /nix/store/derivations ]; then
-      mkdir -p /nix/store/derivations
-      chmod 755 /nix/store/derivations
+      (mkdir -p /nix/store/derivations && chmod 755 /nix/store/derivations) || true
     fi
   '';
 }
