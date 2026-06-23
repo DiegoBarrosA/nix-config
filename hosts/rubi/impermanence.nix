@@ -53,6 +53,9 @@
       # libvirt VM state (disks, OVMF nvram, swtpm TPM state)
       "/var/lib/libvirt"
 
+      # llama.cpp model cache (large files, must persist across reboots)
+      "/var/lib/llama-cpp"
+
       # User home directory (persisted entirely)
       {
         directory = "/home/diego";
