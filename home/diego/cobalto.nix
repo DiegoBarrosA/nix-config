@@ -13,10 +13,6 @@
   ];
 
   programs.opencode-config = {
-    ohMyOpencode = {
-      enable = true;
-      agentConfig.agents = (import ./features/ai/opencode-personal.nix).agents;
-    };
     opencodeGo.enable = true;
     opencodeZen.enable = true;
     provider.enable = false;
