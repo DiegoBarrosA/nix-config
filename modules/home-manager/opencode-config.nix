@@ -549,12 +549,6 @@ in
           #!${pkgs.bash}/bin/bash
           set -euo pipefail
           ${secretEnvScript}
-          # Share node_modules from the main config dir to avoid re-installing packages
-          PROFILE_DIR="$HOME/.config/opencode-profiles/${profileName}/opencode"
-          mkdir -p "$PROFILE_DIR"
-          if [ ! -e "$PROFILE_DIR/node_modules" ] && [ -d "$HOME/.config/opencode/node_modules" ]; then
-            ln -sf "$HOME/.config/opencode/node_modules" "$PROFILE_DIR/node_modules"
-          fi
           exec env XDG_CONFIG_HOME="$HOME/.config/opencode-profiles/${profileName}" \
             ${pkgs.opencode}/bin/opencode "$@"
         ''

@@ -13,6 +13,6 @@
       enableShellHook = false;
     };
     provider.enable = false;
-    # ohMyOpencode, opencodeGo/Zen, extraConfig, profiles, secretEnv, skills set per-host
+    # opencodeGo/Zen, extraConfig, profiles, secretEnv, skills, agents, commands, references set per-host
   };
 }
