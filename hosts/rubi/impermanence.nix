@@ -54,7 +54,12 @@
       "/var/lib/libvirt"
 
       # llama.cpp model cache (large files, must persist across reboots)
-      "/var/lib/llama-cpp"
+      {
+        directory = "/var/lib/llama-cpp";
+        user = "llama";
+        group = "llama";
+        mode = "0755";
+      }
 
       # User home directory (persisted entirely)
       {
