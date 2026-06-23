@@ -20,6 +20,7 @@
     extraConfig = (import ./features/ai/opencode-personal.nix).config;
     agents = (import ./features/ai/gsd-core-agents.nix).agents;
     commands = (import ./features/ai/gsd-core-agents.nix).commands;
+    references = (import ./features/ai/gsd-core-agents.nix).references;
     secretEnv = {
       OPENCODE_API_KEY = "/run/secrets/opencode-api-key";
       GROQ_API_KEY = "/run/secrets/groq-api-key";

@@ -26,7 +26,7 @@
     agent = {
       title.model = "groq/llama-3.1-8b-instant";
       summary.model = "groq/llama-3.1-8b-instant";
-      compaction.model = "opencode/big-pickle";
+      compaction.model = "groq/llama-3.1-8b-instant";
       explore.model = "groq/llama-3.3-70b-versatile";
       librarian.model = "groq/llama-3.3-70b-versatile";
       oracle.model = "groq/llama-3.3-70b-versatile";
