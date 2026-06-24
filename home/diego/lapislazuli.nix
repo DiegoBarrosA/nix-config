@@ -32,6 +32,7 @@
 
     # Provider config disabled - manage manually for employer-specific models
     provider.enable = false;
+    plugins = (import ./features/ai/session-character-visualizer.nix) { inherit pkgs; };
   };
 
   programs.ai-skills.opencodeProfiles = [ ];

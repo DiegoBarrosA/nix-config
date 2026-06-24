@@ -21,17 +21,22 @@ let
 
   # Build server entry in standard MCP format (for Claude Code, Cursor, Antigravity)
   # Standard format: { command = "string", args = [...], env = { KEY = "${VAR}" } }
+  # or for SSE/HTTP servers: { url = "string"; }
   toStandardServer = name: srv:
-    let
-      cmdList = if builtins.isList srv.command then srv.command else [ srv.command ];
-      hasArgs = (srv.args or [ ]) != [ ] || builtins.length cmdList > 1;
-      combinedArgs = (if builtins.length cmdList > 1 then builtins.tail cmdList else [ ]) ++ (srv.args or [ ]);
-    in
-    {
-      command = builtins.head cmdList;
-    }
-    // lib.optionalAttrs hasArgs { args = combinedArgs; }
-    // lib.optionalAttrs ((srv.env or { }) != { }) { env = convertEnvAttrs srv.env; };
+    if (srv.url or null) != null && (srv.command or null) == null then
+      { url = srv.url; }
+      // lib.optionalAttrs ((srv.env or { }) != { }) { env = convertEnvAttrs srv.env; }
+    else
+      let
+        cmdList = if builtins.isList srv.command then srv.command else [ srv.command ];
+        hasArgs = (srv.args or [ ]) != [ ] || builtins.length cmdList > 1;
+        combinedArgs = (if builtins.length cmdList > 1 then builtins.tail cmdList else [ ]) ++ (srv.args or [ ]);
+      in
+      {
+        command = builtins.head cmdList;
+      }
+      // lib.optionalAttrs hasArgs { args = combinedArgs; }
+      // lib.optionalAttrs ((srv.env or { }) != { }) { env = convertEnvAttrs srv.env; };
 in
 {
   options.programs.mcp-config = {
