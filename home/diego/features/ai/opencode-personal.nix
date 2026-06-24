@@ -9,12 +9,6 @@
       title.model = "opencode/big-pickle";
       summary.model = "opencode/big-pickle";
       compaction.model = "opencode/big-pickle";
-      explore.model = "opencode/big-pickle";
-      librarian.model = "opencode/big-pickle";
-      oracle.model = "opencode/big-pickle";
-      prometheus.model = "opencode/big-pickle";
-      metis.model = "opencode/big-pickle";
-      momus.model = "opencode/big-pickle";
       plan.model = "opencode/big-pickle";
       build.model = "opencode/big-pickle";
       general.model = "opencode/big-pickle";
