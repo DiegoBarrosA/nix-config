@@ -74,6 +74,7 @@
 
     ../common/optional/samba.nix
     ../common/optional/home-assistant.nix
+    ../common/optional/go2rtc.nix
     ../common/optional/music-assistant.nix
 
     # OpenCode remote access (API + web UI)
@@ -125,8 +126,13 @@
         ];
       };
     };
-    firewall.allowedTCPPorts = [ 21063 ]; # HomeKit bridge for Siri (default HA port)
-    firewall.allowedUDPPorts = [ ];
+    firewall.allowedTCPPorts = [
+      21063 # HomeKit bridge for Siri (default HA port)
+      1984 8554 8555 # go2rtc API, RTSP, WebRTC
+    ];
+    firewall.allowedUDPPorts = [
+      50000 50001 50002 50003 50004 50005 # go2rtc WebRTC
+    ];
     nameservers = [
       "1.1.1.1"
       "9.9.9.9"

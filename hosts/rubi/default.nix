@@ -201,7 +201,7 @@
     port = 11435;
     host = "127.0.0.1";
     openFirewall = false;
-    contextSize = 8192;
+    contextSize = 24576;  # 24K context for OpenCode's large system prompts
     gpuLayers = 99;
     modelsDirectory = "/var/lib/llama-cpp";
     extraArgs = [ "--alias" "qwen2.5-coder-7b" ];

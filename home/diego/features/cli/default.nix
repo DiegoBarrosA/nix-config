@@ -38,6 +38,7 @@ in
       ripgrep # Better grep
       wget
       zip
+      code-cursor-fhs
     ]
     # Linux/macOS desktop tools (not Android)
     ++ lib.optionals (isDesktop || isDarwin) [

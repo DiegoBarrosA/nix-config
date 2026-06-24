@@ -21,6 +21,7 @@
     agents = (import ./features/ai/gsd-core-agents.nix).agents;
     commands = (import ./features/ai/gsd-core-agents.nix).commands;
     references = (import ./features/ai/gsd-core-agents.nix).references;
+    plugins = (import ./features/ai/session-character-visualizer.nix) { inherit pkgs; };
     secretEnv = {
       OPENCODE_API_KEY = "/run/secrets/opencode-api-key";
       OBSIDIAN_API_KEY = "/run/secrets/obsidian-api-key";

@@ -226,6 +226,30 @@ let
         };
       };
     }
+    // lib.optionalAttrs cfg.groq.enable {
+      "groq" = {
+        npm = "@ai-sdk/openai-compatible";
+        name = "Groq";
+        options = {
+          baseURL = "https://api.groq.com/openai/v1";
+          apiKey = "{env:${cfg.groq.apiKeyEnvVar}}";
+        };
+        models = {
+          "llama-3.3-70b-versatile" = {
+            name = "Llama 3.3 70B Versatile";
+          };
+          "llama-3.1-8b-instant" = {
+            name = "Llama 3.1 8B Instant";
+          };
+          "qwen3-32b" = {
+            name = "Qwen3 32B";
+          };
+          "gpt-oss-20b" = {
+            name = "GPT OSS 20B";
+          };
+        };
+      };
+    }
     // (if cfg.provider.enable then cfg.provider.config else { });
 
   # Determine the default model
@@ -299,6 +323,27 @@ in
           Environment variable containing the OpenCode API key.
           OpenCode uses a single API key for both Go and Zen providers
           (same subscription, same auth backend).
+        '';
+      };
+    };
+
+    # Groq free tier configuration
+    groq = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = ''
+          Enable Groq provider configuration.
+          Groq offers free-tier access to fast LLM inference.
+        '';
+      };
+
+      apiKeyEnvVar = lib.mkOption {
+        type = lib.types.str;
+        default = "GROQ_API_KEY";
+        description = ''
+          Environment variable containing the Groq API key.
+          Get your free API key at https://console.groq.com
         '';
       };
     };
@@ -506,6 +551,30 @@ in
         Deployed to ~/.config/opencode/gsd-core/references/<name>
       '';
     };
+
+    plugins = lib.mkOption {
+      type = lib.types.attrsOf lib.types.path;
+      default = { };
+      description = ''
+        OpenCode plugin files to install. Keys are filenames (relative to
+        the plugins/ directory), values are store paths to the source files.
+        Local plugin files are auto-loaded by OpenCode from this directory.
+      '';
+      example = lib.literalExpression ''
+        let
+          scv = pkgs.fetchFromGitHub {
+            owner = "Caffa";
+            repo = "Session-Character-Visualizer";
+            rev = "v1.3.0";
+            hash = "...";
+          };
+        in {
+          "blob-office.ts" = "''${scv}/blob-office.ts";
+          "blob-office.html" = "''${scv}/blob-office.html";
+          "package.json" = "''${scv}/package.json";
+        }
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable (
@@ -549,10 +618,91 @@ in
           #!${pkgs.bash}/bin/bash
           set -euo pipefail
           ${secretEnvScript}
-          exec env XDG_CONFIG_HOME="$HOME/.config/opencode-profiles/${profileName}" \
-            ${pkgs.opencode}/bin/opencode "$@"
+          # Default to build agent unless --agent is explicitly passed
+          if [[ ! " $* " =~ " --agent " ]]; then
+            exec env XDG_CONFIG_HOME="$HOME/.config/opencode-profiles/${profileName}" \
+              ${pkgs.opencode}/bin/opencode --agent build "$@"
+          else
+            exec env XDG_CONFIG_HOME="$HOME/.config/opencode-profiles/${profileName}" \
+              ${pkgs.opencode}/bin/opencode "$@"
+          fi
         ''
       ) cfg.profiles;
+
+      # Build a map from context name to profile name for the dispatcher
+      # Contexts: nvidia->work, opencode-go->personal, groq->groq, or profile name directly
+      contextToProfile = {
+        nvidia = "work";
+        "opencode-go" = "personal";
+        groq = "groq";
+        work = "work";
+        personal = "personal";
+      };
+
+      # Generate the oc dispatcher script that reads OPENCODE_BILLING_CONTEXT
+      ocDispatcher = pkgs.writeShellScriptBin "oc" ''
+        #!${pkgs.bash}/bin/bash
+        set -euo pipefail
+
+        # Available contexts and their required API keys
+        declare -A CONTEXT_KEYS=(
+          [nvidia]="NVIDIA_API_KEY"
+          [work]="NVIDIA_API_KEY"
+          [opencode-go]="OPENCODE_API_KEY"
+          [personal]="OPENCODE_API_KEY"
+          [groq]="GROQ_API_KEY"
+        )
+
+        # Map context to profile script
+        declare -A CONTEXT_SCRIPTS=(
+          [nvidia]="ocw"
+          [work]="ocw"
+          [opencode-go]="ocp"
+          [personal]="ocp"
+          [groq]="ocg"
+        )
+
+        # Default context
+        CONTEXT="''${OPENCODE_BILLING_CONTEXT:-personal}"
+
+        # Handle --print-context flag
+        if [[ "''${1:-}" == "--print-context" ]]; then
+          echo "[BILLING CONTEXT: $CONTEXT]"
+          SCRIPT="''${CONTEXT_SCRIPTS[$CONTEXT]:-}"
+          if [[ -z "$SCRIPT" ]]; then
+            echo "ERROR: Invalid billing context '$CONTEXT'" >&2
+            echo "Available contexts: nvidia, opencode-go, groq (or: work, personal)" >&2
+            exit 1
+          fi
+          echo "Profile script: $SCRIPT"
+          exit 0
+        fi
+
+        # Validate context
+        SCRIPT="''${CONTEXT_SCRIPTS[$CONTEXT]:-}"
+        if [[ -z "$SCRIPT" ]]; then
+          echo "ERROR: Invalid billing context '$CONTEXT'" >&2
+          echo "Available contexts: nvidia, opencode-go, groq (or: work, personal)" >&2
+          exit 1
+        fi
+
+        # Check required API key
+        REQUIRED_KEY="''${CONTEXT_KEYS[$CONTEXT]}"
+        if [[ -z "''${!REQUIRED_KEY:-}" ]]; then
+          # Check if there's a secret file for it
+          SECRET_FILE="/run/secrets/$(echo "$REQUIRED_KEY" | tr '[:upper:]' '[:lower:]' | tr '_' '-')"
+          if [[ ! -r "$SECRET_FILE" ]]; then
+            echo "ERROR: $REQUIRED_KEY not set (required for context '$CONTEXT')" >&2
+            echo "Set the environment variable or ensure $SECRET_FILE exists" >&2
+            exit 1
+          fi
+        fi
+
+        echo "[BILLING CONTEXT: $CONTEXT]" >&2
+
+        # Dispatch to the profile script
+        exec "$SCRIPT" "$@"
+      '';
 
       # Generate xdg.configFile entries for each profile (opencode.json)
       profileConfigFiles = lib.foldlAttrs (
@@ -602,12 +752,20 @@ in
             force = true;
           }
         ) cfg.references
+        // lib.mapAttrs' (
+          name: source:
+          lib.nameValuePair "opencode-profiles/${profileName}/opencode/plugins/${name}" {
+            source = source;
+            force = true;
+          }
+        ) cfg.plugins
       ) { } cfg.profiles;
     in
     lib.mkMerge [
       {
         home.packages = [
           opencodePackage
+          ocDispatcher
         ]
         ++ lib.optional mcpCfg.mcpNixos.enable pkgs.mcp-nixos
         ++ profileScripts;
@@ -651,6 +809,13 @@ in
             force = true;
           }
         ) cfg.references
+        // lib.mapAttrs' (
+          name: source:
+          lib.nameValuePair "opencode/plugins/${name}" {
+            source = source;
+            force = true;
+          }
+        ) cfg.plugins
         // profileConfigFiles;
       }
 

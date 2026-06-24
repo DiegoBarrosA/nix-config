@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   # mDNS/Zeroconf for device discovery (Yeelight, Apple TV, HomeKit Bridge/Siri)
   services.avahi = {
@@ -19,20 +24,34 @@
     enable = true;
     extraPackages = ps: with ps; [
       alexapy              # required by alexa_devices integration
-      python-miio
-      pyatv
-      yeelight
-      aiohomekit
       music-assistant-client # required by built-in music_assistant integration
+      python-miio
       python-otbr-api        # required by homekit_controller integration
-      gtts                   # required by google_translate TTS integration
+      pyatv
       pyswitchbot            # required by switchbot integration (BLE)
-    ];
+      yeelight
+      gtts                   # required by google_translate TTS integration
+    ] ++ [ pkgs.ffmpeg-headless ];
     customComponents = [
       pkgs."home-assistant-custom-components".tuya_local
     ];
     config = {
       default_config = {};
+
+      camera = [
+        {
+          platform = "generic";
+          name = "Reolink E1";
+          stream_source = "rtsp://127.0.0.1:8554/reolink_e1";
+          verify_ssl = false;
+        }
+        {
+          platform = "generic";
+          name = "Xiaomi Camera";
+          stream_source = "rtsp://127.0.0.1:8554/xiaomi_cam";
+          verify_ssl = false;
+        }
+      ];
 
       homeassistant = {
         external_url = "https://homeassistant.minerales.network";
