@@ -33,6 +33,7 @@
     ./features/desktop/common # Firefox, Qt, Stylix
     ./features/desktop/sway # Sway desktop configuration
     ./features/ai
+    ./features/ai/pixel-office.nix # Pixel Office dashboard + plugin (replaces Caffa blob-office)
     ./features/desktop/obsidian.nix
   ];
 
@@ -112,10 +113,59 @@
                 };
               };
             };
-            # Override light agent tasks to use local model — saves credits
+            # Personal profile uses Big Pickle for all agents (no employer resources)
             agent = (import ./features/ai/opencode-personal.nix).config.agent // {
-              title.model = "local-llm/qwen2.5-coder-7b";
-              summary.model = "local-llm/qwen2.5-coder-7b";
+              title.model = "opencode/big-pickle";
+              summary.model = "opencode/big-pickle";
+              compaction.model = "opencode/big-pickle";
+            };
+          };
+        };
+        # opencode-groq → Groq free tier (personal free resources)
+        groq = {
+          scriptName = "ocg";
+          config = {
+            model = "groq/llama-3.3-70b-versatile";
+            small_model = "groq/llama-3.1-8b-instant";
+            provider."groq" = {
+              npm = "@ai-sdk/openai-compatible";
+              name = "Groq";
+              options = {
+                baseURL = "https://api.groq.com/openai/v1";
+                apiKey = "{env:GROQ_API_KEY}";
+              };
+              models = {
+                "llama-3.3-70b-versatile" = {
+                  name = "Llama 3.3 70B Versatile";
+                };
+                "llama-3.1-8b-instant" = {
+                  name = "Llama 3.1 8B Instant";
+                };
+                "qwen3-32b" = {
+                  name = "Qwen3 32B";
+                };
+                "gpt-oss-20b" = {
+                  name = "GPT OSS 20B";
+                };
+              };
+            };
+            # Map agents by capability tier
+            agent = {
+              # Heavy reasoning tasks → large model
+              build.model = "groq/llama-3.3-70b-versatile";
+              plan.model = "groq/llama-3.3-70b-versatile";
+              oracle.model = "groq/llama-3.3-70b-versatile";
+              metis.model = "groq/llama-3.3-70b-versatile";
+              momus.model = "groq/llama-3.3-70b-versatile";
+              # General tasks → medium model
+              explore.model = "groq/llama-3.1-8b-instant";
+              general.model = "groq/llama-3.1-8b-instant";
+              librarian.model = "groq/llama-3.1-8b-instant";
+              prometheus.model = "groq/llama-3.1-8b-instant";
+              # Lightweight tasks → fast model
+              compaction.model = "groq/llama-3.1-8b-instant";
+              summary.model = "groq/llama-3.1-8b-instant";
+              title.model = "groq/llama-3.1-8b-instant";
             };
           };
         };
@@ -123,11 +173,13 @@
 
     secretEnv = (privateConfig.rubiSecretEnv or { }) // {
       NVIDIA_API_KEY = "/run/secrets/nvidia-api-key";
+      GROQ_API_KEY = "/run/secrets/groq-api-key";
     };
 
     # Skills are sourced from the vault via programs.ai-skills (all prompts migrated there).
     skills = { };
     agents = (import ./features/ai/gsd-core-agents.nix).agents;
+    # Pixel Office plugin (pixel-office.js) is provided by ./features/ai/pixel-office.nix
     commands = (import ./features/ai/gsd-core-agents.nix).commands;
     references = (import ./features/ai/gsd-core-agents.nix).references;
   };
@@ -135,6 +187,7 @@
   programs.ai-skills.opencodeProfiles = [
     "work"
     "personal"
+    "groq"
   ];
 
   # COSMIC-specific user configuration
