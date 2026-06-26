@@ -644,11 +644,11 @@
     "jira-service-management-forms-mcp": {
       "flake": false,
       "locked": {
-        "lastModified": 1782486468,
-        "narHash": "sha256-Pefj9PcUSRF7uozR/b2rVGpJIgvL4IeCB9iRoOwjUNI=",
+        "lastModified": 1782498987,
+        "narHash": "sha256-BYgoRr0n5502rmndRNOLE09BMzJ5TyVDM2A15c+4Q1o=",
         "ref": "refs/heads/main",
-        "rev": "09b437538ea85d877e9148c6cf2422680176ae0b",
-        "revCount": 3,
+        "rev": "a641505abf9d20a820cd2a05463306bcb7acab72",
+        "revCount": 4,
         "type": "git",
         "url": "ssh://git@bitbucket.org/servicerocket-coe/jira-service-management-forms-mcp.git"
       },
@@ -1286,11 +1286,11 @@
         "trello-cloud-mcp": "trello-cloud-mcp"
       },
       "locked": {
-        "lastModified": 1782496477,
-        "narHash": "sha256-dstVaBI5+jmYOGS3TJN3cRxuZTNl1/npsezDLdcGn/w=",
+        "lastModified": 1782499086,
+        "narHash": "sha256-zsjueNbP8PWYmu8LLoYT6H7d7aX860dsBN8hPaqmmXs=",
         "ref": "refs/heads/master",
-        "rev": "7b05440df96883157d4823c227452d22a1a1142c",
-        "revCount": 56,
+        "rev": "d1e1d172e1d8fdb7cc2a07558408458439318140",
+        "revCount": 57,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/nix-private-config.git"
       },
