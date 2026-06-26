@@ -628,17 +628,33 @@
     "jira-data-center-mcp": {
       "flake": false,
       "locked": {
-        "lastModified": 1778092451,
-        "narHash": "sha256-XruIzBxgXOpO7XX/VBp0yst3d/UiE5hA817NG84TGIo=",
+        "lastModified": 1782403284,
+        "narHash": "sha256-Bi1iSN2aXYvm5mKQCPS3Vq36US86FHtmNUs+pAEAB8k=",
         "ref": "refs/heads/main",
-        "rev": "3bfe6a80eefa1cec3f785a0aafd8ba8fbc74db97",
-        "revCount": 3,
+        "rev": "0aac13d360d24502df485163bf48ab4750f79b72",
+        "revCount": 5,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/jira-data-center-mcp.git"
       },
       "original": {
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/jira-data-center-mcp.git"
+      }
+    },
+    "jira-service-management-forms-mcp": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1782486468,
+        "narHash": "sha256-Pefj9PcUSRF7uozR/b2rVGpJIgvL4IeCB9iRoOwjUNI=",
+        "ref": "refs/heads/main",
+        "rev": "09b437538ea85d877e9148c6cf2422680176ae0b",
+        "revCount": 3,
+        "type": "git",
+        "url": "ssh://git@bitbucket.org/servicerocket-coe/jira-service-management-forms-mcp.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@bitbucket.org/servicerocket-coe/jira-service-management-forms-mcp.git"
       }
     },
     "musnix": {
@@ -1265,15 +1281,16 @@
         "confluence-cloud-mcp": "confluence-cloud-mcp",
         "jira-cloud-mcp": "jira-cloud-mcp",
         "jira-data-center-mcp": "jira-data-center-mcp",
+        "jira-service-management-forms-mcp": "jira-service-management-forms-mcp",
         "nixpkgs": "nixpkgs_8",
         "trello-cloud-mcp": "trello-cloud-mcp"
       },
       "locked": {
-        "lastModified": 1782395881,
-        "narHash": "sha256-t2wELRCw0oX5ufi00FTN0yH3XPNiaP5FbqlUorRnKjI=",
+        "lastModified": 1782496477,
+        "narHash": "sha256-dstVaBI5+jmYOGS3TJN3cRxuZTNl1/npsezDLdcGn/w=",
         "ref": "refs/heads/master",
-        "rev": "89ddab88c64d1ae34d7740ead45bb4273f55ddb0",
-        "revCount": 51,
+        "rev": "7b05440df96883157d4823c227452d22a1a1142c",
+        "revCount": 56,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/nix-private-config.git"
       },
