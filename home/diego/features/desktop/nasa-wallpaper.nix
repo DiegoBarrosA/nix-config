@@ -144,6 +144,15 @@ let
       kill -TERM ''${OLD_SWAYBG} > /dev/null 2>&1 || true
     fi
 
+    # Retention: keep only the 10 most recent downloads (plus the one in use
+    # and the blur copy) so ~/.wallpapers does not grow unbounded.
+    ls -1t "''${WALLPAPER_DIR}"/nasa-*.jpg "''${WALLPAPER_DIR}"/nasa-*.png 2>/dev/null \
+      | tail -n +11 \
+      | while read -r old; do
+          [ "''${old}" = "''${WALLPAPER_FILE}" ] && continue
+          rm -f "''${old}"
+        done
+
     echo "nasa-wallpaper: set ''${NASA_ID} (''${TOPIC})"
   '';
 in
