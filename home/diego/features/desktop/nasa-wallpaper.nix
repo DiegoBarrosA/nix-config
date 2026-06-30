@@ -3,7 +3,7 @@
 let
   nasaApodWallpaper = pkgs.writeShellScriptBin "nasa-apod-wallpaper" ''
     set -euo pipefail
-    export PATH=${lib.makeBinPath [ pkgs.curl pkgs.jq pkgs.awww pkgs.coreutils pkgs.gnused ]}
+    export PATH=${lib.makeBinPath [ pkgs.curl pkgs.jq pkgs.awww pkgs.coreutils pkgs.gnused pkgs.util-linux ]}
 
     # Need a Wayland session to set a wallpaper; bail quietly otherwise.
     if [ -z "''${WAYLAND_DISPLAY:-}" ]; then
@@ -48,7 +48,7 @@ let
 
     if ! awww query > /dev/null 2>&1; then
       echo "nasa-apod-wallpaper: starting awww-daemon"
-      awww-daemon &
+      setsid -f awww-daemon > /dev/null 2>&1 || awww-daemon &
       for _ in $(seq 1 10); do
         if awww query > /dev/null 2>&1; then
           break
