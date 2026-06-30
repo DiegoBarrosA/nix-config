@@ -10,6 +10,8 @@ let
   cursorSize = toString config.stylix.cursor.size;
 in
 {
+  imports = [ ./quickshell ];
+
   programs.niri.package = pkgs.niri;
 
   # Stylix enabled via inputs.niri.homeModules.stylix (defaults to true)
@@ -118,7 +120,8 @@ in
     ];
 
     spawn-at-startup = [
-      { argv = [ "vibepanel" ]; }
+      # quickshell bar (replaces vibepanel)
+      { argv = [ "quickshell" ]; }
       { argv = [ "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1" ]; }
       # Animated wallpaper daemon + initial NASA APOD wallpaper
       { argv = [ "awww-daemon" ]; }
@@ -154,12 +157,8 @@ in
       # Lock screen
       "Mod+Escape".action.spawn = "swaylock -f";
 
-      # Power menu (VibePanel CLI)
-      "Mod+Shift+E".action.spawn = [
-        "vibepanel"
-        "power"
-        "menu"
-      ];
+      # Power menu (shared fuzzel-based menu)
+      "Mod+Shift+E".action.spawn = "power-menu";
 
       # Focus movement (vim-style for columns + arrows for workspace switching)
       "Mod+H".action.focus-column-left = { };
@@ -322,36 +321,4 @@ in
 
     };
   };
-
-  # VibePanel configuration
-  xdg.configFile."vibepanel/config.toml".text = ''
-    [bar]
-    size = 36
-    screen_margin = 0
-    inset = 0
-
-    [widgets]
-    left = ["workspaces"]
-    center = ["media", "clock"]
-    right = ["battery", "notifications", "quick_settings"]
-
-    [widgets.workspaces]
-    show_unoccupied = true
-    separator = " "
-
-    [widgets.battery]
-    show_percentage = false
-
-    [theme]
-    mode = "dark"
-    accent = "#${colors.base0D}"
-
-    [theme.typography]
-    font_family = "Jost"
-    font_scale = 0.65
-
-    [theme.icons]
-    theme = "gtk"
-    weight = 400
-  '';
 }
