@@ -10,13 +10,19 @@
     obsidian.enable = true;
     mcpNixos.enable = true;
     mcpTelegram.enable = true;
-    jobspy.enable = true;
+    jobspy = {
+      enable = true;
+      autostart = false; # lazily disabled — rarely used; enable on demand
+    };
     github.enable = true;
     playwright = {
       enable = true;
       browserPath = "${pkgs.firefox-devedition}/bin/firefox";
     };
-    thunderbird.enable = true;
+    thunderbird = {
+      enable = true;
+      autostart = false; # lazily disabled — rarely used; enable on demand
+    };
   };
 
   # mcp-env.nu template + deprecated-syntax fix (moved from rubi.nix)

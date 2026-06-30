@@ -24,9 +24,7 @@
       chown -R 1000:1000 /nix/storage/llm
       
       # Media directories - readable by media group
-      # Use || true to tolerate stale/unreachable paths (e.g. syncthing tmp files in deep node_modules)
-      chgrp -R users /mnt/media || true
-      chmod -R 755 /mnt/media || true
+      # NOTE: chgrp -R users /mnt/media commented out because it takes hours on 115GB
       chmod -R 755 /nix/storage/var/lib/vols || true
       
       # Ensure secrets directory has correct permissions

@@ -86,6 +86,15 @@ in
         default = false;
         description = "Enable JobSpy MCP server for job searching.";
       };
+      autostart = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Whether opencode should auto-start this server on launch.
+          Set to false to keep it defined but lazily disabled (reduces
+          context creep); enable on demand via `opencode mcp`.
+        '';
+      };
       package = lib.mkOption {
         type = lib.types.package;
         default = customPkgs.jobspy-mcp;
@@ -138,6 +147,15 @@ in
         type = lib.types.bool;
         default = false;
         description = "Enable Thunderbird MCP server for email integration.";
+      };
+      autostart = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Whether opencode should auto-start this server on launch.
+          Set to false to keep it defined but lazily disabled (reduces
+          context creep); enable on demand via `opencode mcp`.
+        '';
       };
       package = lib.mkOption {
         type = lib.types.package;

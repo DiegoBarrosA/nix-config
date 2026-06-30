@@ -4,37 +4,19 @@ with lib;
 
 let
   cfg = config.services.go2rtc;
+  xiaomiToken = "V1:9d2wTZnSKA8D7PcQtwbCZKjaasdBO2IZtsfXmV0vW6s/fNbjJIIQ8Fk7RRjKzDIGGLQCfRUmk6eIWUWUfO3/BF9SyiSoOOWDT/K6Od9RjXOKIgFiTryo4u0J1qMJZkbsEapqcTYEsSRBPGf5BftARrfJ0yHlJibzUANoCfcgsDE33WBin0NvJ5vQbkMPwPlem3vYq5GNcwh7dJw38OqjQHGYFoyEfRmQAqE8yqHz5DHeF+otFU3WwqbRmY8jaLIxp5w734VlY2mkdgUzp/aRz9O3SHaiW2LbHSVuZtaIEFg=";
 in {
-  sops.secrets = {
-    "camera-reolink-user" = { };
-    "camera-reolink-pass" = { };
-    "camera-xiaomi-token" = { };
-  };
-
-  sops.templates."go2rtc-env" = {
-    content = ''
-      REOLINK_USER=${config.sops.placeholder.camera-reolink-user}
-      REOLINK_PASS=${config.sops.placeholder.camera-reolink-pass}
-      XIAOMI_TOKEN=${config.sops.placeholder.camera-xiaomi-token}
-    '';
-  };
-
   services.go2rtc = {
     enable = true;
     settings = {
-      api.listen = "127.0.0.1:1984";
+      api.listen = ":1984";
+      rtsp.listen = ":8557";
+      xiaomi.${"6704780226"} = xiaomiToken;
       streams = {
-        reolink_e1 = ''
-          reolink://''${REOLINK_USER}:''${REOLINK_PASS}@192.168.1.7/'';
-        xiaomi_cam = ''
-          xiaomi://192.168.1.2?token=''${XIAOMI_TOKEN}'';
+        xiaomi_cam = "xiaomi://6704780226:us@192.168.1.2?did=1078941680&model=chuangmi.camera.046c04";
       };
       webrtc.listen = ":8555";
       webrtc.ice_servers = [{ urls = [ "stun:stun.l.google.com:19302" ]; }];
     };
-  };
-
-  systemd.services.go2rtc = {
-    serviceConfig.EnvironmentFile = config.sops.templates."go2rtc-env".path;
   };
 }

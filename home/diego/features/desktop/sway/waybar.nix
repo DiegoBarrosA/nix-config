@@ -82,6 +82,7 @@ let
   services-tooltip = pkgs.writeShellScriptBin "services-tooltip" (
     builtins.readFile ./services-tooltip.sh
   );
+  worldclock = pkgs.writeShellScriptBin "worldclock" (builtins.readFile ./worldclock.sh);
 
   # Decode a \uXXXX escape to the actual Unicode character
   u = code: builtins.fromJSON ''"\u${code}"'';
@@ -93,6 +94,7 @@ in
     cobalto-status
     tray-tooltip
     services-tooltip
+    worldclock
   ];
 
   programs.waybar = {
@@ -114,7 +116,6 @@ in
           "sway/mode"
         ];
         modules-center = [
-          "clock"
         ];
         modules-right = [
           "group/services"
@@ -122,6 +123,7 @@ in
           "pulseaudio"
           "network"
           "battery"
+          "custom/worldclock"
         ];
 
         "sway/workspaces" = {
@@ -167,21 +169,11 @@ in
           return-type = "json";
         };
 
-        clock = {
-          format = "{:%H:%M}";
+        "custom/worldclock" = {
+          exec = "${worldclock}/bin/worldclock";
+          interval = 30;
+          return-type = "json";
           on-click = "xdg-open http://localhost:8384";
-          tooltip-format = "<tt><small>{calendar}</small></tt>";
-          calendar = {
-            mode = "month";
-            weeks-pos = "left";
-            format = {
-              months = "<span color='#${colors.base05}'><b>{}</b></span>";
-              days = "<span color='#${colors.base04}'>{}</span>";
-              weeks = "<span color='#${colors.base0C}'>W{}</span>";
-              weekdays = "<span color='#${colors.base0A}'><b>{}</b></span>";
-              today = "<span color='#${colors.base0D}'><b><u>{}</u></b></span>";
-            };
-          };
         };
 
         cpu = {
@@ -237,7 +229,7 @@ in
               "${u "f028"}"
             ];
           };
-          on-click = "pavucontrol";
+          on-click = "alacritty -e ncpamixer";
         };
 
         "group/services" = {
@@ -362,7 +354,6 @@ in
         padding: 0 10px;
       }
 
-      #clock,
       #battery,
       #cpu,
       #memory,
@@ -375,12 +366,13 @@ in
       #custom-tailscale,
       #custom-cobalto,
       #custom-services-toggle,
-      #custom-tray-toggle {
+      #custom-tray-toggle,
+      #custom-worldclock {
         padding: 0 12px;
         color: #${colors.base05};
       }
 
-      #clock {
+      #custom-worldclock {
         font-weight: 500;
       }
 
