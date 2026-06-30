@@ -42,11 +42,20 @@ let
       exit 0
     }
 
-    # Collect all nasa_id values, pick one at random.
-    mapfile -t IDS < <(printf '%s' "''${SEARCH}" \
-      | jq -r '.collection.items[].data[0].nasa_id' 2>/dev/null)
+    # Collect nasa_id values, but drop items whose metadata (title +
+    # keywords + description) suggests people/portraits/ceremonies. NASA's
+    # tagging is sparse, so this is best-effort: combined with space-only
+    # search topics it filters out the obvious astronaut/crew/event shots.
+    PEOPLE_RE="astronaut|cosmonaut|crew|portrait|headshot|ceremony|administrator|official|employee|staff|press|conference|briefing|award|graduat|training|spacewalk|interview|visit|signing|meeting|team photo|group photo|posing|smiling|holds|holding|speaks|speaking|address|panel|audience|expedition .* crew"
+    mapfile -t IDS < <(printf '%s' "''${SEARCH}" | jq -r --arg re "''${PEOPLE_RE}" '
+      .collection.items[]
+      | .data[0]
+      | ([.title, (.keywords // [] | join(" ")), .description] | join(" ") | ascii_downcase) as $text
+      | select($text | test($re) | not)
+      | .nasa_id
+    ' 2>/dev/null)
     if [ "''${#IDS[@]}" -eq 0 ]; then
-      echo "nasa-wallpaper: no results for ''${TOPIC}, skipping"
+      echo "nasa-wallpaper: no people-free results for ''${TOPIC}, skipping"
       exit 0
     fi
 
