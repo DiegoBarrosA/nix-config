@@ -7,10 +7,12 @@ let
       pkgs.curl
       pkgs.jq
       pkgs.awww
+      pkgs.swaybg
       pkgs.coreutils
       pkgs.gnused
       pkgs.gnugrep
       pkgs.imagemagick
+      pkgs.procps
       pkgs.util-linux
     ]}
 
@@ -118,6 +120,14 @@ let
       --transition-type any \
       --transition-duration 3 \
       --transition-fps 60
+
+    # awww is placed within niri's overview backdrop (see the layer-rule in
+    # the niri config), which removes it from the per-workspace background.
+    # Run swaybg with the same image so the wallpaper also shows on the
+    # active workspace, not just in the overview.
+    pkill -x swaybg > /dev/null 2>&1 || true
+    setsid -f swaybg -i "''${WALLPAPER_FILE}" -m fill > /dev/null 2>&1 \
+      || swaybg -i "''${WALLPAPER_FILE}" -m fill &
 
     echo "nasa-wallpaper: set ''${NASA_ID} (''${TOPIC})"
   '';
