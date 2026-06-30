@@ -10,6 +10,7 @@ let
       pkgs.coreutils
       pkgs.gnused
       pkgs.gnugrep
+      pkgs.imagemagick
       pkgs.util-linux
     ]}
 
@@ -49,10 +50,15 @@ let
       exit 0
     fi
 
-    # Try up to 8 random items until we find a usable high-res original.
-    IMAGE_URL=""
+    # Minimum width (px) to consider an image worthy of a wallpaper. Some
+    # NASA "~orig" archives are tiny, so we measure each candidate and skip
+    # anything too small to fill the screen without heavy upscaling.
+    MIN_WIDTH=1920
+
+    # Try up to 12 random items until we find a sufficiently large original.
+    WALLPAPER_FILE=""
     NASA_ID=""
-    for _ in $(seq 1 8); do
+    for _ in $(seq 1 12); do
       CANDIDATE="''${IDS[$((RANDOM % ''${#IDS[@]}))]}"
       ASSETS=$(curl -s -f \
         "https://images-api.nasa.gov/asset/''${CANDIDATE}") || continue
@@ -60,28 +66,30 @@ let
         | jq -r '.collection.items[].href' 2>/dev/null \
         | grep -iE '~orig\.(jpg|jpeg|png)$' \
         | head -n1 || true)
-      if [ -n "''${URL}" ]; then
-        IMAGE_URL="''${URL/http:/https:}"
+      [ -n "''${URL}" ] || continue
+      URL="''${URL/http:/https:}"
+
+      EXT="''${URL##*.}"
+      TMP_FILE="''${WALLPAPER_DIR}/nasa-''${CANDIDATE}.''${EXT}"
+      if [ ! -f "''${TMP_FILE}" ]; then
+        curl -s -f -L -o "''${TMP_FILE}" "''${URL}" || { rm -f "''${TMP_FILE}"; continue; }
+      fi
+
+      WIDTH=$(identify -format '%w' "''${TMP_FILE}" 2>/dev/null || echo 0)
+      if [ "''${WIDTH}" -ge "''${MIN_WIDTH}" ]; then
+        WALLPAPER_FILE="''${TMP_FILE}"
         NASA_ID="''${CANDIDATE}"
+        echo "nasa-wallpaper: selected ''${CANDIDATE} (''${WIDTH}px wide)"
         break
+      else
+        echo "nasa-wallpaper: ''${CANDIDATE} too small (''${WIDTH}px), trying another"
+        rm -f "''${TMP_FILE}"
       fi
     done
 
-    if [ -z "''${IMAGE_URL}" ]; then
-      echo "nasa-wallpaper: could not find a high-res original, skipping"
+    if [ -z "''${WALLPAPER_FILE}" ]; then
+      echo "nasa-wallpaper: no sufficiently large image found, skipping"
       exit 0
-    fi
-
-    EXT="''${IMAGE_URL##*.}"
-    WALLPAPER_FILE="''${WALLPAPER_DIR}/nasa-''${NASA_ID}.''${EXT}"
-
-    if [ ! -f "''${WALLPAPER_FILE}" ]; then
-      echo "nasa-wallpaper: downloading ''${IMAGE_URL}"
-      curl -s -f -L -o "''${WALLPAPER_FILE}" "''${IMAGE_URL}" || {
-        echo "nasa-wallpaper: download failed, skipping"
-        rm -f "''${WALLPAPER_FILE}"
-        exit 0
-      }
     fi
 
     if ! awww query > /dev/null 2>&1; then
