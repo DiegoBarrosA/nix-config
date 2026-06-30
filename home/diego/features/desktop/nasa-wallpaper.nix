@@ -3,7 +3,7 @@
 let
   nasaApodWallpaper = pkgs.writeShellScriptBin "nasa-apod-wallpaper" ''
     set -euo pipefail
-    export PATH=${lib.makeBinPath [ pkgs.curl pkgs.jq pkgs.awww pkgs.coreutils ]}
+    export PATH=${lib.makeBinPath [ pkgs.curl pkgs.jq pkgs.awww pkgs.coreutils pkgs.gnused ]}
 
     # Need a Wayland session to set a wallpaper; bail quietly otherwise.
     if [ -z "''${WAYLAND_DISPLAY:-}" ]; then
@@ -17,10 +17,19 @@ let
 
     mkdir -p "''${WALLPAPER_DIR}"
 
-    RESPONSE=$(curl -s -f "''${API_URL}") || {
-      echo "nasa-apod-wallpaper: failed to fetch APOD (no network? rate limit?)"
+    # Fetch APOD metadata, capturing the HTTP status separately so we can give
+    # a useful message (DEMO_KEY is rate-limited; a free key is recommended).
+    RESPONSE=$(curl -s -w $'\n%{http_code}' "''${API_URL}") || {
+      echo "nasa-apod-wallpaper: curl failed (no network?)"
       exit 0
     }
+    HTTP_CODE=$(printf '%s' "''${RESPONSE}" | tail -n1)
+    RESPONSE=$(printf '%s' "''${RESPONSE}" | sed '$d')
+    if [ "''${HTTP_CODE}" != "200" ]; then
+      echo "nasa-apod-wallpaper: APOD API returned HTTP ''${HTTP_CODE}" \
+           "(DEMO_KEY rate-limited? set NASA_API_KEY from https://api.nasa.gov)"
+      exit 0
+    fi
 
     MEDIA_TYPE=$(echo "''${RESPONSE}" | jq -r '.media_type')
     if [ "''${MEDIA_TYPE}" != "image" ]; then
