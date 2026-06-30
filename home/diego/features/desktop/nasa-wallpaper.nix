@@ -33,7 +33,7 @@ let
     TOPIC="''${TOPICS[$((RANDOM % ''${#TOPICS[@]}))]}"
     QUERY=$(printf '%s' "''${TOPIC}" | jq -sRr @uri)
 
-    echo "nasa-wallpaper: searching for '''${TOPIC}'"
+    echo "nasa-wallpaper: searching for ''${TOPIC}"
     SEARCH=$(curl -s -f \
       "https://images-api.nasa.gov/search?q=''${QUERY}&media_type=image&page_size=100") || {
       echo "nasa-wallpaper: search request failed (no network?)"
@@ -44,7 +44,7 @@ let
     mapfile -t IDS < <(printf '%s' "''${SEARCH}" \
       | jq -r '.collection.items[].data[0].nasa_id' 2>/dev/null)
     if [ "''${#IDS[@]}" -eq 0 ]; then
-      echo "nasa-wallpaper: no results for '''${TOPIC}', skipping"
+      echo "nasa-wallpaper: no results for ''${TOPIC}, skipping"
       exit 0
     fi
 
