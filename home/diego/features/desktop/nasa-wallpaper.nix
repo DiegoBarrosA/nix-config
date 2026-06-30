@@ -1,8 +1,15 @@
 { config, lib, pkgs, ... }:
 
 let
-  nasaApodWallpaper = pkgs.writeShellScript "nasa-apod-wallpaper" ''
+  nasaApodWallpaper = pkgs.writeShellScriptBin "nasa-apod-wallpaper" ''
     set -euo pipefail
+    export PATH=${lib.makeBinPath [ pkgs.curl pkgs.jq pkgs.awww pkgs.coreutils ]}
+
+    # Need a Wayland session to set a wallpaper; bail quietly otherwise.
+    if [ -z "''${WAYLAND_DISPLAY:-}" ]; then
+      echo "nasa-apod-wallpaper: no WAYLAND_DISPLAY, skipping"
+      exit 0
+    fi
 
     WALLPAPER_DIR="''${HOME}/.wallpapers"
     API_KEY="''${NASA_API_KEY:-DEMO_KEY}"
@@ -30,18 +37,18 @@ let
       curl -s -L -o "''${WALLPAPER_FILE}" "''${IMAGE_URL}"
     fi
 
-    if ! ${pkgs.awww}/bin/awww query > /dev/null 2>&1; then
+    if ! awww query > /dev/null 2>&1; then
       echo "nasa-apod-wallpaper: starting awww-daemon"
-      ${pkgs.awww}/bin/awww-daemon &
+      awww-daemon &
       for _ in $(seq 1 10); do
-        if ${pkgs.awww}/bin/awww query > /dev/null 2>&1; then
+        if awww query > /dev/null 2>&1; then
           break
         fi
         sleep 0.5
       done
     fi
 
-    ${pkgs.awww}/bin/awww img "''${WALLPAPER_FILE}" \
+    awww img "''${WALLPAPER_FILE}" \
       --transition-type any \
       --transition-duration 3 \
       --transition-fps 60
@@ -52,6 +59,10 @@ in
 {
   home.packages = [ nasaApodWallpaper ];
 
+  # The service is triggered by the daily timer, by niri's spawn-at-startup
+  # (initial set on login), and manually via the Mod+Shift+W keybind. It is
+  # intentionally not wired to a *.target so it never runs before a Wayland
+  # session exists (the script also guards on WAYLAND_DISPLAY).
   systemd.user.services.nasa-apod-wallpaper = {
     Unit = {
       Description = "Fetch and set NASA APOD wallpaper";
@@ -59,16 +70,16 @@ in
     };
     Service = {
       Type = "oneshot";
-      ExecStart = "${nasaApodWallpaper}";
+      ExecStart = "${nasaApodWallpaper}/bin/nasa-apod-wallpaper";
     };
-    Install.WantedBy = [ "default.target" ];
   };
 
   systemd.user.timers.nasa-apod-wallpaper = {
+    Unit.Description = "Daily NASA APOD wallpaper refresh";
     Timer = {
       OnCalendar = "daily";
       Persistent = true;
     };
-    Install.WantedBy = [ "default.target" ];
+    Install.WantedBy = [ "timers.target" ];
   };
 }

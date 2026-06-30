@@ -112,8 +112,9 @@ in
     spawn-at-startup = [
       { argv = [ "vibepanel" ]; }
       { argv = [ "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1" ]; }
-      # Animated wallpaper daemon
+      # Animated wallpaper daemon + initial NASA APOD wallpaper
       { argv = [ "awww-daemon" ]; }
+      { argv = [ "nasa-apod-wallpaper" ]; }
       # Lock after 5 min, before sleep
       {
         argv = [
