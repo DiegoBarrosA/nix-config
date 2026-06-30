@@ -25,19 +25,14 @@
 
     # niri integration
     niri = {
-      enableKeybinds = true;
-      enableSpawn = true;
-      includes = {
-        enable = true;
-        # Drop "outputs" and "wpblur": DMS must NOT manage wallpaper/outputs,
-        # since awww/swaybg (see nasa-wallpaper.nix) own the wallpaper + overview blur.
-        filesToInclude = [
-          "binds"
-          "colors"
-          "layout"
-          "alttab"
-        ];
-      };
+      enableKeybinds = true; # merges DMS IPC binds (launcher, notifications,
+      # clipboard, powermenu, lock, volume, brightness…) into our niri config
+      enableSpawn = true; # spawns `dms run` at niri startup
+      # No `includes`: keep our Nix-managed niri config authoritative (our
+      # stylix colors, layout, and curated binds). The DMS shell itself runs
+      # via enableSpawn and is independent of niri config includes. This also
+      # avoids the imperative `dms setup` step the includes mechanism needs.
+      includes.enable = false;
     };
   };
 
