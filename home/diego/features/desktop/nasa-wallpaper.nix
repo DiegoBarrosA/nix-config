@@ -103,6 +103,17 @@ let
       exit 0
     fi
 
+    # Build a blurred copy for the overview backdrop. awww is placed within
+    # niri's overview backdrop (see the layer-rule in the niri config), so
+    # feeding it the blurred image yields a blurred overview while swaybg
+    # shows the sharp image on the active workspace.
+    BLUR_FILE="''${WALLPAPER_DIR}/.current-blur.jpg"
+    if ! convert "''${WALLPAPER_FILE}" -resize 1920x -blur 0x20 -quality 90 "''${BLUR_FILE}" 2>/dev/null; then
+      echo "nasa-wallpaper: blur failed, falling back to sharp image in overview"
+      BLUR_FILE="''${WALLPAPER_FILE}"
+    fi
+
+    # --- Overview backdrop (awww, blurred) ---
     if ! awww query > /dev/null 2>&1; then
       echo "nasa-wallpaper: starting awww-daemon"
       setsid -f awww-daemon > /dev/null 2>&1 || awww-daemon &
@@ -114,20 +125,24 @@ let
       done
     fi
 
-    awww img "''${WALLPAPER_FILE}" \
+    awww img "''${BLUR_FILE}" \
       --resize crop \
       --fill-color "000000" \
       --transition-type any \
       --transition-duration 3 \
       --transition-fps 60
 
-    # awww is placed within niri's overview backdrop (see the layer-rule in
-    # the niri config), which removes it from the per-workspace background.
-    # Run swaybg with the same image so the wallpaper also shows on the
-    # active workspace, not just in the overview.
-    pkill -x swaybg > /dev/null 2>&1 || true
+    # --- Active workspace background (swaybg, sharp) ---
+    # Launch the new swaybg first, then cleanly retire any previous ones so
+    # there is no flicker and no orphaned background surfaces.
+    OLD_SWAYBG=$(pgrep -x swaybg 2>/dev/null || true)
     setsid -f swaybg -i "''${WALLPAPER_FILE}" -m fill > /dev/null 2>&1 \
       || swaybg -i "''${WALLPAPER_FILE}" -m fill &
+    sleep 1
+    if [ -n "''${OLD_SWAYBG}" ]; then
+      # SIGTERM lets swaybg destroy its layer surface cleanly.
+      kill -TERM ''${OLD_SWAYBG} > /dev/null 2>&1 || true
+    fi
 
     echo "nasa-wallpaper: set ''${NASA_ID} (''${TOPIC})"
   '';
