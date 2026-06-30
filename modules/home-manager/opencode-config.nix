@@ -39,7 +39,13 @@ let
     {
       type = "local";
       command = fullCmd;
-      enabled = true;
+      # Honor an optional per-server `enabled` flag (defaults to true). Setting
+      # a server to `enabled = false` keeps it defined but stops opencode from
+      # starting it — useful for rarely-used servers to avoid context creep.
+      # NB: the mcp submodule's `enabled` option defaults to `null` (attribute
+      # present), so `srv.enabled or true` would yield `null` — which OpenCode
+      # rejects (expects a boolean). Coerce null → true explicitly.
+      enabled = if (srv.enabled or null) == null then true else srv.enabled;
     }
     // lib.optionalAttrs ((srv.env or { }) != { }) {
       environment = srv.env;
@@ -95,7 +101,7 @@ let
       jobspy = {
         type = "local";
         command = [ "${mcpCfg.jobspy.package}/bin/jobspy-mcp" ];
-        enabled = true;
+        enabled = mcpCfg.jobspy.autostart;
       };
     }
     // lib.optionalAttrs mcpCfg.github.enable {
@@ -125,7 +131,7 @@ let
       thunderbird = {
         type = "local";
         command = [ "${mcpCfg.thunderbird.package}/bin/thunderbird-mcp" ];
-        enabled = true;
+        enabled = mcpCfg.thunderbird.autostart;
       };
     }
     // additionalMcpServers
@@ -455,6 +461,22 @@ in
       description = "Files whose contents should be exported into the environment before running opencode.";
     };
 
+    # Sentinel strings that indicate a secret has not been populated yet.
+    # When a secretEnv file's content matches one of these (or is empty), the
+    # value is NOT exported and a clear warning is printed to stderr. This
+    # prevents a placeholder secret (e.g. a freshly-scaffolded sops entry that
+    # was never filled in) from silently feeding an MCP server, which would
+    # then fail to start and get dropped with no obvious signal.
+    secretPlaceholders = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "PLACEHOLDER_REPLACE_ME" "REPLACE_ME" "CHANGEME" "CHANGE_ME" ];
+      description = ''
+        Sentinel values treated as "unpopulated secret". A secretEnv whose file
+        content exactly matches one of these (after trimming) is skipped with a
+        loud stderr warning instead of being exported.
+      '';
+    };
+
     # Named profiles — each generates an opencode-{name} wrapper script with its own config dir
     profiles = lib.mkOption {
       type = lib.types.attrsOf (
@@ -469,6 +491,19 @@ in
               type = lib.types.attrsOf lib.types.anything;
               default = { };
               description = "opencode.json content for this profile. MCP servers and plugins are inherited from the shared config.";
+            };
+            mcpServers = lib.mkOption {
+              type = lib.types.nullOr (lib.types.listOf lib.types.str);
+              default = null;
+              description = ''
+                Allowlist of MCP server names to include in this profile.
+                When null (default), the profile inherits ALL configured MCP
+                servers (backwards-compatible). When set to a list, only the
+                named servers are injected into this profile's opencode.json —
+                this is the primary lever for reducing per-profile context
+                creep (e.g. keep employer MCPs out of the personal profile).
+              '';
+              example = lib.literalExpression ''[ "obsidian" "nixos" "jira" ]'';
             };
           };
         }
@@ -580,9 +615,26 @@ in
   config = lib.mkIf cfg.enable (
     let
       secretEnvNames = lib.attrNames cfg.secretEnv;
+      # Shell-quoted, newline-separated list of placeholder sentinels used by the
+      # guard below to detect unpopulated secrets.
+      placeholderMatch = lib.concatMapStringsSep " | " (p: "${lib.escapeShellArg p}") cfg.secretPlaceholders;
       secretEnvScript = lib.concatMapStringsSep "\n" (name: ''
         if [ -r "${cfg.secretEnv.${name}}" ]; then
-          export ${name}="$( ${pkgs.coreutils}/bin/cat "${cfg.secretEnv.${name}}" )"
+          __val="$( ${pkgs.coreutils}/bin/cat "${cfg.secretEnv.${name}}" )"
+          # Trim surrounding whitespace/newlines for the placeholder comparison.
+          __trimmed="$( printf '%s' "$__val" | ${pkgs.coreutils}/bin/tr -d '[:space:]' )"
+          case "$__trimmed" in
+            "" )
+              echo "opencode: WARNING: secret '${name}' (${toString cfg.secretEnv.${name}}) is empty; not exporting. The dependent MCP server/provider may be disabled." >&2
+              ;;
+            ${placeholderMatch} )
+              echo "opencode: WARNING: secret '${name}' (${toString cfg.secretEnv.${name}}) still holds a placeholder value; not exporting. Populate it in sops and rebuild. The dependent MCP server/provider will be unavailable until then." >&2
+              ;;
+            * )
+              export ${name}="$__val"
+              ;;
+          esac
+          unset __val __trimmed
         fi
       '') secretEnvNames;
       opencodeWrapper = pkgs.writeShellScriptBin "opencode" ''
@@ -603,9 +655,20 @@ in
             ];
           };
 
-      # Build the shared base (MCP) used by all profiles
-      sharedBase =
-        lib.optionalAttrs (mcpServers != { }) { mcp = mcpServers; };
+      # Build the per-profile shared base (MCP).
+      # A profile may set `mcpServers` to an allowlist of server names; when set,
+      # only those servers are injected into that profile (primary context-creep
+      # lever). When null, the profile inherits all configured MCP servers.
+      profileSharedBase =
+        profileCfg:
+        let
+          selected =
+            if profileCfg.mcpServers == null then
+              mcpServers
+            else
+              lib.filterAttrs (name: _: builtins.elem name profileCfg.mcpServers) mcpServers;
+        in
+        lib.optionalAttrs (selected != { }) { mcp = selected; };
 
       # Generate a wrapper script for each profile (name defaults to opencode-{profileName})
       profileScripts = lib.mapAttrsToList (
@@ -709,7 +772,7 @@ in
         acc: profileName: profileCfg:
         let
           profileJson = lib.filterAttrs (k: v: v != null && v != { }) (
-            lib.recursiveUpdate sharedBase profileCfg.config
+            lib.recursiveUpdate (profileSharedBase profileCfg) profileCfg.config
           );
         in
         acc
@@ -769,6 +832,25 @@ in
         ]
         ++ lib.optional mcpCfg.mcpNixos.enable pkgs.mcp-nixos
         ++ profileScripts;
+
+        # Purge a stray ~/opencode.json on every rebuild.
+        #
+        # OpenCode loads the managed global config from ~/.config/opencode (or a
+        # profile's XDG_CONFIG_HOME), but it ALSO walks up from the current
+        # working directory looking for a project-level opencode.json. A file at
+        # $HOME root is found by that walk-up from any session started under
+        # $HOME and SHADOWS the managed config — silently pinning agents/models
+        # to stale values (e.g. compaction -> meta/llama-3.1-8b-instruct, which
+        # the NVIDIA key cannot access). Such a file is never something Nix
+        # creates here, so remove it if it exists as a plain file (never touch a
+        # symlink, which would be a deliberate user/HM-managed link).
+        home.activation.opencodePurgeStrayConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          STRAY="$HOME/opencode.json"
+          if [ -f "$STRAY" ] && [ ! -L "$STRAY" ]; then
+            run mv "$STRAY" "$STRAY.stale.bak"
+            run echo "opencode: moved stray $STRAY (shadowed managed config) -> $STRAY.stale.bak"
+          fi
+        '';
 
         xdg.configFile = {
           "opencode/opencode.json" = {

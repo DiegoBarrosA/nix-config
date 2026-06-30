@@ -41,7 +41,7 @@
             | lines 
             | where { |line| $line =~ "=" }
             | parse "{key}={value}" 
-            | where { |it| $it.key not-in ["_", "SHLVL", "PWD"] }
+            | where { |it| $it.key not-in ["_", "SHLVL", "PWD", "FILE_PWD", "CURRENT_FILE"] }
             | transpose -r -d
             | load-env
         }
@@ -49,6 +49,9 @@
 
       # Source nix-daemon if available
       source-bash-env /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+
+      # Source home-manager session vars (QT_QPA_PLATFORMTHEME, QT_STYLE_OVERRIDE, etc.)
+      source-bash-env $"($env.HOME)/.nix-profile/etc/profile.d/hm-session-vars.sh"
 
       # Ensure home-manager paths are available
       $env.PATH = ($env.PATH | split row (char esep) 

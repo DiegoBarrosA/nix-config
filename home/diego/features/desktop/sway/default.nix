@@ -36,6 +36,31 @@ let
     fi
   '';
 
+  # Launcher for yazi on workspace 7 (file manager)
+  # Switches to workspace 7; opens yazi if empty, or focuses existing
+  yazi-launcher = pkgs.writeShellScriptBin "yazi-launcher" ''
+    #!/usr/bin/env bash
+    WORKSPACE="7"
+
+    # Count leaf windows (app_id != null) on workspace 7
+    HAS_WINDOWS=$(swaymsg -t get_tree | jq -r "
+      [.. | objects |
+        select(.type == \"workspace\" and .name == \"$WORKSPACE\") |
+        .. | objects |
+        select(.type == \"con\" and .app_id != null)
+      ] | length
+    " 2>/dev/null)
+
+    if [ "$HAS_WINDOWS" -gt 0 ]; then
+      swaymsg "workspace number $WORKSPACE"
+    else
+      # Switch to workspace 7, then tell Sway to exec alacritty -e yazi.
+      # Using a single swaymsg command with ; ensures the workspace switch
+      # completes before the app launches, so the window lands on workspace 7.
+      swaymsg "workspace number $WORKSPACE; exec alacritty -e yazi"
+    fi
+  '';
+
   power-menu = pkgs.writeShellScriptBin "power-menu" ''
     #!/usr/bin/env bash
     #
@@ -534,6 +559,7 @@ in
     networkmanagerapplet
     # Helper scripts
     launch-or-focus
+    yazi-launcher
     power-menu
     sunshine-stream
     swap-workspace-output
@@ -652,6 +678,7 @@ in
         "6" = [
           { app_id = "thunderbird"; }
         ];
+        # yazi (launched via yazi-launcher script) is the only app on workspace 7
         "8" = [
           { app_id = "obsidian"; }
         ];
@@ -801,6 +828,10 @@ in
         "Mod4+9" = "workspace number 9";
         "Mod4+0" = "workspace number 0";
 
+        # Horizontal workspace switching
+        "Mod4+Tab" = "workspace next";
+        "Mod4+Shift+Tab" = "workspace prev";
+
         # Move container to workspace
         "Mod4+Shift+1" = "move container to workspace number 1";
         "Mod4+Shift+2" = "move container to workspace number 2";
@@ -830,7 +861,7 @@ in
         # Launch-or-focus shortcuts
         "Mod4+f" = "exec launch-or-focus firefox-devedition 5 firefox-devedition";
         "Mod4+g" = "exec launch-or-focus thunderbird 6 thunderbird";
-        "Mod4+e" = "exec swaymsg 'workspace number 7' && alacritty -e yazi";
+        "Mod4+e" = "exec yazi-launcher";
         "Mod4+n" = "exec launch-or-focus obsidian 8 obsidian";
 
         # Display mode switching (kanshi)

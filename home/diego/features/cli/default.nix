@@ -28,7 +28,7 @@ in
     with pkgs;
     # Core CLI tools (all platforms)
     [
-      dbeaver-bin
+      basalt
       comma # Install and run programs by sticking a , before them
       fd # Better find
       fzf

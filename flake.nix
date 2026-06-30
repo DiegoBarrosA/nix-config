@@ -56,7 +56,27 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # CodeRabbit CLI (AI code review)
+    llm-agents = {
+      url = "github:numtide/llm-agents.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Niri Wayland compositor (scrollable-tiling)
+    niri = {
+      url = "github:sodiboo/niri-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # VibePanel — eyecandy Wayland panel (replaces bar + notifs + OSD)
+    vibepanel = {
+      url = "github:prankstr/vibepanel";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Private local config (not pushed to github)
+    clin.url = "github:reekta92/clin-rs";
+
     private-config = {
       url = "git+ssh://git@github.com/DiegoBarrosA/nix-private-config.git";
       flake = true;
@@ -103,7 +123,10 @@
           lib = inputs.nixpkgs.lib;
           privatePackages = inputs.private-config.packages.${system} or {};
         in
-        import ./pkgs { inherit pkgs lib privatePackages; }
+        import ./pkgs { inherit pkgs lib privatePackages; } // {
+          clin = inputs.clin.packages.${system}.default;
+          coderabbit-cli = inputs.llm-agents.packages.${system}.coderabbit-cli;
+        }
       );
       nixosConfigurations =
         let
@@ -213,6 +236,8 @@
           };
           modules = (builtins.attrValues homeModules) ++ [
             inputs.stylix.homeModules.stylix
+            inputs.niri.homeModules.stylix
+            inputs.niri.homeModules.config
             inputs.private-config.homeManagerModules.employerMcpConfig
             ./home/diego/rubi.nix
           ];

@@ -9,10 +9,7 @@
   ...
 }:
 {
-  # Default to black-metal-dark-funeral.  The global specialisations (global/default.nix)
-  # would force Gruvbox on `dark`/`light`; we set the default here so rubi always gets the
-  # metal scheme regardless of specialisation.
-  colorscheme.type = lib.mkDefault "black-metal-dark-funeral";
+  colorscheme.type = "black-metal-venom";
 
   imports = [
     # Rubi-local toggles for desktop setup.
@@ -32,10 +29,14 @@
     ./features/cli
     ./features/desktop/common # Firefox, Qt, Stylix
     ./features/desktop/sway # Sway desktop configuration
+    ./features/desktop/niri # Niri desktop configuration
+    ./features/desktop/nasa-wallpaper.nix # NASA APOD daily wallpaper
     ./features/ai
     ./features/ai/pixel-office.nix # Pixel Office dashboard + plugin (replaces Caffa blob-office)
     ./features/desktop/obsidian.nix
   ];
+
+  home.packages = [ customPkgs.clin customPkgs.coderabbit-cli ];
 
   # GTK bookmarks for file manager (using config.home.homeDirectory to avoid hardcoding)
   gtk.gtk3.bookmarks = [
@@ -65,6 +66,18 @@
         # opencode-personal → Go/Zen (Big Pickle) + Groq (no employer resources)
         personal = {
           scriptName = "ocp";
+          # Personal profile: no employer MCP servers (jira/confluence/trello/
+          # tempo/netsuite). Only general + personal tooling. Keeps employer
+          # tool definitions out of personal-context sessions entirely.
+          mcpServers = [
+            "obsidian"
+            "nixos"
+            "telegram"
+            "jobspy"
+            "github"
+            "playwright"
+            "thunderbird"
+          ];
           config = (import ./features/ai/opencode-personal.nix).config // {
             # profiles don't read opencodeGo/Zen options — include the providers explicitly
             provider."opencode-go" = {
@@ -118,12 +131,43 @@
               title.model = "opencode/big-pickle";
               summary.model = "opencode/big-pickle";
               compaction.model = "opencode/big-pickle";
+              # Context-creep control: github (~dozens of tools, flagged by
+              # opencode docs as a token hog) and playwright (~25 tools) are
+              # disabled globally below and re-enabled only inside these
+              # purpose-built subagents. Invoke with @browser / @github.
+              browser = {
+                description = "Web/browser automation via Playwright MCP (navigate, click, screenshot, scrape).";
+                mode = "subagent";
+                tools = {
+                  "playwright_*" = true;
+                };
+              };
+              github = {
+                description = "GitHub operations via the GitHub MCP server (issues, PRs, repos).";
+                mode = "subagent";
+                tools = {
+                  "github_*" = true;
+                };
+              };
+            };
+            # Disable the chatty MCP servers globally; they are re-enabled
+            # per-agent above. The lean default keeps obsidian/nixos/telegram/
+            # jobspy hot (small tool counts) while gating the big ones.
+            tools = {
+              "github_*" = false;
+              "playwright_*" = false;
             };
           };
         };
         # opencode-groq → Groq free tier (personal free resources)
         groq = {
           scriptName = "ocg";
+          # Groq models are small/fast — keep the tool surface minimal to avoid
+          # blowing the context window with MCP tool definitions.
+          mcpServers = [
+            "obsidian"
+            "nixos"
+          ];
           config = {
             model = "groq/llama-3.3-70b-versatile";
             small_model = "groq/llama-3.1-8b-instant";
@@ -178,10 +222,43 @@
 
     # Skills are sourced from the vault via programs.ai-skills (all prompts migrated there).
     skills = { };
-    agents = (import ./features/ai/gsd-core-agents.nix).agents;
+    agents = (import ./features/ai/gsd-core-agents.nix).agents // (import ./features/ai/coderabbit-agent.nix);
     # Pixel Office plugin (pixel-office.js) is provided by ./features/ai/pixel-office.nix
-    commands = (import ./features/ai/gsd-core-agents.nix).commands;
+    commands = (import ./features/ai/gsd-core-agents.nix).commands // {
+      "review" = ''
+---
+description: Run CodeRabbit AI review on uncommitted changes or against base branch
+argument-hint: "[--type uncommitted | --base main]"
+tools:
+  bash: true
+---
+<objective>
+Run CodeRabbit CLI review on the current workspace.
+</objective>
+
+<context>
+User arguments: $ARGUMENTS
+</context>
+
+<process>
+1. Parse $ARGUMENTS:
+   - If `--type uncommitted` or no flag: `cr review --agent --type uncommitted`
+   - If `--base <branch>`: `cr review --agent --base <branch>`
+   - Otherwise: `cr review --agent --type uncommitted`
+2. Run the command and capture JSON output
+3. Present findings in three tiers: **Critical**, **Warning**, **Info**
+4. If user asks to fix issues, suggest `/gsd-code-review --fix`
+</process>
+      '';
+    };
     references = (import ./features/ai/gsd-core-agents.nix).references;
+  };
+
+  programs.claude-code-config.commands = {
+    "review" = {
+      description = "Run CodeRabbit AI review on uncommitted changes or against base branch";
+      prompt = "Run `cr review --agent --type uncommitted` (or `cr review --agent --base <branch>` if --base flag given) and present findings as Critical/Warning/Info tiers. If user asks to fix issues, point them to the findings and suggest addressing each manually.";
+    };
   };
 
   programs.ai-skills.opencodeProfiles = [

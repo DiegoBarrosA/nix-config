@@ -1,0 +1,38 @@
+language: en-US
+
+reviews:
+  profile: assertive
+  request_changes_workflow: true
+  high_level_summary: true
+  sequence_diagrams: false
+  path_instructions:
+    - path: "**/*.nix"
+      instructions: |
+        - Prefer `lib` functions over bare `builtins` where equivalents exist (e.g. `lib.attrNames` vs `builtins.attrNames`)
+        - Check that `mkIf`/`mkMerge`/`mkOption` use consistent indentation and proper closing
+        - Verify `flake.nix` inputs use `follows` for nixpkgs where possible to avoid duplicate nixpkgs in the lock
+        - Flag `with lib;` — prefer explicit `lib.` prefix for readability
+        - Flag missing `description` in `mkOption` definitions
+        - Flag `builtins.readFile` / `builtins.toFile` when `pkgs.writeText` or `pkgs.writeScript` would be more idiomatic
+        - Check that `lib.mkBefore`/`lib.mkAfter`/`lib.mkOverride` have comments explaining why
+        - Flag hardcoded system strings; prefer `pkgs.stdenv.hostPlatform.system` or `system` from the flake
+        - Verify home-manager modules use `lib.mkIf cfg.enable` rather than top-level conditionals
+        - Flag `import <nixpkgs>` which bypasses the flake's nixpkgs
+    - path: "*.sh"
+      instructions: |
+        - Require `set -euo pipefail` at the top of all shell scripts
+        - Flag unquoted variable expansions `$var` — prefer `"$var"`
+        - Flag use of `cat` for single-file reads — prefer `< file` or `$(< file)`
+    - path: ".github/workflows/*.yml"
+      instructions: |
+        - Pin action versions to full semver commit hashes (e.g. `actions/checkout@v4` → pinned)
+        - Avoid `GITHUB_TOKEN` where a more specific token suffices
+        - Flag `workflow_dispatch` missing `inputs` schema when present
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+
+chat:
+  auto_reply: true

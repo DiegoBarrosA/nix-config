@@ -1,0 +1,43 @@
+name: CodeRabbit AI Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CodeRabbit CLI
+        run: curl -fsSL https://cli.coderabbit.ai/install.sh | sh
+
+      - name: Run CodeRabbit review
+        id: coderabbit
+        env:
+          CODERABBIT_API_KEY: ${{ secrets.CODERABBIT_API_KEY }}
+        run: |
+          cr review --agent --base ${{ github.base_ref }} \
+            --api-key "${{ secrets.CODERABBIT_API_KEY }}" \
+            > review_output.json
+
+      - name: Post review summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const review = JSON.parse(fs.readFileSync('review_output.json', 'utf-8'));
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 🤖 CodeRabbit Review\n\n**Findings:** ${review.summary?.total || 0}\n- Critical: ${review.summary?.critical || 0}\n- Warning: ${review.summary?.warning || 0}\n\nSee details in the review output.`
+            });

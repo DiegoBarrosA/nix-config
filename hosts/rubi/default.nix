@@ -19,6 +19,9 @@
     # Stylix theming
     inputs.stylix.nixosModules.stylix
 
+    # Niri compositor (alongside Sway)
+    inputs.niri.nixosModules.niri
+
     # Core services
     ../common/optional/tailscale.nix
     ./sops.nix # rubi-specific SOPS secrets (minimal for desktop)
@@ -42,9 +45,9 @@
     ../common/optional/llama-cpp-server.nix
 
     # libvirt/KVM + virt-manager (Windows 11 VM with virtio-gpu)
-    ../common/optional/virtualization.nix
+    # ../common/optional/virtualization.nix
     inputs.nixvirt.nixosModules.default
-    ./win11-vm.nix
+    # ./win11-vm.nix
 
     # Employer security / VPN modules (from private-config)
     inputs.private-config.nixosModules.carbonBlack
@@ -80,8 +83,9 @@
 
   # Nix configuration
   nix = {
-    registry = lib.mapAttrs (_: value: { flake = value; })
-      (lib.filterAttrs (name: _: name != "private-config") inputs);
+    registry = lib.mapAttrs (_: value: { flake = value; }) (
+      lib.filterAttrs (name: _: name != "private-config") inputs
+    );
     nixPath = lib.mapAttrsToList (key: value: "${key}=${value.to.path}") config.nix.registry;
     settings = {
       experimental-features = "nix-command flakes";
@@ -93,6 +97,20 @@
   programs.sway = {
     enable = true;
     wrapperFeatures.gtk = true; # GTK apps use correct theming
+
+    # Export Qt env vars so apps launched from Sway keybindings get the Stylix theme
+    extraSessionCommands = ''
+      export QT_QPA_PLATFORMTHEME="qt5ct"
+      export QT_STYLE_OVERRIDE="kvantum"
+      export QT_PLUGIN_PATH="$HOME/.nix-profile/lib/qt-5.15.18/plugins:$HOME/.nix-profile/lib/qt-6/plugins"
+      export QML2_IMPORT_PATH="$HOME/.nix-profile/lib/qt-5.15.18/qml:$HOME/.nix-profile/lib/qt-6/qml"
+    '';
+  };
+
+  # Enable Niri (scrollable-tiling Wayland compositor, alongside Sway)
+  programs.niri = {
+    enable = true;
+    package = lib.mkForce pkgs.niri;
   };
 
   # greetd + tuigreet display manager
@@ -100,7 +118,7 @@
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session --sessions ${pkgs.sway}/share/wayland-sessions";
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session --sessions /run/current-system/sw/share/wayland-sessions";
         user = "greeter";
       };
     };
@@ -149,6 +167,8 @@
     openssl
     # python3Packages.python-miio # FIXME: broken in nixpkgs - construct version conflict
 
+    # VibePanel — eyecandy Wayland panel (replaces bar + notifications + OSD)
+    inputs.vibepanel.packages.${pkgs.system}.default
   ];
 
   # Networking
@@ -166,6 +186,9 @@
 
   # OpenCode server for remote access (Android app + web UI)
   # Binds to 0.0.0.0 but only accessible via Tailscale (trusted interface)
+  # UPower for battery reporting (required by vibepanel battery widget)
+  services.upower.enable = true;
+
   services.opencode-server = {
     enable = true;
     host = "0.0.0.0";
@@ -188,6 +211,9 @@
       TEMPO_JIRA_API_TOKEN = config.sops.secrets."tempo-jira-api-key".path;
       TEMPO_JIRA_EMAIL = config.sops.secrets."tempo-jira-email".path;
       TEMPO_JIRA_BASE_URL = config.sops.secrets."tempo-jira-base-url".path;
+      JIRA_DC_BASE_URL = config.sops.secrets."jira-dc-base-url".path;
+      JIRA_DC_EMAIL = config.sops.secrets."jira-dc-email".path;
+      JIRA_DC_API_KEY = config.sops.secrets."jira-dc-api-key".path;
       GITHUB_TOKEN = config.sops.secrets."github-token".path;
     };
   };
@@ -201,10 +227,13 @@
     port = 11435;
     host = "127.0.0.1";
     openFirewall = false;
-    contextSize = 24576;  # 24K context for OpenCode's large system prompts
+    contextSize = 24576; # 24K context for OpenCode's large system prompts
     gpuLayers = 99;
     modelsDirectory = "/var/lib/llama-cpp";
-    extraArgs = [ "--alias" "qwen2.5-coder-7b" ];
+    extraArgs = [
+      "--alias"
+      "qwen2.5-coder-7b"
+    ];
   };
 
   # Security
@@ -260,6 +289,7 @@
   home-manager = {
     backupFileExtension = "backup";
     extraSpecialArgs = {
+      inherit inputs;
       inherit (inputs) nix-colors;
       customPkgs = inputs.self.packages."x86_64-linux";
       privateConfig = inputs.private-config.opencodeConfig or { };

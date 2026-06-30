@@ -103,8 +103,12 @@ in
       # GNOME integration - let Stylix set Adwaita-compatible colors
       gnome.enable = true;
 
-      # Keep Qt using GTK theme (Stylix GNOME target sets this to "gnome")
-      qt.enable = false;
+      # Qt theming via Kvantum (generated from base16 colors)
+      qt = {
+        enable = true;
+        # Use xdg-desktop-portal for native file dialogs
+        standardDialogs = "xdgdesktopportal";
+      };
 
       # Don't let Stylix manage these since we handle them separately
       alacritty.enable = false;

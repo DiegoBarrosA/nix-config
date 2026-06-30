@@ -55,6 +55,17 @@ with lib;
       sopsFile = inputs.private-config.secretFiles.nvidiaApiKey;
     };
 
+    # Anthropic Claude API key (NVIDIA org, usage-based) — shares nvidia.yaml.
+    # Consumed by the work profile's provider."anthropic" via rubiSecretEnv
+    # (ANTHROPIC_API_KEY = /run/secrets/anthropic-api-key). Without this the
+    # anthropic SDK errors with "x-api-key header is required".
+    secrets."anthropic-api-key" = {
+      owner = "diego";
+      group = "users";
+      mode = "0400";
+      sopsFile = inputs.private-config.secretFiles.nvidiaApiKey;
+    };
+
     # GitHub token (from private-config)
     secrets."github-token" = {
       owner = "diego";

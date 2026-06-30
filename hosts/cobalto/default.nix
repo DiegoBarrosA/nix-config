@@ -75,10 +75,14 @@
     ../common/optional/samba.nix
     ../common/optional/home-assistant.nix
     ../common/optional/go2rtc.nix
+    ../common/optional/cameras.nix
     ../common/optional/music-assistant.nix
 
     # OpenCode remote access (API + web UI)
     ../common/optional/opencode-server.nix
+
+    # Invidious - YouTube frontend
+    ../common/optional/invidious.nix
 
     # Boot configuration
     ../common/optional/systemdboot.nix
@@ -128,7 +132,7 @@
     };
     firewall.allowedTCPPorts = [
       21063 # HomeKit bridge for Siri (default HA port)
-      1984 8554 8555 # go2rtc API, RTSP, WebRTC
+      1984 8554 8555 8557 # go2rtc API, RTSP, WebRTC; neolink RTSP
     ];
     firewall.allowedUDPPorts = [
       50000 50001 50002 50003 50004 50005 # go2rtc WebRTC
@@ -149,6 +153,16 @@
 
   # Enable user lingering for systemd user services
   users.users.diego.linger = true;
+
+  # Camera proxy services
+  services.cameras = {
+    enable = true;
+    reolink = {
+      enable = true;
+      ip = "192.168.1.65";
+      rtspPort = 8554;
+    };
+  };
 
   # Bluetooth for SwitchBot IoT devices
   hardware.bluetooth.enable = true;

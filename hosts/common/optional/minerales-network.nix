@@ -15,12 +15,13 @@ let
       useACMEHost = "minerales.network";
     };
 
-  # Standard proxy config
+  # Standard proxy config (use 127.0.0.1 explicitly to avoid IPv6 resolution issues)
   standardProxy = port: {
-    proxyPass = "http://localhost:${toString port}";
+    proxyPass = "http://127.0.0.1:${toString port}";
     proxyWebsockets = true;
     extraConfig = ''
       proxy_buffering off;
+      proxy_set_header Host $host;
       proxy_set_header X-Forwarded-Proto $scheme;
       proxy_set_header X-Forwarded-Host $host;
     '';
@@ -319,6 +320,16 @@ in
       # OpenCode remote access (API + web UI)
       "opencode.minerales.network" = withSSL "opencode" {
         locations."/" = standardProxy 4096;
+      };
+
+      # Invidious - YouTube frontend
+      "invidious.minerales.network" = withSSL "invidious" {
+        locations."/" = standardProxy 3000;
+      };
+
+      # Yattee Server - self-hosted video API (yt-dlp based stream proxy)
+      "yattee.minerales.network" = withSSL "yattee" {
+        locations."/" = standardProxy 8085;
       };
 
       # TURN server domain (for TLS TURN connections)

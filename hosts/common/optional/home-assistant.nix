@@ -31,6 +31,7 @@
       pyswitchbot            # required by switchbot integration (BLE)
       yeelight
       gtts                   # required by google_translate TTS integration
+      reolink-aio            # required by reolink integration
     ] ++ [ pkgs.ffmpeg-headless ];
     customComponents = [
       pkgs."home-assistant-custom-components".tuya_local
@@ -38,20 +39,9 @@
     config = {
       default_config = {};
 
-      camera = [
-        {
-          platform = "generic";
-          name = "Reolink E1";
-          stream_source = "rtsp://127.0.0.1:8554/reolink_e1";
-          verify_ssl = false;
-        }
-        {
-          platform = "generic";
-          name = "Xiaomi Camera";
-          stream_source = "rtsp://127.0.0.1:8554/xiaomi_cam";
-          verify_ssl = false;
-        }
-      ];
+      # Cameras set up via HA UI:
+      #   Reolink E1 → Reolink integration (UI: Settings → Devices → Reolink)
+      #   Xiaomi C200 → ONVIF integration (UI: Settings → Devices → ONVIF)
 
       homeassistant = {
         external_url = "https://homeassistant.minerales.network";
