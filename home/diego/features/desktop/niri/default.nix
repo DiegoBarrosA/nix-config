@@ -109,6 +109,14 @@ in
       }
     ];
 
+    # Show the awww wallpaper inside the overview backdrop too.
+    layer-rules = [
+      {
+        matches = [ { namespace = "^awww-daemon$"; } ];
+        place-within-backdrop = true;
+      }
+    ];
+
     spawn-at-startup = [
       { argv = [ "vibepanel" ]; }
       { argv = [ "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1" ]; }
