@@ -68,6 +68,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # DankMaterialShell — full Quickshell-based desktop shell for niri
+    dms = {
+      url = "github:AvengeMedia/DankMaterialShell/stable";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # VibePanel — eyecandy Wayland panel (replaces bar + notifs + OSD)
     vibepanel = {
       url = "github:prankstr/vibepanel";

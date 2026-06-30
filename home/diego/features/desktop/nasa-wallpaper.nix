@@ -5,12 +5,12 @@ let
     set -euo pipefail
     export PATH=${lib.makeBinPath [
       pkgs.curl
-      pkgs.jq
       pkgs.awww
       pkgs.swaybg
       pkgs.coreutils
       pkgs.gnused
       pkgs.gnugrep
+      pkgs.findutils
       pkgs.imagemagick
       pkgs.procps
       pkgs.util-linux
@@ -23,85 +23,41 @@ let
     fi
 
     WALLPAPER_DIR="''${HOME}/.wallpapers"
-    mkdir -p "''${WALLPAPER_DIR}"
+    POOL_DIR="''${WALLPAPER_DIR}/nasa-iss"
+    mkdir -p "''${POOL_DIR}"
 
-    # Source: NASA Image and Video Library (images.nasa.gov).
-    # Keyless API, and every item exposes a full-resolution "~orig.jpg",
-    # so we always get genuinely high-quality wallpapers (no APOD daily
-    # resolution lottery, no DEMO_KEY rate limits).
-    TOPICS=(
-      "nebula" "galaxy" "hubble" "james webb" "supernova"
-      "star cluster" "spiral galaxy" "earth from space" "aurora"
-      "saturn" "jupiter" "mars surface" "deep field" "milky way"
-    )
-    TOPIC="''${TOPICS[$((RANDOM % ''${#TOPICS[@]}))]}"
-    QUERY=$(printf '%s' "''${TOPIC}" | jq -sRr @uri)
+    # Source: NASA's monthly ISS "Desktop and Mobile Wallpapers" page.
+    # We grab the full-resolution desktop "image only" PNGs (no calendar
+    # overlay), maintain a local pool, and rotate through it.
+    PAGE="https://www.nasa.gov/international-space-station/desktop-and-mobile-wallpapers/"
 
-    echo "nasa-wallpaper: searching for ''${TOPIC}"
-    SEARCH=$(curl -s -f \
-      "https://images-api.nasa.gov/search?q=''${QUERY}&media_type=image&page_size=100") || {
-      echo "nasa-wallpaper: search request failed (no network?)"
-      exit 0
-    }
-
-    # Collect nasa_id values, but drop items whose metadata (title +
-    # keywords + description) suggests people/portraits/ceremonies. NASA's
-    # tagging is sparse, so this is best-effort: combined with space-only
-    # search topics it filters out the obvious astronaut/crew/event shots.
-    PEOPLE_RE="astronaut|cosmonaut|crew|portrait|headshot|ceremony|administrator|official|employee|staff|press|conference|briefing|award|graduat|training|spacewalk|interview|visit|signing|meeting|team photo|group photo|posing|smiling|holds|holding|speaks|speaking|address|panel|audience|expedition .* crew"
-    mapfile -t IDS < <(printf '%s' "''${SEARCH}" | jq -r --arg re "''${PEOPLE_RE}" '
-      .collection.items[]
-      | .data[0]
-      | ([.title, (.keywords // [] | join(" ")), .description] | join(" ") | ascii_downcase) as $text
-      | select($text | test($re) | not)
-      | .nasa_id
-    ' 2>/dev/null)
-    if [ "''${#IDS[@]}" -eq 0 ]; then
-      echo "nasa-wallpaper: no people-free results for ''${TOPIC}, skipping"
-      exit 0
+    # Refresh the pool: scrape desktop image-only URLs and download new ones.
+    # Failures here are non-fatal — we can still rotate the existing pool.
+    if PAGE_HTML=$(curl -s -f "''${PAGE}" 2>/dev/null); then
+      printf '%s' "''${PAGE_HTML}" \
+        | grep -oE 'https://www\.nasa\.gov/wp-content/uploads/[^"'"'"' ]*desktop[^"'"'"' ]*image-only\.png' \
+        | sort -u \
+        | while read -r url; do
+            # Stable local filename from the URL basename (decode %20 etc.).
+            base=$(basename "''${url}" | sed 's/%[0-9A-Fa-f][0-9A-Fa-f]/-/g')
+            dest="''${POOL_DIR}/''${base}"
+            if [ ! -f "''${dest}" ]; then
+              echo "nasa-wallpaper: downloading ''${base}"
+              curl -s -f -L -o "''${dest}" "''${url}" || rm -f "''${dest}"
+            fi
+          done
+    else
+      echo "nasa-wallpaper: could not reach NASA page (no network?), using existing pool"
     fi
 
-    # Minimum width (px) to consider an image worthy of a wallpaper. Some
-    # NASA "~orig" archives are tiny, so we measure each candidate and skip
-    # anything too small to fill the screen without heavy upscaling.
-    MIN_WIDTH=1920
-
-    # Try up to 12 random items until we find a sufficiently large original.
-    WALLPAPER_FILE=""
-    NASA_ID=""
-    for _ in $(seq 1 12); do
-      CANDIDATE="''${IDS[$((RANDOM % ''${#IDS[@]}))]}"
-      ASSETS=$(curl -s -f \
-        "https://images-api.nasa.gov/asset/''${CANDIDATE}") || continue
-      URL=$(printf '%s' "''${ASSETS}" \
-        | jq -r '.collection.items[].href' 2>/dev/null \
-        | grep -iE '~orig\.(jpg|jpeg|png)$' \
-        | head -n1 || true)
-      [ -n "''${URL}" ] || continue
-      URL="''${URL/http:/https:}"
-
-      EXT="''${URL##*.}"
-      TMP_FILE="''${WALLPAPER_DIR}/nasa-''${CANDIDATE}.''${EXT}"
-      if [ ! -f "''${TMP_FILE}" ]; then
-        curl -s -f -L -o "''${TMP_FILE}" "''${URL}" || { rm -f "''${TMP_FILE}"; continue; }
-      fi
-
-      WIDTH=$(identify -format '%w' "''${TMP_FILE}" 2>/dev/null || echo 0)
-      if [ "''${WIDTH}" -ge "''${MIN_WIDTH}" ]; then
-        WALLPAPER_FILE="''${TMP_FILE}"
-        NASA_ID="''${CANDIDATE}"
-        echo "nasa-wallpaper: selected ''${CANDIDATE} (''${WIDTH}px wide)"
-        break
-      else
-        echo "nasa-wallpaper: ''${CANDIDATE} too small (''${WIDTH}px), trying another"
-        rm -f "''${TMP_FILE}"
-      fi
-    done
-
-    if [ -z "''${WALLPAPER_FILE}" ]; then
-      echo "nasa-wallpaper: no sufficiently large image found, skipping"
+    # Pick a random image from the pool.
+    mapfile -t POOL < <(find "''${POOL_DIR}" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' \) 2>/dev/null | sort)
+    if [ "''${#POOL[@]}" -eq 0 ]; then
+      echo "nasa-wallpaper: wallpaper pool is empty, skipping"
       exit 0
     fi
+    WALLPAPER_FILE="''${POOL[$((RANDOM % ''${#POOL[@]}))]}"
+    echo "nasa-wallpaper: selected $(basename "''${WALLPAPER_FILE}")"
 
     # Build a blurred copy for the overview backdrop. awww is placed within
     # niri's overview backdrop (see the layer-rule in the niri config), so
@@ -144,16 +100,19 @@ let
       kill -TERM ''${OLD_SWAYBG} > /dev/null 2>&1 || true
     fi
 
-    # Retention: keep only the 10 most recent downloads (plus the one in use
-    # and the blur copy) so ~/.wallpapers does not grow unbounded.
-    ls -1t "''${WALLPAPER_DIR}"/nasa-*.jpg "''${WALLPAPER_DIR}"/nasa-*.png 2>/dev/null \
-      | tail -n +11 \
+    # Retention: NASA publishes ~3 new wallpapers/month, so the pool grows
+    # slowly. Cap it at the 60 most-recently-downloaded images so it never
+    # grows unbounded over years, while keeping plenty of variety.
+    find "''${POOL_DIR}" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' \) -printf '%T@ %p\n' 2>/dev/null \
+      | sort -rn \
+      | tail -n +61 \
+      | cut -d' ' -f2- \
       | while read -r old; do
           [ "''${old}" = "''${WALLPAPER_FILE}" ] && continue
           rm -f "''${old}"
         done
 
-    echo "nasa-wallpaper: set ''${NASA_ID} (''${TOPIC})"
+    echo "nasa-wallpaper: set $(basename "''${WALLPAPER_FILE}")"
   '';
 in
 {

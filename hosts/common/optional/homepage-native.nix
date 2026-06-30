@@ -224,6 +224,35 @@
           disk = "/mnt/media";
         };
       }
+      # Developer news feeds (hackertab.dev-style curated sources)
+      {
+        rss = {
+          feedurl = "https://hnrss.org/frontpage";
+          name = "Hacker News";
+          limit = 6;
+        };
+      }
+      {
+        rss = {
+          feedurl = "https://lobste.rs/rss";
+          name = "Lobsters";
+          limit = 6;
+        };
+      }
+      {
+        rss = {
+          feedurl = "https://dev.to/feed";
+          name = "DEV.to";
+          limit = 6;
+        };
+      }
+      {
+        rss = {
+          feedurl = "https://www.freecodecamp.org/news/rss/";
+          name = "freeCodeCamp";
+          limit = 6;
+        };
+      }
     ];
 
     bookmarks = [

@@ -8,7 +8,7 @@
 let
   extrahostsfromsteve = pkgs.fetchurl {
     url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling/hosts";
-    sha256 = "CSjWrKuSLq8eh2hOthL8Ydz0xNbzOS3ouRphKWDpDLc=";
+    sha256 = "wBdsdgdZ8YnxFzcR1SEoZ7tmolD73qLNdhcqy8aZxXg=";
 
   };
 in
