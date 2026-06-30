@@ -12,7 +12,18 @@ let
     fi
 
     WALLPAPER_DIR="''${HOME}/.wallpapers"
-    API_KEY="''${NASA_API_KEY:-DEMO_KEY}"
+    # API key resolution order:
+    #   1. NASA_API_KEY env var
+    #   2. ~/.config/nasa-apod/api-key (not in git/nix store; no rebuild to change)
+    #   3. DEMO_KEY (heavily rate-limited shared key)
+    KEY_FILE="''${XDG_CONFIG_HOME:-''${HOME}/.config}/nasa-apod/api-key"
+    if [ -n "''${NASA_API_KEY:-}" ]; then
+      API_KEY="''${NASA_API_KEY}"
+    elif [ -r "''${KEY_FILE}" ]; then
+      API_KEY="$(tr -d '[:space:]' < "''${KEY_FILE}")"
+    else
+      API_KEY="DEMO_KEY"
+    fi
     API_URL="https://api.nasa.gov/planetary/apod?api_key=''${API_KEY}"
 
     mkdir -p "''${WALLPAPER_DIR}"
@@ -58,6 +69,8 @@ let
     fi
 
     awww img "''${WALLPAPER_FILE}" \
+      --resize crop \
+      --fill-color "000000" \
       --transition-type any \
       --transition-duration 3 \
       --transition-fps 60
