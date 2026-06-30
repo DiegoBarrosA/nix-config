@@ -21,6 +21,9 @@ let
 
   # Generate the MCP servers JSON file (used by activation script)
   mcpServersJson = jsonFormat.generate "claude-code-mcp-servers.json" mcpServersConfig;
+
+  # Generate commands JSON for custom slash commands
+  commandsJson = jsonFormat.generate "claude-code-commands.json" cfg.commands;
 in
 {
   options.programs.claude-code-config = {
@@ -42,6 +45,31 @@ in
         }
       '';
     };
+
+    commands = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.submodule {
+        options = {
+          description = lib.mkOption {
+            type = lib.types.str;
+            description = "Description shown for the slash command.";
+          };
+          prompt = lib.mkOption {
+            type = lib.types.str;
+            description = "Prompt text to execute when the command is invoked.";
+          };
+        };
+      });
+      default = { };
+      description = "Custom slash commands for Claude Code.";
+      example = lib.literalExpression ''
+        {
+          "review" = {
+            description = "Run CodeRabbit AI review on uncommitted changes";
+            prompt = "Run `cr review --agent --type uncommitted` and present findings as Critical/Warning/Info tiers.";
+          };
+        }
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -50,20 +78,24 @@ in
       source = mcpServersJson;
     };
 
-    # Activation script to merge MCP servers into ~/.claude.json
+    # Activation script to merge MCP servers and commands into ~/.claude.json
     home.activation.claudeCodeMcpConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       CLAUDE_CONFIG="$HOME/.claude.json"
       MCP_SERVERS_FILE="${mcpServersJson}"
+      COMMANDS_FILE="${commandsJson}"
 
       if [ -f "$CLAUDE_CONFIG" ]; then
         # Merge MCP servers into existing config
         ${pkgs.jq}/bin/jq -s '.[0] * {mcpServers: .[1]}' "$CLAUDE_CONFIG" "$MCP_SERVERS_FILE" > "$CLAUDE_CONFIG.tmp"
         mv "$CLAUDE_CONFIG.tmp" "$CLAUDE_CONFIG"
-        run echo "Claude Code: Updated MCP servers in $CLAUDE_CONFIG"
+        # Merge commands into existing config
+        ${pkgs.jq}/bin/jq -s '.[0] * {commands: .[1]}' "$CLAUDE_CONFIG" "$COMMANDS_FILE" > "$CLAUDE_CONFIG.tmp"
+        mv "$CLAUDE_CONFIG.tmp" "$CLAUDE_CONFIG"
+        run echo "Claude Code: Updated MCP servers and commands in $CLAUDE_CONFIG"
       else
-        # Create new config with just MCP servers
-        ${pkgs.jq}/bin/jq '{mcpServers: .}' "$MCP_SERVERS_FILE" > "$CLAUDE_CONFIG"
-        run echo "Claude Code: Created $CLAUDE_CONFIG with MCP servers"
+        # Create new config with MCP servers and commands
+        ${pkgs.jq}/bin/jq -s '{mcpServers: .[0], commands: .[1]}' "$MCP_SERVERS_FILE" "$COMMANDS_FILE" > "$CLAUDE_CONFIG"
+        run echo "Claude Code: Created $CLAUDE_CONFIG with MCP servers and commands"
       fi
     '';
   };

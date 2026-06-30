@@ -10,27 +10,21 @@ let
   cursorSize = toString config.stylix.cursor.size;
 in
 {
-  imports = [ ./quickshell ];
+  imports = [ ./dms.nix ];
 
   programs.niri.package = pkgs.niri;
 
   # Stylix enabled via inputs.niri.homeModules.stylix (defaults to true)
-
-  # Cliphist clipboard manager
-  services.cliphist = {
-    enable = true;
-    allowImages = true;
-  };
+  # Bar, launcher, notifications, lock, idle, clipboard, polkit are all
+  # provided by DankMaterialShell (see ./dms.nix).
 
   home.packages = with pkgs; [
     jq
     grim
     slurp
     wl-clipboard
-    swayidle
     swaybg
     awww
-    polkit_gnome
   ];
 
   # XDG desktop portal config for niri
@@ -120,24 +114,10 @@ in
     ];
 
     spawn-at-startup = [
-      # quickshell bar (replaces vibepanel)
-      { argv = [ "quickshell" ]; }
-      { argv = [ "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1" ]; }
-      # Animated wallpaper daemon + initial NASA APOD wallpaper
+      # Wallpaper: animated daemon + initial NASA ISS wallpaper.
+      # (Bar/launcher/notifications/lock/idle/polkit are spawned by DMS.)
       { argv = [ "awww-daemon" ]; }
       { argv = [ "nasa-apod-wallpaper" ]; }
-      # Lock after 5 min, before sleep
-      {
-        argv = [
-          "swayidle"
-          "-w"
-          "timeout"
-          "300"
-          "swaylock -f"
-          "before-sleep"
-          "swaylock -f"
-        ];
-      }
     ];
 
     environment = {
@@ -147,18 +127,11 @@ in
     };
 
     binds = {
-      # Launcher
-      "Mod+D".action.spawn = "fuzzel";
+      # Terminal (launcher, lock, power menu, clipboard provided by DMS)
       "Mod+Return".action.spawn = "alacritty";
 
       # Close window
       "Mod+W".action.close-window = { };
-
-      # Lock screen
-      "Mod+Escape".action.spawn = "swaylock -f";
-
-      # Power menu (shared fuzzel-based menu)
-      "Mod+Shift+E".action.spawn = "power-menu";
 
       # Focus movement (vim-style for columns + arrows for workspace switching)
       "Mod+H".action.focus-column-left = { };
@@ -209,7 +182,7 @@ in
       # App shortcuts
       "Mod+F".action.spawn = "firefox";
       "Mod+G".action.spawn = "thunderbird";
-      "Mod+N".action.spawn = "obsidian";
+      "Mod+O".action.spawn = "obsidian";
 
       # Manual wallpaper refresh
       "Mod+Shift+W".action.spawn = "nasa-apod-wallpaper";
@@ -219,58 +192,8 @@ in
       "Mod+Shift+S".action.screenshot-screen = { };
       "Mod+Shift+A".action.screenshot-window = { };
 
-      # Brightness
-      "XF86MonBrightnessUp".action.spawn = [
-        "brillo"
-        "-A"
-        "5"
-      ];
-      "XF86MonBrightnessDown".action.spawn = [
-        "brillo"
-        "-U"
-        "5"
-      ];
-
-      # Volume
-      "XF86AudioRaiseVolume".action.spawn = [
-        "wpctl"
-        "set-volume"
-        "@DEFAULT_AUDIO_SINK@"
-        "5%+"
-      ];
-      "XF86AudioLowerVolume".action.spawn = [
-        "wpctl"
-        "set-volume"
-        "@DEFAULT_AUDIO_SINK@"
-        "5%-"
-      ];
-      "XF86AudioMute".action.spawn = [
-        "wpctl"
-        "set-mute"
-        "@DEFAULT_AUDIO_SINK@"
-        "toggle"
-      ];
-      "XF86AudioMicMute".action.spawn = [
-        "wpctl"
-        "set-mute"
-        "@DEFAULT_AUDIO_SOURCE@"
-        "toggle"
-      ];
-
-      # Clipboard history
-      "Mod+C".action.spawn = [
-        "sh"
-        "-c"
-        "cliphist list | fuzzel --dmenu | cliphist decode | wl-copy"
-      ];
-
       # Hotkey overlay
       "Mod+Shift+Slash".action.show-hotkey-overlay = { };
-
-      # Alternative launcher (Mod+D also does this)
-      "Mod+Space".action.spawn = "fuzzel";
-
-      # Tab management
       "Mod+T".action.toggle-column-tabbed-display = { };
       "Mod+Shift+T".action.consume-or-expel-window-left = { };
 

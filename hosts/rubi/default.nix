@@ -258,6 +258,10 @@
   };
 
   # Power management for desktop/laptop
+  services.logind = {
+    lidSwitch = "ignore";
+    lidSwitchDocked = "ignore";
+  };
   services.power-profiles-daemon.enable = true;
   services.thermald.enable = true;
 
