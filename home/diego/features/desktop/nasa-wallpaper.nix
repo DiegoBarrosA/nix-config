@@ -9,6 +9,7 @@ let
       pkgs.awww
       pkgs.coreutils
       pkgs.gnused
+      pkgs.gnugrep
       pkgs.util-linux
     ]}
 
