@@ -29,8 +29,6 @@
     ./features/cli
     ./features/desktop/common # Firefox, Qt, Stylix
     ./features/desktop/sway # Sway desktop configuration
-    ./features/desktop/niri # Niri desktop configuration
-    ./features/desktop/nasa-wallpaper.nix # NASA APOD daily wallpaper
     ./features/ai
     ./features/ai/pixel-office.nix # Pixel Office dashboard + plugin (replaces Caffa blob-office)
     ./features/desktop/obsidian.nix

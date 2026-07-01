@@ -19,9 +19,6 @@
     # Stylix theming
     inputs.stylix.nixosModules.stylix
 
-    # Niri compositor (alongside Sway)
-    inputs.niri.nixosModules.niri
-
     # Core services
     ../common/optional/tailscale.nix
     ./sops.nix # rubi-specific SOPS secrets (minimal for desktop)
@@ -107,12 +104,6 @@
     '';
   };
 
-  # Enable Niri (scrollable-tiling Wayland compositor, alongside Sway)
-  programs.niri = {
-    enable = true;
-    package = lib.mkForce pkgs.niri;
-  };
-
   # greetd + tuigreet display manager
   services.greetd = {
     enable = true;
@@ -166,9 +157,6 @@
     sbctl
     openssl
     # python3Packages.python-miio # FIXME: broken in nixpkgs - construct version conflict
-
-    # VibePanel — eyecandy Wayland panel (replaces bar + notifications + OSD)
-    inputs.vibepanel.packages.${pkgs.system}.default
   ];
 
   # Networking
@@ -186,7 +174,7 @@
 
   # OpenCode server for remote access (Android app + web UI)
   # Binds to 0.0.0.0 but only accessible via Tailscale (trusted interface)
-  # UPower for battery reporting (required by vibepanel battery widget)
+  # UPower for battery reporting
   services.upower.enable = true;
 
   services.opencode-server = {

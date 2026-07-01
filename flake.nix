@@ -62,24 +62,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Niri Wayland compositor (scrollable-tiling)
-    niri = {
-      url = "github:sodiboo/niri-flake";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    # DankMaterialShell — full Quickshell-based desktop shell for niri
-    dms = {
-      url = "github:AvengeMedia/DankMaterialShell/stable";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    # VibePanel — eyecandy Wayland panel (replaces bar + notifs + OSD)
-    vibepanel = {
-      url = "github:prankstr/vibepanel";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # Private local config (not pushed to github)
     clin.url = "github:reekta92/clin-rs";
 
@@ -242,8 +224,6 @@
           };
           modules = (builtins.attrValues homeModules) ++ [
             inputs.stylix.homeModules.stylix
-            inputs.niri.homeModules.stylix
-            inputs.niri.homeModules.config
             inputs.private-config.homeManagerModules.employerMcpConfig
             ./home/diego/rubi.nix
           ];
