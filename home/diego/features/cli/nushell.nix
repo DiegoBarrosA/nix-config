@@ -19,11 +19,14 @@
       snr = "sudo nixos-rebuild --flake .";
       snrs = "sudo nixos-rebuild --flake . switch";
       hm = "home-manager --flake .";
-      hms = "home-manager --flake . switch";
+      hms = ''home-manager switch -b $"backup_(date now | format date '%Y-%m-%d_%H-%M-%S')" --flake .'';
       e = "emacsclient -t";
       v = "hx";
       vi = "hx";
       vim = "hx";
+      l = "ls";
+      lk = "ls";
+      ll = "ls";
 
       # Migrated from fish shellAliases
       getip = "curl ifconfig.me";

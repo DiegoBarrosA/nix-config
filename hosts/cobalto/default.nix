@@ -74,6 +74,7 @@
 
     ../common/optional/samba.nix
     ../common/optional/home-assistant.nix
+    ../common/optional/miniflux.nix # RSS reader (Stylix-themed), embedded in HA dashboard
     ../common/optional/go2rtc.nix
     ../common/optional/cameras.nix
     ../common/optional/music-assistant.nix
