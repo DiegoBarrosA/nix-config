@@ -35,6 +35,8 @@
       "/var/lib/jellyfin"
       "/var/lib/cockpit"
       "/var/lib/hass"
+      "/var/lib/miniflux"
+      "/var/lib/postgresql"
       "/var/lib/private/music-assistant"
 
       # Servarr suite data directories
@@ -199,6 +201,10 @@
 
     # Home Assistant directory
     "d /nix/persist/var/lib/hass 0700 hass hass -"
+
+    # Miniflux + PostgreSQL data
+    "d /nix/persist/var/lib/miniflux 0750 miniflux miniflux -"
+    "d /nix/persist/var/lib/postgresql 0750 postgres postgres -"
 
     # Servarr suite directories
     "d /nix/storage/servarr 0755 root root -"
