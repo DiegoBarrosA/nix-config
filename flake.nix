@@ -213,7 +213,7 @@
           };
           modules = (builtins.attrValues homeModules) ++ [
             inputs.stylix.homeModules.stylix
-            inputs.private-config.homeManagerModules.employerMcpConfig
+            inputs.private-config.homeManagerModules.workMcpConfig
             ./home/diego/cobalto.nix
           ];
         };
@@ -227,7 +227,7 @@
           };
           modules = (builtins.attrValues homeModules) ++ [
             inputs.stylix.homeModules.stylix
-            inputs.private-config.homeManagerModules.employerMcpConfig
+            inputs.private-config.homeManagerModules.workMcpConfig
             inputs.private-config.homeManagerModules.workExtras
             ./home/diego/rubi.nix
           ];
@@ -242,7 +242,7 @@
           };
           modules = (builtins.attrValues homeModules) ++ [
             inputs.stylix.homeModules.stylix
-            inputs.private-config.homeManagerModules.employerMcpConfig
+            inputs.private-config.homeManagerModules.workMcpConfig
             ./home/diego/lapislazuli.nix
           ];
         };

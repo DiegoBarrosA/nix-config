@@ -46,16 +46,9 @@
     inputs.nixvirt.nixosModules.default
     # ./win11-vm.nix
 
-    # Employer security / VPN modules (from private-config)
-    inputs.private-config.nixosModules.carbonBlack
-    inputs.private-config.nixosModules.nvidiaVpn
-    inputs.private-config.nixosModules.atlassianMcpSecrets
-
-    # Prisma Access VPN (employer-specific, from private-config)
-    inputs.private-config.nixosModules.prismaAccess
-
-    # Prisma Browser (employer-specific, from private-config)
-    inputs.private-config.nixosModules.prismaBrowser
+    # Work (customer) system module — VPN, endpoint security, work secrets.
+    # Contents are defined entirely in private-config.
+    inputs.private-config.nixosModules.work
   ];
 
   # TTY console font - large bold Terminus for hacky TUI aesthetic
@@ -301,7 +294,7 @@
         inputs.ai-tooling.homeManagerModules.claude-code-config
         inputs.ai-tooling.homeManagerModules.cursor-config
         inputs.ai-tooling.homeManagerModules.ai-skills
-        inputs.private-config.homeManagerModules.employerMcpConfig
+        inputs.private-config.homeManagerModules.workMcpConfig
         inputs.private-config.homeManagerModules.workExtras
         ../../home/diego/rubi.nix
       ];
