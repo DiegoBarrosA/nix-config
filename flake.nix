@@ -3,14 +3,7 @@
   inputs = {
 
     hardware.url = "github:nixos/nixos-hardware";
-    nixos-apple-silicon.url = "github:tpwrules/nixos-apple-silicon";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-24.11";
-    musnix.url = "github:musnix/musnix";
-    darwin = {
-      url = "github:lnl7/nix-darwin/master";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nix-on-droid = {
       url = "github:nix-community/nix-on-droid/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -22,18 +15,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    zjstatus = {
-      url = "github:dj95/zjstatus";
-    };
     sops-nix = {
       url = "github:mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    emacs-overlay.url = "github:nix-community/emacs-overlay";
-    nix-doom-emacs.url = "github:nix-community/nix-doom-emacs";
     nix-colors.url = "github:misterio77/nix-colors";
-
-    themes.url = "github:misterio77/themes";
 
     stylix.url = "github:danth/stylix";
 
@@ -60,6 +46,13 @@
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Agent skills for Obsidian (kepano/obsidian-skills). Consumed as raw
+    # SKILL.md files via programs.ai-skills.extraSkillSources, so flake=false.
+    obsidian-skills = {
+      url = "github:kepano/obsidian-skills";
+      flake = false;
     };
 
     # Private local config (not pushed to github)
@@ -109,9 +102,10 @@
         let
           pkgs = legacyPackages.${system};
           lib = inputs.nixpkgs.lib;
-          privatePackages = inputs.private-config.packages.${system} or {};
+          privatePackages = inputs.private-config.packages.${system} or { };
         in
-        import ./pkgs { inherit pkgs lib privatePackages; } // {
+        import ./pkgs { inherit pkgs lib privatePackages; }
+        // {
           clin = inputs.clin.packages.${system}.default;
           coderabbit-cli = inputs.llm-agents.packages.${system}.coderabbit-cli;
         }
