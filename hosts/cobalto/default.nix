@@ -18,74 +18,74 @@
     ./hardware-configuration.nix
 
     # Core services
-    ../common/optional/tailscale.nix
-    ../common/optional/devices.nix
-    ../common/optional/hosts.nix
-    ../common/optional/environment.nix
+    ../common/optional/network/tailscale.nix
+    ../common/optional/desktop/devices.nix
+    ../common/optional/network/hosts.nix
+    ../common/optional/system/environment.nix
 
     # Automation modules
-    ../common/optional/sops-secrets.nix
-    ../common/optional/automated-storage.nix
+    ../common/optional/system/sops-secrets.nix
+    ../common/optional/system/automated-storage.nix
     ./impermanence.nix # cobalto-specific impermanence (systemd stage 1)
 
     # Server configurations
-    ../common/optional/amd-gpu-acceleration.nix # For AI/compute workloads
+    ../common/optional/desktop/amd-gpu-acceleration.nix # For AI/compute workloads
     # ../common/optional/nginx-tailscale.nix      # Disabled: replaced by minerales-network.nix
-    ../common/optional/minerales-network.nix # Private minerales.network subdomains
-    ../common/optional/cloudflare-tunnel.nix # Cloudflare Tunnel for Alexa Smart Home
+    ../common/optional/network/minerales-network.nix # Private minerales.network subdomains
+    ../common/optional/network/cloudflare-tunnel.nix # Cloudflare Tunnel for Alexa Smart Home
 
     # Native services (replacing containers)
     # ../common/optional/media-stack-native.nix  # Replaced by native servarr-suite.nix
-    ../common/optional/llama-cpp-server.nix # llama.cpp with Vulkan for RX580 GPU acceleration
-    # ../common/optional/ollama-native.nix # Disabled: ROCm doesn't support gfx803/RX580
-    ../common/optional/flaresolverr.nix # Cloudflare bypass proxy
+    ../common/optional/ai/llama-cpp-server.nix # llama.cpp with Vulkan for RX580 GPU acceleration
+    # ../common/optional/ai/ollama-native.nix # Disabled: ROCm doesn't support gfx803/RX580
+    ../common/optional/media/flaresolverr.nix # Cloudflare bypass proxy
 
     # Native dashboard and sync services
-    ../common/optional/homepage-native.nix # Native Homepage with full system integration
-    ../common/optional/syncthing.nix # Native Syncthing (running as user service)
-    ../common/optional/couchdb.nix # CouchDB for Obsidian LiveSync backend
-    # ../common/optional/nextcloud.nix # Nextcloud with notes sync - DISABLED: fix setup issue
+    ../common/optional/apps/homepage-native.nix # Native Homepage with full system integration
+    ../common/optional/network/syncthing.nix # Native Syncthing (running as user service)
+    ../common/optional/apps/couchdb.nix # CouchDB for Obsidian LiveSync backend
+    # ../common/optional/apps/nextcloud.nix # Nextcloud with notes sync - DISABLED: fix setup issue
 
     # Container services (individual files)
-    ../common/optional/open-webui.nix # LLM chat interface
+    ../common/optional/ai/open-webui.nix # LLM chat interface
     # Individual native Servarr services
-    ../common/optional/prowlarr.nix
-    ../common/optional/sonarr.nix
-    ../common/optional/radarr.nix
-    ../common/optional/lidarr.nix
-    ../common/optional/calibre.nix
-    ../common/optional/lazylibrarian.nix
-    ../common/optional/bazarr.nix
-    ../common/optional/transmission.nix # Native Transmission BitTorrent client
+    ../common/optional/media/prowlarr.nix
+    ../common/optional/media/sonarr.nix
+    ../common/optional/media/radarr.nix
+    ../common/optional/media/lidarr.nix
+    ../common/optional/media/calibre.nix
+    ../common/optional/media/lazylibrarian.nix
+    ../common/optional/media/bazarr.nix
+    ../common/optional/media/transmission.nix # Native Transmission BitTorrent client
     # Native media services
-    ../common/optional/jellyfin.nix # Native Jellyfin media server
+    ../common/optional/media/jellyfin.nix # Native Jellyfin media server
 
     # Multi-room audio
-    ../common/optional/snapcast.nix
+    ../common/optional/media/snapcast.nix
 
     # Communication
-    ../common/optional/matrix-synapse.nix # Private Matrix homeserver (Tailscale only)
+    ../common/optional/apps/matrix-synapse.nix # Private Matrix homeserver (Tailscale only)
     # ../common/optional/matrix-music-bot.nix # Disabled: container registry rate-limited
 
     # Media directory structure
-    ../common/optional/media-directories.nix
+    ../common/optional/media/media-directories.nix
     # "./common/optional/media-stack-native.nix"  # Disabled in favor of servarr-suite.nix        # Now uses native NixOS services
 
-    ../common/optional/samba.nix
-    ../common/optional/home-assistant.nix
-    ../common/optional/miniflux.nix # RSS reader (Stylix-themed), embedded in HA dashboard
-    ../common/optional/go2rtc.nix
-    ../common/optional/cameras.nix
-    ../common/optional/music-assistant.nix
+    ../common/optional/network/samba.nix
+    ../common/optional/apps/home-assistant.nix
+    ../common/optional/media/miniflux.nix # RSS reader (Stylix-themed), embedded in HA dashboard
+    ../common/optional/apps/go2rtc.nix
+    ../common/optional/apps/cameras.nix
+    ../common/optional/media/music-assistant.nix
 
     # OpenCode remote access (API + web UI)
-    ../common/optional/opencode-server.nix
+    ../common/optional/ai/opencode-server.nix
 
     # Invidious - YouTube frontend
-    ../common/optional/invidious.nix
+    ../common/optional/media/invidious.nix
 
     # Boot configuration
-    ../common/optional/systemdboot.nix
+    ../common/optional/system/systemdboot.nix
   ];
 
   # Basic server configuration
