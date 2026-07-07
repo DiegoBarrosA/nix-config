@@ -302,6 +302,7 @@
         inputs.ai-tooling.homeManagerModules.cursor-config
         inputs.ai-tooling.homeManagerModules.ai-skills
         inputs.private-config.homeManagerModules.employerMcpConfig
+        inputs.private-config.homeManagerModules.workExtras
         ../../home/diego/rubi.nix
       ];
     };

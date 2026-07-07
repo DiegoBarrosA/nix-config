@@ -228,6 +228,7 @@
           modules = (builtins.attrValues homeModules) ++ [
             inputs.stylix.homeModules.stylix
             inputs.private-config.homeManagerModules.employerMcpConfig
+            inputs.private-config.homeManagerModules.workExtras
             ./home/diego/rubi.nix
           ];
         };
