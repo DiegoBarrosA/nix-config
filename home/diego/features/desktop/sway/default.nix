@@ -204,7 +204,7 @@ let
     #
     # Usage:
     #   scrcpy-stream toggle               - toggle mirroring (default)
-    #   scrcpy-stream start                 - start mirroring on workspace 0
+    #   scrcpy-stream start                 - start mirroring on workspace 10
     #   scrcpy-stream stop                  - stop mirroring
     #   scrcpy-stream status                - show ADB device status
     #   scrcpy-stream list                  - list connected ADB devices
@@ -279,8 +279,8 @@ let
         exit 1
       fi
 
-      # Switch to workspace 0 before launching
-      swaymsg 'workspace number 0'
+      # Switch to workspace 10 before launching
+      swaymsg 'workspace number 10'
 
       # Launch scrcpy with optimal defaults:
       #   --turn-screen-off : conserve phone battery
@@ -295,11 +295,11 @@ let
         --no-audio \
         --window-title "Android (scrcpy)" &
 
-      # Wait for window to appear then ensure it's on workspace 0
+      # Wait for window to appear then ensure it's on workspace 10
       sleep 1
-      swaymsg "[title=\"Android (scrcpy)\"] move workspace number 0" 2>/dev/null || true
+      swaymsg "[title=\"Android (scrcpy)\"] move workspace number 10" 2>/dev/null || true
 
-      notify-send "scrcpy" "Android mirror started on workspace 0"
+      notify-send "scrcpy" "Android mirror started on workspace 10"
     }
 
     stop_mirror() {
@@ -453,7 +453,7 @@ let
         echo ""
         echo "Mirror / control an Android device via scrcpy."
         echo ""
-        echo "Wired:  Connect USB → toggle starts mirroring on workspace 0"
+        echo "Wired:  Connect USB → toggle starts mirroring on workspace 10"
         echo ""
         echo "Wireless setup (first time only):"
         echo "  1. Connect USB → scrcpy-stream wireless"
@@ -532,6 +532,7 @@ in
     ./mako.nix
     ./swaylock.nix
     ./fuzzel.nix
+    ./bluetooth.nix
   ];
 
   # Cliphist clipboard manager (systemd service)
@@ -691,6 +692,17 @@ in
           };
           command = "border pixel 0, floating enable, fullscreen disable, move absolute position 0 0";
         }
+        # Inhibit idle while Firefox is focused so swayidle doesn't fire the lock
+        # timer during screen shares (the XDG Inhibit portal isn't supported by
+        # xdg-desktop-portal-wlr, so apps can't prevent lock via the portal).
+        {
+          criteria.app_id = "firefox-devedition";
+          command = "inhibit_idle focus";
+        }
+        {
+          criteria.app_id = "firefox";
+          command = "inhibit_idle focus";
+        }
       ];
 
       input = {
@@ -826,7 +838,7 @@ in
         "Mod4+7" = "workspace number 7";
         "Mod4+8" = "workspace number 8";
         "Mod4+9" = "workspace number 9";
-        "Mod4+0" = "workspace number 0";
+        "Mod4+0" = "workspace number 10";
 
         # Horizontal workspace switching
         "Mod4+Tab" = "workspace next";
@@ -842,7 +854,7 @@ in
         "Mod4+Shift+7" = "move container to workspace number 7";
         "Mod4+Shift+8" = "move container to workspace number 8";
         "Mod4+Shift+9" = "move container to workspace number 9";
-        "Mod4+Shift+0" = "move container to workspace number 0";
+        "Mod4+Shift+0" = "move container to workspace number 10";
 
         # Layout
         "Mod4+b" = "splith";
@@ -877,8 +889,7 @@ in
 
         # Android mirroring & control (scrcpy)
         "Mod4+Shift+o" = "exec scrcpy-stream toggle"; # Toggle Android mirror
-        "Mod4+Ctrl+o" =
-          "exec scrcpy-stream status && notify-send 'scrcpy' \"$(scrcpy-stream status)\""; # Show status
+        "Mod4+Ctrl+o" = "exec scrcpy-stream status && notify-send 'scrcpy' \"$(scrcpy-stream status)\""; # Show status
 
         # Swap workspaces between outputs
         "Mod4+Ctrl+Left" = "exec swap-workspace-output left";
