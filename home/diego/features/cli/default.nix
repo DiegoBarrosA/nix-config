@@ -17,7 +17,7 @@ in
     ./fzf.nix
     ./bat.nix
     # ./fish.nix # Fish shell with home-manager module (disabled - migrated to nushell)
-    ./zellij.nix # Zellij multiplexer with Material Darker theme
+    ./zellij.nix # Zellij multiplexer (manual material-darker theme)
     ./nushell.nix # Nushell with vi mode, Ctrl+T for Zellij
     ./yazi.nix
     ./zathura.nix
@@ -28,6 +28,7 @@ in
     with pkgs;
     # Core CLI tools (all platforms)
     [
+      timr-tui
       basalt
       comma # Install and run programs by sticking a , before them
       fd # Better find
