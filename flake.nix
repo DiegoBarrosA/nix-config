@@ -123,27 +123,21 @@
           coderabbit-cli = inputs.llm-agents.packages.${system}.coderabbit-cli;
         }
       );
-      nixosConfigurations =
-        let
-          mkHost =
-            system: hostname:
-            inputs.nixpkgs.lib.nixosSystem {
-              pkgs = legacyPackages.${system};
-              modules = [ ./hosts/${hostname} ] ++ (builtins.attrValues nixosModules);
-              # MODIFICATION 2: Changed 'outputs' to 'self'
-              specialArgs = {
-                inherit inputs;
-                outputs = self;
-                self = self;
-                customPkgs = packages.${system};
-              };
-            };
-        in
-        {
-          cobalto = mkHost "x86_64-linux" "cobalto";
-          granate = mkHost "x86_64-linux" "granate";
-          rubi = mkHost "x86_64-linux" "rubi";
-        };
+      myLib = import ./lib {
+        inherit
+          inputs
+          self
+          legacyPackages
+          packages
+          homeModules
+          nixosModules
+          ;
+      };
+      nixosConfigurations = {
+        cobalto = myLib.mkHost "x86_64-linux" "cobalto";
+        granate = myLib.mkHost "x86_64-linux" "granate";
+        rubi = myLib.mkHost "x86_64-linux" "rubi";
+      };
 
       # Deploy-rs configuration
       deploy = {
@@ -207,49 +201,11 @@
 
       # --- MOVE homeConfigurations TO TOP LEVEL ---
       homeConfigurations = {
-        "diego@cobalto" = inputs.home-manager.lib.homeManagerConfiguration {
-          pkgs = legacyPackages."x86_64-linux";
-          extraSpecialArgs = {
-            inherit inputs;
-            inherit (inputs) nix-colors;
-            customPkgs = packages."x86_64-linux";
-            privateConfig = inputs.private-config or { };
-          };
-          modules = (builtins.attrValues homeModules) ++ [
-            inputs.stylix.homeModules.stylix
-            inputs.private-config.homeManagerModules.workMcpConfig
-            ./home/diego/cobalto.nix
-          ];
-        };
-        "diego@rubi" = inputs.home-manager.lib.homeManagerConfiguration {
-          pkgs = legacyPackages."x86_64-linux";
-          extraSpecialArgs = {
-            inherit inputs;
-            inherit (inputs) nix-colors;
-            customPkgs = packages."x86_64-linux";
-            privateConfig = inputs.private-config or { };
-          };
-          modules = (builtins.attrValues homeModules) ++ [
-            inputs.stylix.homeModules.stylix
-            inputs.private-config.homeManagerModules.workMcpConfig
-            inputs.private-config.homeManagerModules.workExtras
-            ./home/diego/rubi.nix
-          ];
-        };
-        "diego@lapislazuli" = inputs.home-manager.lib.homeManagerConfiguration {
-          pkgs = legacyPackages."aarch64-darwin";
-          extraSpecialArgs = {
-            inherit inputs;
-            inherit (inputs) nix-colors;
-            customPkgs = packages."aarch64-darwin";
-            privateConfig = inputs.private-config or { };
-          };
-          modules = (builtins.attrValues homeModules) ++ [
-            inputs.stylix.homeModules.stylix
-            inputs.private-config.homeManagerModules.workMcpConfig
-            ./home/diego/lapislazuli.nix
-          ];
-        };
+        "diego@cobalto" = myLib.mkHome "x86_64-linux" ./home/diego/cobalto.nix [ ];
+        "diego@rubi" = myLib.mkHome "x86_64-linux" ./home/diego/rubi.nix [
+          inputs.private-config.homeManagerModules.workExtras
+        ];
+        "diego@lapislazuli" = myLib.mkHome "aarch64-darwin" ./home/diego/lapislazuli.nix [ ];
       };
 
       # Nix-on-Droid configurations (Android)
