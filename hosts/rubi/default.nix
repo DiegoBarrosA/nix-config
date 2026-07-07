@@ -20,7 +20,7 @@
     inputs.stylix.nixosModules.stylix
 
     # Core services
-    ../common/optional/tailscale.nix
+    ../common/optional/network/tailscale.nix
     ./sops.nix # rubi-specific SOPS secrets (minimal for desktop)
 
     # Impermanence (rubi-specific for desktop)
@@ -30,19 +30,19 @@
     ./bootloader.nix
 
     # USB/iOS/device mounting support
-    ../common/optional/devices.nix
+    ../common/optional/desktop/devices.nix
 
     # Steam gaming (GameMode, gamescope, Proton-GE) tuned for the 680M APU
-    ../common/optional/steam.nix
+    ../common/optional/desktop/steam.nix
 
     # OpenCode remote access (API + web UI)
-    ../common/optional/opencode-server.nix
+    ../common/optional/ai/opencode-server.nix
 
     # Local LLM inference (Vulkan on AMD 680M APU — model cache at /var/lib/llama-cpp)
-    ../common/optional/llama-cpp-server.nix
+    ../common/optional/ai/llama-cpp-server.nix
 
     # libvirt/KVM + virt-manager (Windows 11 VM with virtio-gpu)
-    # ../common/optional/virtualization.nix
+    # ../common/optional/desktop/virtualization.nix
     inputs.nixvirt.nixosModules.default
     # ./win11-vm.nix
 

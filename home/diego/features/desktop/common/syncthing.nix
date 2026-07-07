@@ -7,7 +7,7 @@
 
 {
   # Syncthing service via Home Manager
-  # Syncs with cobalto (folder IDs must match hosts/common/optional/syncthing.nix)
+  # Syncs with cobalto (folder IDs must match hosts/common/optional/network/syncthing.nix)
 
   services.syncthing = {
     enable = true;
