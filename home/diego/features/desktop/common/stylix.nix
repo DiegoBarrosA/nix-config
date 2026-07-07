@@ -47,7 +47,7 @@ in
       base0A = colors.base0A;
       base0B = colors.base0B;
       base0C = colors.base0C;
-      base0D = colors.base04;
+      base0D = colors.base0D;
       base0E = colors.base0E;
       base0F = colors.base0F;
     };
@@ -116,8 +116,11 @@ in
       mako.enable = false;
       swaylock.enable = false;
       fuzzel.enable = false;
-      bat.enable = false;
+      bat.enable = true;
       helix.enable = true;
+      # Zellij themed manually (features/cli/zellij.nix) due to tab-bar
+      # green-fallback bug with Stylix's structured theme format
+      zellij.enable = false;
 
       # App targets
       yazi.enable = true;
