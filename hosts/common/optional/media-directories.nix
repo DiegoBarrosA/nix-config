@@ -80,6 +80,7 @@
     # Media directories (library)
     "d /mnt/media 0755 diego media -"
     "d /mnt/media/Movies 0755 diego media -"
+    "L+ /mnt/media/movies - - - - /mnt/media/Movies"
     "d /mnt/media/Tv 0755 diego media -"
     "d /mnt/media/Music 0755 diego media -"
     "d /mnt/media/Books 0755 diego media -"

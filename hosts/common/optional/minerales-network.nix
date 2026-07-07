@@ -16,12 +16,15 @@ let
     };
 
   # Standard proxy config (use 127.0.0.1 explicitly to avoid IPv6 resolution issues)
+  # NOTE: Don't set Host $host here — recommendedProxySettings already includes a global
+  # proxy_set_header Host $host via the headers include.  Duplicating it in the location
+  # block can cause issues with ASP.NET Core apps (Sonarr/Prowlarr/Lidarr/etc.) when
+  # nginx processes the include after the explicit directive, resulting in a spurious 400.
   standardProxy = port: {
     proxyPass = "http://127.0.0.1:${toString port}";
     proxyWebsockets = true;
     extraConfig = ''
       proxy_buffering off;
-      proxy_set_header Host $host;
       proxy_set_header X-Forwarded-Proto $scheme;
       proxy_set_header X-Forwarded-Host $host;
     '';
