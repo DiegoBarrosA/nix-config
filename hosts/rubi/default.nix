@@ -131,6 +131,9 @@
       settings.screencast = {
         chooser_type = "simple";
         chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";
+        # Cap frame rate; without this the portal may stall on damage-only
+        # updates and the consumer sees a frozen stream.
+        max_fps = 30;
       };
     };
     extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
@@ -194,7 +197,6 @@
       CONFLUENCE_API_KEY = config.sops.secrets."confluence-api-key".path;
       TRELLO_API_KEY = config.sops.secrets."trello-api-key".path;
       TRELLO_API_TOKEN = config.sops.secrets."trello-api-token".path;
-      OBSIDIAN_API_KEY = config.sops.secrets."obsidian-api-key".path;
       TEMPO_API_TOKEN = config.sops.secrets."tempo-api-key".path;
       TEMPO_JIRA_API_TOKEN = config.sops.secrets."tempo-jira-api-key".path;
       TEMPO_JIRA_EMAIL = config.sops.secrets."tempo-jira-email".path;
@@ -293,7 +295,6 @@
         ../../modules/home-manager/fonts.nix
         ../../modules/home-manager/kanshi.nix
         ../../modules/home-manager/monitors.nix
-        ../../modules/home-manager/obsidian-config.nix
         ../../modules/home-manager/opencode-config.nix
         ../../modules/home-manager/mcp-config.nix
         ../../modules/home-manager/antigravity-config.nix
