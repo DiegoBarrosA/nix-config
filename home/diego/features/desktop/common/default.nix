@@ -18,7 +18,6 @@
     ./syncthing.nix
     ./pavucontrol.nix
     ./localsend.nix
-    # ./obsidian.nix
     ./alacritty.nix
     ./obs-studio.nix
     ./mpv.nix
