@@ -38,8 +38,8 @@
       # CUPS printing
       "/var/lib/cups"
 
-      # VPN client state
-      "/opt/paloaltonetworks/prismaaccessagent"
+      # VPN client state (/opt/paloaltonetworks/prismaaccessagent) is
+      # contributed by the customer module (private-config).
 
       # PipeWire/audio state
       "/var/lib/pipewire"
@@ -114,8 +114,8 @@
         # Syncthing (preserve device identity across reboots)
         ".config/syncthing"
 
-        # VPN client user state
-        "paloaltonetworks/prismaaccessagent"
+        # VPN client user state (paloaltonetworks/prismaaccessagent) is
+        # contributed by the customer module (private-config).
       ];
 
       files = [ ];

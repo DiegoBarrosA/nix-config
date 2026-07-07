@@ -178,25 +178,11 @@
     host = "0.0.0.0";
     port = 4096;
     passwordFile = config.sops.secrets."opencode-server-password".path;
-    # Load API keys for model providers and MCP servers
+    # Personal API keys only. Work provider/MCP env (NVIDIA, Jira, Confluence,
+    # Trello, Tempo, Jira DC) is contributed by the customer module
+    # (private-config: customers/nvidia/modules/defaults.nix) and merges here.
     secretEnv = {
       OPENCODE_API_KEY = config.sops.secrets."opencode-api-key".path;
-      NVIDIA_API_KEY = config.sops.secrets."nvidia-api-key".path;
-      JIRA_BASE_URL = config.sops.secrets."jira-base-url".path;
-      JIRA_EMAIL = config.sops.secrets."jira-email".path;
-      JIRA_API_KEY = config.sops.secrets."jira-api-key".path;
-      CONFLUENCE_BASE_URL = config.sops.secrets."confluence-base-url".path;
-      CONFLUENCE_EMAIL = config.sops.secrets."confluence-email".path;
-      CONFLUENCE_API_KEY = config.sops.secrets."confluence-api-key".path;
-      TRELLO_API_KEY = config.sops.secrets."trello-api-key".path;
-      TRELLO_API_TOKEN = config.sops.secrets."trello-api-token".path;
-      TEMPO_API_TOKEN = config.sops.secrets."tempo-api-key".path;
-      TEMPO_JIRA_API_TOKEN = config.sops.secrets."tempo-jira-api-key".path;
-      TEMPO_JIRA_EMAIL = config.sops.secrets."tempo-jira-email".path;
-      TEMPO_JIRA_BASE_URL = config.sops.secrets."tempo-jira-base-url".path;
-      JIRA_DC_BASE_URL = config.sops.secrets."jira-dc-base-url".path;
-      JIRA_DC_EMAIL = config.sops.secrets."jira-dc-email".path;
-      JIRA_DC_API_KEY = config.sops.secrets."jira-dc-api-key".path;
       GITHUB_TOKEN = config.sops.secrets."github-token".path;
     };
   };
@@ -254,20 +240,9 @@
   # Printing support
   services.printing.enable = true;
 
-  # Prisma Access Agent VPN (from private-config module)
-  # autoStart must stay true to avoid a mkIf bug in the private-config module
-  # (setting it false leaves environment.etc."xdg/autostart/PAGui.desktop".source
-  # without a value). Instead, strip wantedBy from both services so neither
-  # starts at boot. Use `vpn-on` / `vpn-off` to control manually.
-  services.prismaAccess = {
-    enable = true;
-    autoStart = true;
-  };
-  systemd.services.paa.wantedBy = lib.mkForce [ ];
-  systemd.user.services.paa-gui.wantedBy = lib.mkForce [ ];
-
-  # Prisma Browser (from private-config module)
-  services.prismaBrowser.enable = true;
+  # Prisma Access Agent VPN + Prisma Browser enables, boot-autostart strip, and
+  # VPN state persistence are contributed by the customer module
+  # (private-config: customers/nvidia/modules/defaults.nix).
 
   # Enable nix-ld for running unpatched binaries
   programs.nix-ld.enable = true;
