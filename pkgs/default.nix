@@ -12,4 +12,5 @@ in
   lazylibrarian = pkgs.callPackage ./lazylibrarian { inherit iso639-lang; };
   jobspy-mcp = pkgs.callPackage ./jobspy-mcp { };
   thunderbird-mcp = pkgs.callPackage ./thunderbird-mcp { };
+  codex-acp = pkgs.callPackage ./codex-acp { };
 } // privatePackages
