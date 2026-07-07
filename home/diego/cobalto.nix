@@ -24,7 +24,6 @@
     plugins = (import ./features/ai/session-character-visualizer.nix) { inherit pkgs; };
     secretEnv = {
       OPENCODE_API_KEY = "/run/secrets/opencode-api-key";
-      OBSIDIAN_API_KEY = "/run/secrets/obsidian-api-key";
       GITHUB_TOKEN = "/run/secrets/github-token";
     };
   };
