@@ -27,7 +27,6 @@
     ../common/optional/sops-secrets.nix
     ../common/optional/automated-storage.nix
     ./impermanence.nix # cobalto-specific impermanence (systemd stage 1)
-    # ./sops-employer.nix # Employer-specific secrets from private-config - TEMPORARILY DISABLED
 
     # Server configurations
     ../common/optional/amd-gpu-acceleration.nix # For AI/compute workloads
