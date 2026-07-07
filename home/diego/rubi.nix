@@ -9,7 +9,7 @@
   ...
 }:
 {
-  colorscheme.type = "black-metal-venom";
+  colorscheme.type = "material-darker";
 
   imports = [
     # Rubi-local toggles for desktop setup.
@@ -34,7 +34,10 @@
     ./features/desktop/obsidian.nix
   ];
 
-  home.packages = [ customPkgs.clin customPkgs.coderabbit-cli ];
+  home.packages = [
+    customPkgs.clin
+    customPkgs.coderabbit-cli
+  ];
 
   # GTK bookmarks for file manager (using config.home.homeDirectory to avoid hardcoding)
   gtk.gtk3.bookmarks = [
@@ -68,7 +71,6 @@
           # tempo/netsuite). Only general + personal tooling. Keeps employer
           # tool definitions out of personal-context sessions entirely.
           mcpServers = [
-            "obsidian"
             "nixos"
             "telegram"
             "jobspy"
@@ -149,7 +151,7 @@
               };
             };
             # Disable the chatty MCP servers globally; they are re-enabled
-            # per-agent above. The lean default keeps obsidian/nixos/telegram/
+            # per-agent above. The lean default keeps nixos/telegram/
             # jobspy hot (small tool counts) while gating the big ones.
             tools = {
               "github_*" = false;
@@ -163,7 +165,6 @@
           # Groq models are small/fast — keep the tool surface minimal to avoid
           # blowing the context window with MCP tool definitions.
           mcpServers = [
-            "obsidian"
             "nixos"
           ];
           config = {
@@ -220,33 +221,34 @@
 
     # Skills are sourced from the vault via programs.ai-skills (all prompts migrated there).
     skills = { };
-    agents = (import ./features/ai/gsd-core-agents.nix).agents // (import ./features/ai/coderabbit-agent.nix);
+    agents =
+      (import ./features/ai/gsd-core-agents.nix).agents // (import ./features/ai/coderabbit-agent.nix);
     # Pixel Office plugin (pixel-office.js) is provided by ./features/ai/pixel-office.nix
     commands = (import ./features/ai/gsd-core-agents.nix).commands // {
       "review" = ''
----
-description: Run CodeRabbit AI review on uncommitted changes or against base branch
-argument-hint: "[--type uncommitted | --base main]"
-tools:
-  bash: true
----
-<objective>
-Run CodeRabbit CLI review on the current workspace.
-</objective>
+        ---
+        description: Run CodeRabbit AI review on uncommitted changes or against base branch
+        argument-hint: "[--type uncommitted | --base main]"
+        tools:
+          bash: true
+        ---
+        <objective>
+        Run CodeRabbit CLI review on the current workspace.
+        </objective>
 
-<context>
-User arguments: $ARGUMENTS
-</context>
+        <context>
+        User arguments: $ARGUMENTS
+        </context>
 
-<process>
-1. Parse $ARGUMENTS:
-   - If `--type uncommitted` or no flag: `cr review --agent --type uncommitted`
-   - If `--base <branch>`: `cr review --agent --base <branch>`
-   - Otherwise: `cr review --agent --type uncommitted`
-2. Run the command and capture JSON output
-3. Present findings in three tiers: **Critical**, **Warning**, **Info**
-4. If user asks to fix issues, suggest `/gsd-code-review --fix`
-</process>
+        <process>
+        1. Parse $ARGUMENTS:
+           - If `--type uncommitted` or no flag: `cr review --agent --type uncommitted`
+           - If `--base <branch>`: `cr review --agent --base <branch>`
+           - Otherwise: `cr review --agent --type uncommitted`
+        2. Run the command and capture JSON output
+        3. Present findings in three tiers: **Critical**, **Warning**, **Info**
+        4. If user asks to fix issues, suggest `/gsd-code-review --fix`
+        </process>
       '';
     };
     references = (import ./features/ai/gsd-core-agents.nix).references;

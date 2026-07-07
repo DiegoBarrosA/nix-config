@@ -21,7 +21,6 @@
   # NOTE: mcp.nix not imported here — firefox-devedition not available on aarch64-darwin
   programs.mcp-config = {
     enable = true;
-    obsidian.enable = true;
     mcpNixos.enable = true;
   };
 
@@ -37,34 +36,49 @@
 
   programs.ai-skills.opencodeProfiles = [ ];
 
-  # Obsidian configuration (managed by modules/home-manager/obsidian-config.nix)
-  programs.obsidian-vault = {
+  programs.obsidian = {
     enable = true;
-    vaultPath = "${config.home.homeDirectory}/Notes";
-    settings = {
-      vimMode = true;
-      showLineNumber = true;
-      showInlineTitle = false;
-      alwaysUpdateLinks = true;
-      newFileLocation = "folder";
-      newFileFolderPath = "Quick notes";
-      attachmentFolderPath = "Attachments";
-      openBehavior = "daily";
+    cli.enable = true;
+
+    vaults.notes = {
+      target = "Notes";
+
+      settings = {
+        app = {
+          vimMode = true;
+          showLineNumber = true;
+          showInlineTitle = false;
+          alwaysUpdateLinks = true;
+          newFileLocation = "folder";
+          newFileFolderPath = "Quick notes";
+          attachmentFolderPath = "Attachments";
+          openBehavior = "daily";
+        };
+
+        appearance = {
+          theme = "obsidian";
+          showViewHeader = true;
+          showRibbon = false;
+        };
+
+        extraFiles."community-plugins.json".text =
+          builtins.toJSON [
+            "obsidian-excalidraw-plugin"
+            "dataview"
+            "templater-obsidian"
+          ];
+      };
     };
-    appearance = {
-      theme = "moonstone";
-      accentColor = "#828282";
-      baseFontSize = 26;
-      showViewHeader = true;
-      showRibbon = false;
-    };
-    communityPlugins = [
-      "obsidian-excalidraw-plugin"
-      "dataview"
-      "templater-obsidian"
-    ];
-    restApi.enable = true;
-    syncthing.enable = false; # Disable syncthing on this host if not needed
+  };
+
+  stylix.targets.obsidian = {
+    enable = true;
+    vaultNames = [ "notes" ];
+  };
+
+  programs.obsidian.vaults.notes.settings.appearance = {
+    interfaceFontFamily = lib.mkForce config.stylix.fonts.monospace.name;
+    textFontFamily = lib.mkForce config.stylix.fonts.monospace.name;
   };
 
   home.packages = with pkgs; [
