@@ -64,7 +64,11 @@
     clin.url = "github:reekta92/clin-rs";
 
     private-config = {
-      url = "git+ssh://git@github.com/DiegoBarrosA/nix-private-config.git";
+      # TEMP: pinned to the employer-cleanup branch while the cleanup epic is
+      # in flight (this nix-config branch consumes the neutral work* exports,
+      # which don't exist on private-config master yet). Drop ?ref when both
+      # employer-cleanup branches merge.
+      url = "git+ssh://git@github.com/DiegoBarrosA/nix-private-config.git?ref=employer-cleanup";
       flake = true;
     };
   };
