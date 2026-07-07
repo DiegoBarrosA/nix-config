@@ -47,7 +47,7 @@
     "file://${config.home.homeDirectory}/Projects"
   ];
 
-  # OpenCode MCP configuration (managed by modules/home-manager/opencode-config.nix)
+  # OpenCode MCP configuration (managed by the nix-ai-tooling opencode-config module)
   # MCP servers are shared with Zed, Claude Code, Cursor, Antigravity via programs.mcp-config
   programs.opencode-config = {
     enable = true;

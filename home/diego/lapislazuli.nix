@@ -16,7 +16,7 @@
   # macOS-specific home directory
   home.homeDirectory = lib.mkForce "/Users/${config.home.username}";
 
-  # OpenCode MCP configuration (managed by modules/home-manager/opencode-config.nix)
+  # OpenCode MCP configuration (managed by the nix-ai-tooling opencode-config module)
   # MCP servers are shared with Zed via programs.mcp-config
   # NOTE: mcp.nix not imported here — firefox-devedition not available on aarch64-darwin
   programs.mcp-config = {
