@@ -214,6 +214,35 @@
         };
       };
 
+    # Billing-context dispatcher (`oc`): routes to the right profile wrapper
+    # script based on $OPENCODE_BILLING_CONTEXT. Neutral contexts are literal;
+    # the work context is sourced from private-config (customer values live
+    # there), keyed by the neutral keyword "work" — the private flake exports
+    # only workProfile.scriptName, no customer keyword, so the old "nvidia"
+    # keyword is dropped (type `work` instead). The NVIDIA_API_KEY env-var name
+    # is kept literal, matching the existing secretEnv entry below.
+    dispatcher.contexts =
+      {
+        personal = {
+          scriptName = "ocp";
+          apiKeyEnvVar = "OPENCODE_API_KEY";
+        };
+        "opencode-go" = {
+          scriptName = "ocp";
+          apiKeyEnvVar = "OPENCODE_API_KEY";
+        };
+        groq = {
+          scriptName = "ocg";
+          apiKeyEnvVar = "GROQ_API_KEY";
+        };
+      }
+      // lib.optionalAttrs ((privateConfig.workProfile or null) != null) {
+        work = {
+          scriptName = privateConfig.workProfile.scriptName;
+          apiKeyEnvVar = "NVIDIA_API_KEY";
+        };
+      };
+
     secretEnv = (privateConfig.rubiSecretEnv or { }) // {
       NVIDIA_API_KEY = "/run/secrets/nvidia-api-key";
       GROQ_API_KEY = "/run/secrets/groq-api-key";

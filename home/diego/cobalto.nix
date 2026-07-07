@@ -26,6 +26,15 @@
       OPENCODE_API_KEY = "/run/secrets/opencode-api-key";
       GITHUB_TOKEN = "/run/secrets/github-token";
     };
+
+    # Personal-only host: keep the `oc` dispatcher available (neutral contexts
+    # only). The module now installs `oc` only when contexts are declared.
+    dispatcher.contexts = {
+      personal = {
+        scriptName = "ocp";
+        apiKeyEnvVar = "OPENCODE_API_KEY";
+      };
+    };
   };
 
   home.packages = with pkgs; [

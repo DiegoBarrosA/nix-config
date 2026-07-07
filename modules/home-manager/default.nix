@@ -5,11 +5,4 @@
   fonts = import ./fonts.nix;
   monitors = import ./monitors.nix;
   colors = import ./colors.nix;
-  opencode-config = import ./opencode-config.nix;
-  mcp-config = import ./mcp-config.nix;
-  # MCP config generators for other AI coding tools
-  claude-code-config = import ./claude-code-config.nix;
-  cursor-config = import ./cursor-config.nix;
-  antigravity-config = import ./antigravity-config.nix;
-  ai-skills = import ./ai-skills.nix;
 }
