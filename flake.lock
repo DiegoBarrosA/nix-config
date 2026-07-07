@@ -872,15 +872,16 @@
         "trello-cloud-mcp": "trello-cloud-mcp"
       },
       "locked": {
-        "lastModified": 1783089258,
-        "narHash": "sha256-aR1+1TF9Yz9WrrOaDS4435j66tR4aQ4QILEtZN/Xb3E=",
-        "ref": "refs/heads/master",
-        "rev": "8a4c82153053acf66124afce822851b68671f2c7",
-        "revCount": 62,
+        "lastModified": 1783452454,
+        "narHash": "sha256-1ppD5FQu5uKlNXMcxzfmC/mttmGJis0LG3ZJIyHW7H4=",
+        "ref": "employer-cleanup",
+        "rev": "22d7b32e1910646e24be8afaa9c08718f02319a8",
+        "revCount": 66,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/nix-private-config.git"
       },
       "original": {
+        "ref": "employer-cleanup",
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/nix-private-config.git"
       }
