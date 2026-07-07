@@ -9,7 +9,7 @@
 #     port = 4096;
 #     secretEnv = {
 #       OPENCODE_API_KEY = "/run/secrets/opencode-api-key";
-#       NVIDIA_API_KEY = "/run/secrets/nvidia-api-key";
+#       WORK_API_KEY = "/run/secrets/work-api-key";
 #     };
 #   };
 #

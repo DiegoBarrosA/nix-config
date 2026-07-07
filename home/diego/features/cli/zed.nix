@@ -62,17 +62,27 @@ let
 
   # Build language model providers from privateConfig and standard providers
   # Handle both full privateConfig and opencodeConfig-only variants
+  workOpencodeCfg = privateConfig.opencodeConfig or privateConfig;
+
+  # Work provider key: exported by private-config (workProviderId); when only
+  # the opencode config subset is passed through, derive it from the default
+  # model's "<provider>/<model>" prefix.
+  workProviderId =
+    privateConfig.workProviderId or (
+      let
+        m = workOpencodeCfg.model or null;
+      in
+      if m == null then null else lib.head (lib.splitString "/" m)
+    );
+
   workModels =
-    let
-      opencodeCfg = privateConfig.opencodeConfig or privateConfig;
-    in
-    opencodeCfg.provider."work-inference".models or { };
+    if workProviderId == null then { } else workOpencodeCfg.provider.${workProviderId}.models or { };
 
   workBaseUrl =
-    let
-      opencodeCfg = privateConfig.opencodeConfig or privateConfig;
-    in
-    opencodeCfg.provider."work-inference".options.baseURL or null;
+    if workProviderId == null then
+      null
+    else
+      workOpencodeCfg.provider.${workProviderId}.options.baseURL or null;
 
   languageModels = {
     # DeepSeek built-in provider
@@ -80,9 +90,9 @@ let
       api_url = "https://api.deepseek.com/v1";
     };
 
-    # work inference API via openai_compatible (only present when private-config supplies the URL)
+    # Work inference API via openai_compatible (only present when private-config supplies the URL)
     openai_compatible = lib.optionalAttrs (workBaseUrl != null && workModels != { }) {
-      "NVIDIA" = {
+      ${privateConfig.workProviderLabel or "Work"} = {
         api_url = workBaseUrl;
         available_models = lib.mapAttrsToList (modelId: modelCfg: {
           name = modelId;
