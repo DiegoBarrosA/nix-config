@@ -32,6 +32,15 @@
     # Provider config disabled - manage manually for employer-specific models
     provider.enable = false;
     plugins = (import ./features/ai/session-character-visualizer.nix) { inherit pkgs; };
+
+    # Personal-only host: keep the `oc` dispatcher available (neutral contexts
+    # only). The module now installs `oc` only when contexts are declared.
+    dispatcher.contexts = {
+      personal = {
+        scriptName = "ocp";
+        apiKeyEnvVar = "OPENCODE_API_KEY";
+      };
+    };
   };
 
   programs.ai-skills.opencodeProfiles = [ ];

@@ -295,12 +295,12 @@
         ../../modules/home-manager/fonts.nix
         ../../modules/home-manager/kanshi.nix
         ../../modules/home-manager/monitors.nix
-        ../../modules/home-manager/opencode-config.nix
-        ../../modules/home-manager/mcp-config.nix
-        ../../modules/home-manager/antigravity-config.nix
-        ../../modules/home-manager/claude-code-config.nix
-        ../../modules/home-manager/cursor-config.nix
-        ../../modules/home-manager/ai-skills.nix
+        inputs.ai-tooling.homeManagerModules.opencode-config
+        inputs.ai-tooling.homeManagerModules.mcp-config
+        inputs.ai-tooling.homeManagerModules.antigravity-config
+        inputs.ai-tooling.homeManagerModules.claude-code-config
+        inputs.ai-tooling.homeManagerModules.cursor-config
+        inputs.ai-tooling.homeManagerModules.ai-skills
         inputs.private-config.homeManagerModules.employerMcpConfig
         ../../home/diego/rubi.nix
       ];

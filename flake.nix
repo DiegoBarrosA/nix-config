@@ -55,6 +55,11 @@
       flake = false;
     };
 
+    # Reusable AI/agent tooling modules (extracted from this repo)
+    ai-tooling = {
+      url = "github:DiegoBarrosA/nix-ai-tooling";
+    };
+
     # Private local config (not pushed to github)
     clin.url = "github:reekta92/clin-rs";
 
@@ -77,7 +82,11 @@
       forAllSystems = inputs.nixpkgs.lib.genAttrs supportedSystems;
       overlays = import ./overlays { inherit inputs; };
       nixosModules = import ./modules/nixos;
-      homeModules = import ./modules/home-manager;
+      homeModules = import ./modules/home-manager // {
+        inherit (inputs.ai-tooling.homeManagerModules)
+          mcp-config opencode-config claude-code-config
+          cursor-config antigravity-config ai-skills;
+      };
       devShells = forAllSystems (system: {
         default = inputs.nixpkgs.legacyPackages.${system}.callPackage ./shell.nix { };
       });
