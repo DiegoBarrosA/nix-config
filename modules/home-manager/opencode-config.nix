@@ -17,7 +17,6 @@ let
   # Names of servers that opencode-config manages explicitly (from programs.mcp-config options).
   # Any programs.mcp.servers entry NOT in this set is auto-included below.
   explicitServerNames = lib.concatLists [
-    (lib.optional mcpCfg.obsidian.enable "obsidian")
     (lib.optional mcpCfg.mcpNixos.enable "nixos")
     (lib.optional mcpCfg.mcpTelegram.enable "telegram")
     (lib.optional mcpCfg.jobspy.enable "jobspy")
@@ -63,22 +62,7 @@ let
 
   # Build MCP servers configuration from shared mcp-config
   mcpServers =
-    lib.optionalAttrs mcpCfg.obsidian.enable {
-      obsidian = {
-        type = "local";
-        command = [
-          "uvx"
-          "mcp-obsidian"
-        ];
-        enabled = true;
-        environment = {
-          OBSIDIAN_HOST = mcpCfg.obsidian.host;
-          OBSIDIAN_PORT = toString mcpCfg.obsidian.port;
-          OBSIDIAN_API_KEY = "{env:OBSIDIAN_API_KEY}";
-        };
-      };
-    }
-    // lib.optionalAttrs mcpCfg.mcpNixos.enable {
+    lib.optionalAttrs mcpCfg.mcpNixos.enable {
       nixos = {
         type = "local";
         command = [
@@ -469,7 +453,12 @@ in
     # then fail to start and get dropped with no obvious signal.
     secretPlaceholders = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "PLACEHOLDER_REPLACE_ME" "REPLACE_ME" "CHANGEME" "CHANGE_ME" ];
+      default = [
+        "PLACEHOLDER_REPLACE_ME"
+        "REPLACE_ME"
+        "CHANGEME"
+        "CHANGE_ME"
+      ];
       description = ''
         Sentinel values treated as "unpopulated secret". A secretEnv whose file
         content exactly matches one of these (after trimming) is skipped with a
@@ -610,6 +599,27 @@ in
         }
       '';
     };
+
+    # ---- Exposed helpers (read-only, for other modules e.g. Zed ACP) ----
+    # These let other home-manager modules reuse the sops secret-loading and
+    # per-profile XDG_CONFIG_HOME logic without duplicating it. Set in `config`.
+    _secretEnvScript = lib.mkOption {
+      type = lib.types.str;
+      internal = true;
+      default = "";
+      description = "Shell snippet that exports opencode sops secrets. Reusable by ACP wrappers.";
+    };
+    _mkAcpWrapper = lib.mkOption {
+      type = lib.types.functionTo lib.types.package;
+      internal = true;
+      default = _: throw "opencode-config._mkAcpWrapper used before config eval (module disabled?)";
+      defaultText = lib.literalMD "internal builder";
+      description = ''
+        Builder: given a profile name, returns a package whose binary launches
+        `opencode acp` with that profile's XDG_CONFIG_HOME and secrets loaded.
+        Usage: config.programs.opencode-config._mkAcpWrapper "work".
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable (
@@ -617,7 +627,9 @@ in
       secretEnvNames = lib.attrNames cfg.secretEnv;
       # Shell-quoted, newline-separated list of placeholder sentinels used by the
       # guard below to detect unpopulated secrets.
-      placeholderMatch = lib.concatMapStringsSep " | " (p: "${lib.escapeShellArg p}") cfg.secretPlaceholders;
+      placeholderMatch = lib.concatMapStringsSep " | " (
+        p: "${lib.escapeShellArg p}"
+      ) cfg.secretPlaceholders;
       secretEnvScript = lib.concatMapStringsSep "\n" (name: ''
         if [ -r "${cfg.secretEnv.${name}}" ]; then
           __val="$( ${pkgs.coreutils}/bin/cat "${cfg.secretEnv.${name}}" )"
@@ -791,20 +803,18 @@ in
         // lib.mapAttrs' (
           name: content:
           lib.nameValuePair "opencode-profiles/${profileName}/opencode/agents/${name}.md" {
-            text = builtins.replaceStrings
-              ["/tmp/gsd-capture/opencode/"]
-              ["${config.xdg.configHome}/opencode/"]
-              content;
+            text =
+              builtins.replaceStrings [ "/tmp/gsd-capture/opencode/" ] [ "${config.xdg.configHome}/opencode/" ]
+                content;
             force = true;
           }
         ) cfg.agents
         // lib.mapAttrs' (
           name: content:
           lib.nameValuePair "opencode-profiles/${profileName}/opencode/commands/${name}.md" {
-            text = builtins.replaceStrings
-              ["/tmp/gsd-capture/opencode/"]
-              ["${config.xdg.configHome}/opencode/"]
-              content;
+            text =
+              builtins.replaceStrings [ "/tmp/gsd-capture/opencode/" ] [ "${config.xdg.configHome}/opencode/" ]
+                content;
             force = true;
           }
         ) cfg.commands
@@ -826,6 +836,19 @@ in
     in
     lib.mkMerge [
       {
+        # Expose the secret-loader + ACP wrapper builder for other modules
+        # (e.g. Zed ACP agent entries) to reuse without duplicating logic.
+        programs.opencode-config._secretEnvScript = secretEnvScript;
+        programs.opencode-config._mkAcpWrapper =
+          profileName:
+          pkgs.writeShellScriptBin "opencode-acp-${profileName}" ''
+            #!${pkgs.bash}/bin/bash
+            set -euo pipefail
+            ${secretEnvScript}
+            exec env XDG_CONFIG_HOME="$HOME/.config/opencode-profiles/${profileName}" \
+              ${pkgs.opencode}/bin/opencode acp "$@"
+          '';
+
         home.packages = [
           opencodePackage
           ocDispatcher
@@ -867,20 +890,18 @@ in
         // lib.mapAttrs' (
           name: content:
           lib.nameValuePair "opencode/agents/${name}.md" {
-            text = builtins.replaceStrings
-              ["/tmp/gsd-capture/opencode/"]
-              ["${config.xdg.configHome}/opencode/"]
-              content;
+            text =
+              builtins.replaceStrings [ "/tmp/gsd-capture/opencode/" ] [ "${config.xdg.configHome}/opencode/" ]
+                content;
             force = true;
           }
         ) cfg.agents
         // lib.mapAttrs' (
           name: content:
           lib.nameValuePair "opencode/commands/${name}.md" {
-            text = builtins.replaceStrings
-              ["/tmp/gsd-capture/opencode/"]
-              ["${config.xdg.configHome}/opencode/"]
-              content;
+            text =
+              builtins.replaceStrings [ "/tmp/gsd-capture/opencode/" ] [ "${config.xdg.configHome}/opencode/" ]
+                content;
             force = true;
           }
         ) cfg.commands
