@@ -48,9 +48,9 @@ with lib;
       mode = "0400";
     };
 
-    # Work inference (nvidia-api-key) and Anthropic (anthropic-api-key) secrets
-    # are declared by the customer module (private-config:
-    # customers/nvidia/modules/secrets.nix), imported via nixosModules.work.
+    # Work inference and Anthropic (anthropic-api-key) secrets are declared
+    # by the customer module (private-config: the active customer's secrets
+    # module), imported via nixosModules.work.
 
     # GitHub token (from private-config)
     secrets."github-token" = {

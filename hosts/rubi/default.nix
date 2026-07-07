@@ -178,9 +178,9 @@
     host = "0.0.0.0";
     port = 4096;
     passwordFile = config.sops.secrets."opencode-server-password".path;
-    # Personal API keys only. Work provider/MCP env (NVIDIA, Jira, Confluence,
-    # Trello, Tempo, Jira DC) is contributed by the customer module
-    # (private-config: customers/nvidia/modules/defaults.nix) and merges here.
+    # Personal API keys only. Work provider/MCP env (inference API, project
+    # trackers, wiki, time tracking) is contributed by the customer module
+    # (private-config: the active customer's defaults module) and merges here.
     secretEnv = {
       OPENCODE_API_KEY = config.sops.secrets."opencode-api-key".path;
       GITHUB_TOKEN = config.sops.secrets."github-token".path;
@@ -242,7 +242,7 @@
 
   # Prisma Access Agent VPN + Prisma Browser enables, boot-autostart strip, and
   # VPN state persistence are contributed by the customer module
-  # (private-config: customers/nvidia/modules/defaults.nix).
+  # (private-config: the active customer's defaults module).
 
   # Enable nix-ld for running unpatched binaries
   programs.nix-ld.enable = true;

@@ -52,23 +52,23 @@
   programs.opencode-config = {
     enable = true;
 
-    # Work machine: NVIDIA inference only — no Go/Zen (personal resources)
+    # Work machine: work-provider inference only — no Go/Zen (personal resources)
     opencodeGo.enable = false;
     opencodeZen.enable = false;
 
     extraConfig = privateConfig.opencodeConfig or { };
 
     profiles =
-      lib.optionalAttrs ((privateConfig.rubiWorkProfile or null) != null) {
-        # opencode-work → NVIDIA inference only (employer resources, from private-config)
-        work = privateConfig.rubiWorkProfile; # scriptName "ocw" comes from private repo
+      lib.optionalAttrs ((privateConfig.workProfile or null) != null) {
+        # opencode-work → work-provider inference only (work resources, from private-config)
+        work = privateConfig.workProfile; # scriptName "ocw" comes from private repo
       }
       // {
-        # opencode-personal → Go/Zen (Big Pickle) + Groq (no employer resources)
+        # opencode-personal → Go/Zen (Big Pickle) + Groq (no work resources)
         personal = {
           scriptName = "ocp";
-          # Personal profile: no employer MCP servers (jira/confluence/trello/
-          # tempo/netsuite). Only general + personal tooling. Keeps employer
+          # Personal profile: no work MCP servers (project trackers etc.).
+          # Only general + personal tooling. Keeps work
           # tool definitions out of personal-context sessions entirely.
           mcpServers = [
             "nixos"
@@ -126,7 +126,7 @@
                 };
               };
             };
-            # Personal profile uses Big Pickle for all agents (no employer resources)
+            # Personal profile uses Big Pickle for all agents (no work resources)
             agent = (import ./features/ai/opencode-personal.nix).config.agent // {
               title.model = "opencode/big-pickle";
               summary.model = "opencode/big-pickle";
@@ -217,10 +217,10 @@
     # Billing-context dispatcher (`oc`): routes to the right profile wrapper
     # script based on $OPENCODE_BILLING_CONTEXT. Neutral contexts are literal;
     # the work context is sourced from private-config (customer values live
-    # there), keyed by the neutral keyword "work" — the private flake exports
-    # only workProfile.scriptName, no customer keyword, so the old "nvidia"
-    # keyword is dropped (type `work` instead). The NVIDIA_API_KEY env-var name
-    # is kept literal, matching the existing secretEnv entry below.
+    # there), keyed by the neutral keyword "work" — the old customer keyword
+    # is dropped (type `work` instead). The work API-key env-var name and the
+    # secretEnv entry backing it also come from private-config
+    # (workInferenceEnvVar / workSecretEnv).
     dispatcher.contexts =
       {
         personal = {
@@ -239,12 +239,13 @@
       // lib.optionalAttrs ((privateConfig.workProfile or null) != null) {
         work = {
           scriptName = privateConfig.workProfile.scriptName;
-          apiKeyEnvVar = "NVIDIA_API_KEY";
+          apiKeyEnvVar = privateConfig.workInferenceEnvVar;
         };
       };
 
-    secretEnv = (privateConfig.rubiSecretEnv or { }) // {
-      NVIDIA_API_KEY = "/run/secrets/nvidia-api-key";
+    # workSecretEnv already carries the work inference key entry, so no
+    # customer-named literal is needed here.
+    secretEnv = (privateConfig.workSecretEnv or { }) // {
       GROQ_API_KEY = "/run/secrets/groq-api-key";
     };
 

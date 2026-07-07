@@ -121,13 +121,6 @@ with lib;
       mode = "0400";
     };
 
-    # secrets."nvidia-api-key" = {
-    #   owner = "diego";
-    #   group = "users";
-    #   mode = "0400";
-    #   sopsFile = inputs.private-config.secretFiles.nvidiaApiKey;
-    # };
-
     # secrets."deepseek-api-key" = {
     #   owner = "diego";
     #   group = "users";

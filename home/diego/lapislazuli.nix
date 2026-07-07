@@ -29,7 +29,7 @@
     opencodeGo.enable = true;
     opencodeZen.enable = true;
 
-    # Provider config disabled - manage manually for employer-specific models
+    # Provider config disabled - manage manually for work-specific models
     provider.enable = false;
     plugins = (import ./features/ai/session-character-visualizer.nix) { inherit pkgs; };
 

@@ -62,17 +62,27 @@ let
 
   # Build language model providers from privateConfig and standard providers
   # Handle both full privateConfig and opencodeConfig-only variants
-  nvidiaModels =
-    let
-      opencodeCfg = privateConfig.opencodeConfig or privateConfig;
-    in
-    opencodeCfg.provider."nvidia-inference".models or { };
+  workOpencodeCfg = privateConfig.opencodeConfig or privateConfig;
 
-  nvidiaBaseUrl =
-    let
-      opencodeCfg = privateConfig.opencodeConfig or privateConfig;
-    in
-    opencodeCfg.provider."nvidia-inference".options.baseURL or null;
+  # Work provider key: exported by private-config (workProviderId); when only
+  # the opencode config subset is passed through, derive it from the default
+  # model's "<provider>/<model>" prefix.
+  workProviderId =
+    privateConfig.workProviderId or (
+      let
+        m = workOpencodeCfg.model or null;
+      in
+      if m == null then null else lib.head (lib.splitString "/" m)
+    );
+
+  workModels =
+    if workProviderId == null then { } else workOpencodeCfg.provider.${workProviderId}.models or { };
+
+  workBaseUrl =
+    if workProviderId == null then
+      null
+    else
+      workOpencodeCfg.provider.${workProviderId}.options.baseURL or null;
 
   languageModels = {
     # DeepSeek built-in provider
@@ -80,15 +90,15 @@ let
       api_url = "https://api.deepseek.com/v1";
     };
 
-    # NVIDIA Inference API via openai_compatible (only present when private-config supplies the URL)
-    openai_compatible = lib.optionalAttrs (nvidiaBaseUrl != null && nvidiaModels != { }) {
-      "NVIDIA" = {
-        api_url = nvidiaBaseUrl;
+    # Work inference API via openai_compatible (only present when private-config supplies the URL)
+    openai_compatible = lib.optionalAttrs (workBaseUrl != null && workModels != { }) {
+      ${privateConfig.workProviderLabel or "Work"} = {
+        api_url = workBaseUrl;
         available_models = lib.mapAttrsToList (modelId: modelCfg: {
           name = modelId;
           display_name = modelCfg.name or modelId;
           max_tokens = modelCfg.options.max_tokens or 8192;
-        }) nvidiaModels;
+        }) workModels;
       };
     } // {
       "OpenCode Go" = {
