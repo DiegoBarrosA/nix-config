@@ -12,25 +12,25 @@ let
 
   # Helper to convert env var syntax from internal format to standard MCP format
   # {env:VAR} -> ${VAR}
-  convertEnvSyntax = str:
-    builtins.replaceStrings [ "{env:" "}" ] [ "\${" "}" ] str;
+  convertEnvSyntax = str: builtins.replaceStrings [ "{env:" "}" ] [ "\${" "}" ] str;
 
   # Convert env attrset values
-  convertEnvAttrs = env:
-    lib.mapAttrs (_: v: if builtins.isString v then convertEnvSyntax v else toString v) env;
+  convertEnvAttrs =
+    env: lib.mapAttrs (_: v: if builtins.isString v then convertEnvSyntax v else toString v) env;
 
   # Build server entry in standard MCP format (for Claude Code, Cursor, Antigravity)
   # Standard format: { command = "string", args = [...], env = { KEY = "${VAR}" } }
   # or for SSE/HTTP servers: { url = "string"; }
-  toStandardServer = name: srv:
+  toStandardServer =
+    name: srv:
     if (srv.url or null) != null && (srv.command or null) == null then
-      { url = srv.url; }
-      // lib.optionalAttrs ((srv.env or { }) != { }) { env = convertEnvAttrs srv.env; }
+      { url = srv.url; } // lib.optionalAttrs ((srv.env or { }) != { }) { env = convertEnvAttrs srv.env; }
     else
       let
         cmdList = if builtins.isList srv.command then srv.command else [ srv.command ];
         hasArgs = (srv.args or [ ]) != [ ] || builtins.length cmdList > 1;
-        combinedArgs = (if builtins.length cmdList > 1 then builtins.tail cmdList else [ ]) ++ (srv.args or [ ]);
+        combinedArgs =
+          (if builtins.length cmdList > 1 then builtins.tail cmdList else [ ]) ++ (srv.args or [ ]);
       in
       {
         command = builtins.head cmdList;
@@ -41,25 +41,6 @@ in
 {
   options.programs.mcp-config = {
     enable = lib.mkEnableOption "shared MCP server configuration";
-
-    # Obsidian MCP
-    obsidian = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Enable Obsidian MCP server.";
-      };
-      host = lib.mkOption {
-        type = lib.types.str;
-        default = "127.0.0.1";
-        description = "Obsidian REST API host.";
-      };
-      port = lib.mkOption {
-        type = lib.types.int;
-        default = 27123;
-        description = "Obsidian REST API port.";
-      };
-    };
 
     # mcp-nixos
     mcpNixos = {
@@ -188,18 +169,7 @@ in
     programs.mcp = {
       enable = true;
       servers = lib.filterAttrs (_: v: v != null) (
-        lib.optionalAttrs cfg.obsidian.enable {
-          obsidian = {
-            command = "uvx";
-            args = [ "mcp-obsidian" ];
-            env = {
-              OBSIDIAN_HOST = cfg.obsidian.host;
-              OBSIDIAN_PORT = toString cfg.obsidian.port;
-              OBSIDIAN_API_KEY = "{env:OBSIDIAN_API_KEY}";
-            };
-          };
-        }
-        // lib.optionalAttrs cfg.mcpNixos.enable {
+        lib.optionalAttrs cfg.mcpNixos.enable {
           nixos = {
             command = "${pkgs.mcp-nixos}/bin/mcp-nixos";
           };
@@ -226,8 +196,12 @@ in
         // lib.optionalAttrs cfg.playwright.enable {
           playwright = {
             command = "${cfg.playwright.package}/bin/playwright-mcp";
-          } // lib.optionalAttrs (cfg.playwright.browserPath != null) {
-            args = [ "--executable-path" cfg.playwright.browserPath ];
+          }
+          // lib.optionalAttrs (cfg.playwright.browserPath != null) {
+            args = [
+              "--executable-path"
+              cfg.playwright.browserPath
+            ];
           };
         }
         // lib.optionalAttrs cfg.thunderbird.enable {

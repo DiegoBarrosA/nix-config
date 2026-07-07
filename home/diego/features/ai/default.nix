@@ -4,5 +4,6 @@
     ./mcp.nix
     ./opencode.nix
     ./ai-tools.nix
+    ./graphify.nix
   ];
 }
