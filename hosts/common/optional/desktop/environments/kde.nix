@@ -7,6 +7,9 @@
   services.displayManager.sddm.wayland.enable = true;
   services.desktopManager.plasma6.enable = true;
 
+  # Strip xterm if the X stack pulls it in — barebones/TUI-first.
+  services.xserver.excludePackages = [ pkgs.xterm ];
+
   # xdg-desktop-portal-kde is wired automatically by the Plasma module.
 
   # Strip Plasma's default app set — TUI-first, apps come from common/.
