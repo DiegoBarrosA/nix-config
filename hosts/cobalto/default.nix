@@ -19,6 +19,7 @@
 
     # Core services
     ../common/optional/network/tailscale.nix
+    ../common/optional/network/protonvpn-exit.nix
     ../common/optional/desktop/devices.nix
     ../common/optional/network/hosts.nix
     ../common/optional/system/environment.nix
@@ -72,6 +73,7 @@
     # "./common/optional/media-stack-native.nix"  # Disabled in favor of servarr-suite.nix        # Now uses native NixOS services
 
     ../common/optional/network/samba.nix
+    ../common/optional/network/pihole.nix
     ../common/optional/apps/home-assistant.nix
     ../common/optional/media/miniflux.nix # RSS reader (Stylix-themed), embedded in HA dashboard
     ../common/optional/apps/go2rtc.nix
@@ -116,7 +118,7 @@
     hostName = "cobalto";
     useDHCP = false;
     interfaces = {
-      enp6s0 = {
+      enp7s0 = {
         useDHCP = true;
         ipv4.addresses = [
           {
@@ -183,6 +185,16 @@
     host = "127.0.0.1";
     port = 4096;
     passwordFile = config.sops.secrets."opencode-server-password".path;
+  };
+
+  # Proton VPN exit node for bypassing PLDT CGNAT
+  # iPhone selects cobalto as Tailscale exit node → traffic routes through Proton VPN
+  networking.protonvpnExit = {
+    enable = true;
+    privateKeyFile = config.sops.secrets."protonvpn-key".path;
+    address = "10.2.0.2/32";
+    peerPublicKey = "F7z+SRMw1d3o1lQbWObWN7GBbHeUZNCC+PCpPy+SOQ8=";
+    peerEndpoint = "138.199.50.106:51820";
   };
 
   system.stateVersion = "22.11";

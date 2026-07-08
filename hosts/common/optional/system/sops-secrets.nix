@@ -147,6 +147,13 @@ with lib;
     #   mode = "0400";
     # };
 
+    # Proton VPN WireGuard private key for exit node
+    secrets."protonvpn-key" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
     # OpenCode server password for remote Android/web access
     # Used by services.opencode-server for Basic Auth
     secrets."opencode-server-password" = {
