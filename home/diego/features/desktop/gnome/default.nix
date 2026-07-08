@@ -6,19 +6,18 @@
     ./dconf.nix
   ];
 
+  # Barebones app set: settings, file manager, image viewer, disks, screenshot.
+  # Everything else (browser, terminal, editor, media) comes from common/ + TUI.
   home.packages = with pkgs; [
-    gnome-tweaks
-    gnome-extension-manager
-    dconf-editor
-
+    gnome-control-center
     nautilus
-    gnome-calculator
-    gnome-system-monitor
+    loupe
     gnome-disk-utility
-    eog
-    gnome-text-editor
-    gnome-screenshot
+    gradia # screenshot annotate/share (GNOME-native)
   ];
+
+  # Alacritty client-side decorations under GNOME (title bar + window buttons).
+  programs.alacritty.settings.window.decorations = "full";
 
   home.sessionVariables = {
     XDG_SESSION_TYPE = "wayland";
