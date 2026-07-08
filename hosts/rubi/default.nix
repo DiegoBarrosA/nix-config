@@ -89,7 +89,6 @@
     pciutils
     usbutils
     lshw
-    file-roller
     qt6.qtwayland
     sbctl
     openssl

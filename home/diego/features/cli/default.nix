@@ -35,6 +35,7 @@ in
       fzf
       jq # JSON pretty printer and manipulator
       nixfmt-rfc-style
+      ouch # TUI/CLI archive compress+decompress (tar/zip/7z/…); pairs with yazi
       pv
       ripgrep # Better grep
       wget
