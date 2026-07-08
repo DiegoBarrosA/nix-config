@@ -4,6 +4,7 @@
     inputs.home-manager.nixosModules.home-manager
     ./openssh.nix
     ./locale.nix
+    ../optional/desktop/select.nix
   ];
   networking.domain = "mineral.network";
 
