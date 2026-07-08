@@ -8,7 +8,7 @@
 }:
 rec {
   mkHost =
-    system: hostname:
+    system: hostname: hostArgs:
     inputs.nixpkgs.lib.nixosSystem {
       pkgs = legacyPackages.${system};
       modules = [ "${self}/hosts/${hostname}" ] ++ (builtins.attrValues nixosModules);
@@ -16,6 +16,7 @@ rec {
         inherit inputs self;
         outputs = self;
         customPkgs = packages.${system};
+        desktop = hostArgs.desktop or null;
       };
     };
 
