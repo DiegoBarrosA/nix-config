@@ -79,16 +79,25 @@ in
       };
     };
 
-    # Keep nftables counter for debugging forwarded traffic from tailscale0
+    # nftables rules: counter + SNAT masquerade + MSS clamping for exit node
     systemd.services.protonvpn-nftables = {
-      description = "Set up nftables counter for Proton VPN exit node";
+      description = "Set up nftables for Proton VPN exit node";
       before = [ "protonvpn-routing.service" ];
       wantedBy = [ "multi-user.target" ];
       script = ''
         ${pkgs.nftables}/bin/nft delete table inet protonvpn-exit 2>/dev/null || true
+        ${pkgs.nftables}/bin/nft delete table ip protonvpn-exit-nat 2>/dev/null || true
+        # Counter + MSS clamp in inet table
         ${pkgs.nftables}/bin/nft add table inet protonvpn-exit
         ${pkgs.nftables}/bin/nft add chain inet protonvpn-exit counter-prerouting { type filter hook prerouting priority -1\; policy accept\; }
         ${pkgs.nftables}/bin/nft add rule inet protonvpn-exit counter-prerouting iifname "tailscale0" counter
+        ${pkgs.nftables}/bin/nft add rule inet protonvpn-exit counter-prerouting oifname "tailscale0" counter
+        # MSS clamping for forwarded traffic (avoids PMTU issues over WireGuard)
+        ${pkgs.nftables}/bin/nft add rule inet protonvpn-exit counter-prerouting iifname "tailscale0" tcp flags syn tcp option maxseg size set 1350
+        # SNAT in ip table: rewrite src to proton0 IP so return traffic comes back through tunnel
+        ${pkgs.nftables}/bin/nft add table ip protonvpn-exit-nat
+        ${pkgs.nftables}/bin/nft add chain ip protonvpn-exit-nat masq-postrouting { type nat hook postrouting priority srcnat\; policy accept\; }
+        ${pkgs.nftables}/bin/nft add rule ip protonvpn-exit-nat masq-postrouting oifname "proton0" masquerade
       '';
       serviceConfig = {
         Type = "oneshot";
