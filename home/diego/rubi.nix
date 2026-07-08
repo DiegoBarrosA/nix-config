@@ -5,6 +5,7 @@
   pkgs,
   inputs,
   customPkgs,
+  desktop ? null,
   privateConfig ? { },
   ...
 }:
@@ -28,11 +29,11 @@
     ./global
     ./features/cli
     ./features/desktop/common # Firefox, Qt, Stylix
-    ./features/desktop/sway # Sway desktop configuration
     ./features/ai
     ./features/ai/pixel-office.nix # Pixel Office dashboard + plugin (replaces Caffa blob-office)
     ./features/desktop/obsidian.nix
-  ];
+  ]
+  ++ lib.optional (desktop != null) ./features/desktop/${desktop};
 
   home.packages = [
     customPkgs.clin
