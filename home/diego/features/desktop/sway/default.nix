@@ -551,7 +551,7 @@ in
     autotiling-rs
     polkit_gnome
     # Screenshot tools
-    flameshot
+    swappy
     grim
     slurp
     wl-clipboard
@@ -568,15 +568,6 @@ in
     # Android mirroring & control
     scrcpy
   ];
-
-  # Flameshot configuration for Wayland (use grim adapter instead of dbus)
-  xdg.configFile."flameshot/flameshot.ini".text = ''
-    [General]
-    useGrimAdapter=true
-    showStartupLaunchMessage=false
-    savePath=${config.home.homeDirectory}/Pictures
-    saveAsFileExtension=png
-  '';
 
   xdg.configFile."environment.d/xdg.conf".text = ''
     XDG_SESSION_TYPE=wayland
@@ -688,9 +679,9 @@ in
       window.commands = [
         {
           criteria = {
-            app_id = "flameshot";
+            app_id = "swappy";
           };
-          command = "border pixel 0, floating enable, fullscreen disable, move absolute position 0 0";
+          command = "floating enable";
         }
         # Inhibit idle while Firefox is focused so swayidle doesn't fire the lock
         # timer during screen shares (the XDG Inhibit portal isn't supported by
@@ -801,7 +792,7 @@ in
         "XF86AudioMicMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
 
         # Screenshots
-        "Mod4+Shift+s" = "exec flameshot gui";
+        "Mod4+Shift+s" = "exec grim -g \"$(slurp)\" - | swappy -f -";
         "Print" = "exec grim - | wl-copy";
         "Mod4+Shift+a" = "exec grim -g \"$(slurp)\" ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png";
 
