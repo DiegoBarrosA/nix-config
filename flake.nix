@@ -136,7 +136,7 @@
       nixosConfigurations = {
         cobalto = myLib.mkHost "x86_64-linux" "cobalto" { };
         granate = myLib.mkHost "x86_64-linux" "granate" { };
-        rubi = myLib.mkHost "x86_64-linux" "rubi" { desktop = "sway"; };
+        rubi = myLib.mkHost "x86_64-linux" "rubi" { desktop = "gnome"; };
       };
 
       # Deploy-rs configuration
