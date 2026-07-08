@@ -2,6 +2,7 @@
   config,
   pkgs,
   lib,
+  desktop ? null,
   ...
 }:
 let
@@ -52,8 +53,9 @@ in
       base0F = colors.base0F;
     };
 
-    # Cursor theme - Bibata themed to Stylix scheme
-    cursor = {
+    # Cursor theme - Bibata themed to Stylix scheme.
+    # Sway only: GNOME/KDE keep their native cursor (Adwaita/Breeze).
+    cursor = lib.mkIf (desktop == "sway") {
       package = bibataStylix;
       name = "Bibata-Stylix";
       size = 28;
@@ -130,8 +132,9 @@ in
   };
 
   # Icon theme (Stylix doesn't handle icons)
-  # Use Papirus with custom folder color matching our accent (base0D)
-  gtk.iconTheme =
+  # Use Papirus with custom folder color matching our accent (base0D).
+  # Sway only: GNOME/KDE keep their native icons (Adwaita/Breeze).
+  gtk.iconTheme = lib.mkIf (desktop == "sway") (
     let
       # Map our accent color to closest Papirus folder color
       # base0D = #82aaff (blue) -> "blue" or "indigo"
@@ -144,10 +147,12 @@ in
     {
       name = "Papirus-Dark";
       package = papirusWithFolders;
-    };
+    }
+  );
 
-  # Symlink icon themes to ~/.local/share/icons for GTK apps installed via apt
-  xdg.dataFile =
+  # Symlink icon + cursor themes for GTK/Snap/sandboxed apps. Sway only;
+  # GNOME/KDE ship their own icon/cursor sets.
+  xdg.dataFile = lib.mkIf (desktop == "sway") (
     let
       folderColor = "indigo";
       papirusWithFolders = pkgs.papirus-icon-theme.override {
@@ -160,13 +165,17 @@ in
       "icons/Papirus-Light".source = "${papirusWithFolders}/share/icons/Papirus-Light";
       # Cursor theme for Snap apps and other sandboxed applications
       "icons/Bibata-Stylix".source = "${bibataStylix}/share/icons/Bibata-Stylix";
-    };
+    }
+  );
 
-  # Also symlink to ~/.icons for older apps and Snap compatibility
-  home.file.".icons/Bibata-Stylix".source = "${bibataStylix}/share/icons/Bibata-Stylix";
+  # Also symlink to ~/.icons for older apps and Snap compatibility (Sway only)
+  home.file.".icons/Bibata-Stylix" = lib.mkIf (desktop == "sway") {
+    source = "${bibataStylix}/share/icons/Bibata-Stylix";
+  };
 
-  # Propagate GTK theme to apps via XSettings (needed on Sway/Wayland)
-  services.xsettingsd = {
+  # Propagate GTK theme to apps via XSettings. Needed on Sway/Wayland (GNOME/KDE
+  # run their own settings daemon, and this references the Sway-only iconTheme).
+  services.xsettingsd = lib.mkIf (desktop == "sway") {
     enable = true;
     settings = {
       "Net/ThemeName" = "${config.gtk.theme.name}";

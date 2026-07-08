@@ -7,6 +7,9 @@
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;
 
+  # Strip xterm, which services.xserver pulls in by default — barebones/TUI-first.
+  services.xserver.excludePackages = [ pkgs.xterm ];
+
   # xdg-desktop-portal-gnome is wired automatically by the GNOME module.
 
   # Strip GNOME's default app set — TUI-first, apps come from common/.

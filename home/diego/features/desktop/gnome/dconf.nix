@@ -32,9 +32,9 @@
 
     # Interface settings
     "org/gnome/desktop/interface" = {
-      # Stylix sets gtk-theme via stylix.targets.gnome
-      icon-theme = "Papirus-Dark";
-      cursor-theme = config.stylix.cursor.name;
+      # Stylix sets gtk-theme via stylix.targets.gnome (colors/fonts only).
+      # Icons and cursor are intentionally left unset so GNOME uses its native
+      # Adwaita defaults — Stylix icon/cursor theming is Sway-only.
       font-name = lib.mkDefault "Cantarell 11";
       document-font-name = lib.mkDefault "Cantarell 11";
       monospace-font-name = lib.mkDefault "${config.fontProfiles.monospace.family} 11";
