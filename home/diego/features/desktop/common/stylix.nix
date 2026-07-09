@@ -98,12 +98,15 @@ in
 
     # Target-specific settings
     targets = {
+      # GTK app theming: enabled on Sway/KDE; disabled on GNOME so GTK apps
+      # use native Adwaita (per "GNOME native only" — no Stylix gtk/shell).
       gtk = {
-        enable = true;
+        enable = desktop != "gnome";
       };
 
-      # GNOME integration - let Stylix set Adwaita-compatible colors
-      gnome.enable = true;
+      # GNOME Shell integration: disabled on GNOME so the shell stays native.
+      # (Has effect only under a GNOME session anyway.)
+      gnome.enable = desktop != "gnome";
 
       # Qt theming via Kvantum (generated from base16 colors)
       qt = {
