@@ -11,13 +11,14 @@ in
     ./zoxide.nix
     ./helix.nix
     ./zed.nix
+    ./vscode.nix
     ./pfetch.nix
     ./git.nix
     ./starship.nix
     ./fzf.nix
     ./bat.nix
     # ./fish.nix # Fish shell with home-manager module (disabled - migrated to nushell)
-    ./zellij.nix # Zellij multiplexer with Material Darker theme
+    ./zellij.nix # Zellij multiplexer (manual material-darker theme)
     ./nushell.nix # Nushell with vi mode, Ctrl+T for Zellij
     ./yazi.nix
     ./zathura.nix
@@ -28,12 +29,14 @@ in
     with pkgs;
     # Core CLI tools (all platforms)
     [
+      timr-tui
       basalt
       comma # Install and run programs by sticking a , before them
       fd # Better find
       fzf
       jq # JSON pretty printer and manipulator
       nixfmt-rfc-style
+      ouch # TUI/CLI archive compress+decompress (tar/zip/7z/…); pairs with yazi
       pv
       ripgrep # Better grep
       wget

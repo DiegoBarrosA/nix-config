@@ -8,95 +8,10 @@ let
   inherit (config.colorscheme) colors;
   inherit (config) fontProfiles;
 
-  # Convert hex color (e.g., "#82aaff") to decimal RGB value
-  hexToDec =
-    c:
-    let
-      hexMap = {
-        "0" = 0;
-        "1" = 1;
-        "2" = 2;
-        "3" = 3;
-        "4" = 4;
-        "5" = 5;
-        "6" = 6;
-        "7" = 7;
-        "8" = 8;
-        "9" = 9;
-        "a" = 10;
-        "b" = 11;
-        "c" = 12;
-        "d" = 13;
-        "e" = 14;
-        "f" = 15;
-      };
-    in
-    hexMap.${lib.toLower c} or 0;
-
-  # Convert two hex characters to decimal
-  hexPairToDec =
-    pair:
-    let
-      c1 = builtins.substring 0 1 pair;
-      c2 = builtins.substring 1 1 pair;
-      v1 = hexToDec c1;
-      v2 = hexToDec c2;
-    in
-    v1 * 16 + v2;
-
-  # Extract RGB components from hex color #RRGGBB
-  hexToRgb =
-    hex:
-    let
-      # Remove # if present
-      cleanHex = lib.toLower (
-        if builtins.substring 0 1 hex == "#" then
-          builtins.substring 1 (builtins.stringLength hex - 1) hex
-        else
-          hex
-      );
-      r = hexPairToDec (builtins.substring 0 2 cleanHex);
-      g = hexPairToDec (builtins.substring 2 2 cleanHex);
-      b = hexPairToDec (builtins.substring 4 2 cleanHex);
-    in
-    {
-      r = toString r;
-      g = toString g;
-      b = toString b;
-    };
-
-  base04-rgb = hexToRgb colors.base04;
-  # Transparent highlight for sway workspace buttons (focused / hover).
-  accentWorkspaceBg = "rgba(${base04-rgb.r}, ${base04-rgb.g}, ${base04-rgb.b}, 0.3)";
-  accentWorkspaceBgLow = "rgba(${base04-rgb.r}, ${base04-rgb.g}, ${base04-rgb.b}, 0.1)";
-
-  # Package waybar custom scripts as native Nix packages (in PATH)
-  tailscale-status = pkgs.writeShellScriptBin "tailscale-status" (
-    builtins.readFile ./tailscale-status.sh
-  );
-  syncthing-status = pkgs.writeShellScriptBin "syncthing-status" (
-    builtins.readFile ./syncthing-status.sh
-  );
-  cobalto-status = pkgs.writeShellScriptBin "cobalto-status" (builtins.readFile ./cobalto-status.sh);
-  tray-tooltip = pkgs.writeShellScriptBin "tray-tooltip" (builtins.readFile ./tray-tooltip.sh);
-  services-tooltip = pkgs.writeShellScriptBin "services-tooltip" (
-    builtins.readFile ./services-tooltip.sh
-  );
-  worldclock = pkgs.writeShellScriptBin "worldclock" (builtins.readFile ./worldclock.sh);
-
   # Decode a \uXXXX escape to the actual Unicode character
   u = code: builtins.fromJSON ''"\u${code}"'';
 in
 {
-  home.packages = [
-    tailscale-status
-    syncthing-status
-    cobalto-status
-    tray-tooltip
-    services-tooltip
-    worldclock
-  ];
-
   programs.waybar = {
     enable = true;
 
@@ -113,17 +28,18 @@ in
         spacing = 0;
         modules-left = [
           "sway/workspaces"
-          "sway/mode"
         ];
         modules-center = [
+          "sway/window"
         ];
         modules-right = [
-          "group/services"
+          "tray"
           "sway/language"
           "pulseaudio"
+          "bluetooth"
           "network"
           "battery"
-          "custom/worldclock"
+          "clock"
         ];
 
         "sway/workspaces" = {
@@ -131,18 +47,24 @@ in
           all-outputs = true;
           format = "{icon}";
           format-icons = {
-            "0" = "";
-            "1" = "";
-            "2" = "";
-            "3" = "";
-            "4" = "";
             "5" = "";
             "6" = "";
-            "7" = "";
+            "7" = (u "f802");
             "8" = "";
+            "9" = (u "f5fc");
+            "10" = "";
+            "default" = (u "f22d");
+            "focused" = (u "f192");
+            "high-priority-named" = [
+              "5"
+              "6"
+              "7"
+              "8"
+              "9"
+              "10"
+            ];
           };
           persistent-workspaces = {
-            "0" = [ ];
             "1" = [ ];
             "2" = [ ];
             "3" = [ ];
@@ -163,17 +85,29 @@ in
           spacing = 10;
         };
 
-        "custom/tray-toggle" = {
-          exec = "${tray-tooltip}/bin/tray-tooltip";
-          interval = 5;
-          return-type = "json";
-        };
-
-        "custom/worldclock" = {
-          exec = "${worldclock}/bin/worldclock";
-          interval = 30;
-          return-type = "json";
-          on-click = "xdg-open http://localhost:8384";
+        # macOS-style menu-bar clock: "Mon Jul 06  03:47 PM".
+        # Abbreviated weekday + month, day, then 12-hour time with AM/PM.
+        # Waybar's clock uses the C++ date lib, which supports %d/%I (zero
+        # padded) but not %e/%l (no-pad), so leading zeros are expected.
+        clock = {
+          interval = 1;
+          format = "{:%a %b %d  %I:%M %p}";
+          tooltip-format = "<tt><small>{calendar}</small></tt>";
+          calendar = {
+            mode = "month";
+            mode-mon-col = 3;
+            weeks-pos = "";
+            on-scroll = 1;
+            format = {
+              months = "<span color='#${colors.base0D}'><b>{}</b></span>";
+              days = "<span color='#${colors.base05}'>{}</span>";
+              weekdays = "<span color='#${colors.base0A}'><b>{}</b></span>";
+              today = "<span color='#${colors.base08}'><b>{}</b></span>";
+            };
+          };
+          actions = {
+            on-click-right = "mode";
+          };
         };
 
         cpu = {
@@ -198,7 +132,7 @@ in
             critical = 15;
           };
           format = "{icon}";
-          format-charging = "${u "f0e7"}";
+          format-charging = "${u "e55b"}";
           format-plugged = "${u "f1e6"}";
           format-icons = [
             "${u "f244"}"
@@ -232,39 +166,21 @@ in
           on-click = "alacritty -e ncpamixer";
         };
 
-        "group/services" = {
-          orientation = "horizontal";
-          drawer = {
-            transition-duration = 300;
-            transition-left-to-right = false;
-          };
-          modules = [
-            "custom/tray-toggle"
-            "tray"
-            "custom/tailscale"
-            "custom/cobalto"
-            "custom/syncthing"
-          ];
-        };
-
-        "custom/tailscale" = {
-          exec = "${tailscale-status}/bin/tailscale-status";
-          interval = 15;
-          return-type = "json";
-        };
-
-        "custom/cobalto" = {
-          exec = "${cobalto-status}/bin/cobalto-status";
-          interval = 30;
-          on-click = "xdg-open https://jellyfin.minerales.network";
-          return-type = "json";
-        };
-
-        "custom/syncthing" = {
-          exec = "${syncthing-status}/bin/syncthing-status";
-          interval = 10;
-          on-click = "xdg-open http://localhost:8384";
-          return-type = "json";
+        bluetooth = {
+          # Icons: f294 = bluetooth-b (brand). Empty format-off/disabled hides
+          # the module when the controller is off, so it only shows when active.
+          format = "${u "f294"}";
+          format-on = "${u "f294"}";
+          format-off = "";
+          format-disabled = "";
+          format-connected = "${u "f294"}";
+          format-connected-battery = "${u "f294"} {device_battery_percentage}%";
+          format-no-controller = "";
+          tooltip-format = "{controller_alias}\t{controller_address}\n\n{status}";
+          tooltip-format-connected = "{controller_alias}\t{controller_address}\n\n{num_connections} connected\n\n{device_enumerate}";
+          tooltip-format-enumerate-connected = "{device_alias}\t{device_address}";
+          tooltip-format-enumerate-connected-battery = "{device_alias}\t{device_address}\t{device_battery_percentage}%";
+          on-click = "alacritty -e bluetuith";
         };
       }
     ];
@@ -292,6 +208,8 @@ in
       }
 
       window#waybar #workspaces button {
+        font-family:  "Font Awesome 7 Brands", "Font Awesome 7 Free";
+        font-weight: normal;
         padding: 0 8px;
         background-image: none;
         border: none;
@@ -307,6 +225,8 @@ in
 
       window#waybar #workspaces button * {
         text-shadow: none;
+        font-family: "Font Awesome 7 Brands", "Font Awesome 7 Free";
+        font-weight: normal;
       }
 
       window#waybar #workspaces button.urgent:not(.focused),
@@ -322,7 +242,7 @@ in
       }
 
       window#waybar #workspaces button:hover {
-        background-color: ${accentWorkspaceBgLow};
+        background-color: #${colors.base01};
         background-image: none;
         color: #${colors.base05};
         box-shadow: none;
@@ -333,12 +253,13 @@ in
       window#waybar #workspaces button.focused label,
       window#waybar #workspaces button.active,
       window#waybar #workspaces button.active * {
-        color: #${colors.base04};
+        color: #${colors.base0D};
+        font-weight: 400;
       }
 
       window#waybar #workspaces button.focused,
       window#waybar #workspaces button.active {
-        background-color: ${accentWorkspaceBg};
+        background-color: #${colors.base01};
         background-image: none;
         box-shadow: none;
       }
@@ -360,19 +281,16 @@ in
       #backlight,
       #network,
       #pulseaudio,
+      #bluetooth,
       #language,
-      #tray,
-      #custom-syncthing,
-      #custom-tailscale,
-      #custom-cobalto,
-      #custom-services-toggle,
-      #custom-tray-toggle,
-      #custom-worldclock {
+      #tray {
         padding: 0 12px;
         color: #${colors.base05};
       }
 
-      #custom-worldclock {
+      #clock {
+        padding: 0 12px;
+        color: #${colors.base05};
         font-weight: 500;
       }
 
@@ -413,6 +331,21 @@ in
         color: #${colors.base03};
       }
 
+      #bluetooth.connected {
+        color: #${colors.base0D};
+      }
+
+      #bluetooth.discovering,
+      #bluetooth.discoverable,
+      #bluetooth.pairable {
+        color: #${colors.base0A};
+      }
+
+      #bluetooth.off,
+      #bluetooth.disabled {
+        color: #${colors.base03};
+      }
+
       #tray {
         background-color: #${colors.base01};
       }
@@ -424,72 +357,6 @@ in
       #tray > .needs-attention {
         -gtk-icon-effect: highlight;
         background-color: #${colors.base0F};
-      }
-
-      #custom-syncthing {
-        padding: 0 12px;
-      }
-
-      #custom-syncthing.ok {
-        color: #${colors.base0B};
-      }
-
-      #custom-syncthing.syncing {
-        color: #${colors.base0A};
-      }
-
-      #custom-syncthing.error {
-        color: #${colors.base08};
-      }
-
-      #custom-tailscale {
-        padding: 0 8px;
-      }
-
-      #custom-tailscale.connected {
-        color: #${colors.base0B};
-      }
-
-      #custom-tailscale.disconnected {
-        color: #${colors.base0A};
-      }
-
-      #custom-tailscale.error {
-        color: #${colors.base08};
-      }
-
-      #custom-cobalto {
-        padding: 0 8px;
-      }
-
-      #custom-cobalto.ok {
-        color: #${colors.base0B};
-      }
-
-      #custom-cobalto.degraded {
-        color: #${colors.base0A};
-      }
-
-      #custom-cobalto.offline {
-        color: #${colors.base08};
-      }
-
-      #group-services {
-        padding: 0 4px;
-      }
-
-      #custom-services-toggle {
-        color: #${colors.base04};
-        padding: 0 8px;
-      }
-
-      #group-tray-expand {
-        padding: 0 4px;
-      }
-
-      #custom-tray-toggle {
-        color: #${colors.base04};
-        padding: 0 8px;
       }
 
       tooltip {

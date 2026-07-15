@@ -3,6 +3,7 @@
   lib,
   pkgs,
   customPkgs,
+  inputs,
   ...
 }:
 {
@@ -28,6 +29,10 @@
 
   programs.ai-skills = {
     enable = true;
-    # tools.* default to true; opencodeProfiles set per-host (rubi adds work/personal)
+    # tools.* default to true (opencode/codex/claude/cursor/antigravity);
+    # opencodeProfiles set per-host (rubi adds work/personal).
+    # kepano/obsidian-skills: obsidian-markdown, obsidian-bases, json-canvas,
+    # obsidian-cli, defuddle. Merged alongside the vault skills.
+    extraSkillSources = [ "${inputs.obsidian-skills}/skills" ];
   };
 }

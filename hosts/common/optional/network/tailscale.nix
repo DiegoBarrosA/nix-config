@@ -8,6 +8,7 @@
     extraUpFlags = [
       "--ssh"  # Habilita Tailscale SSH
       "--accept-dns=true"  # Accept Tailscale DNS configuration
+      "--advertise-exit-node"  # Allow routing traffic through this node (e.g., via Proton VPN)
     ];
   };
 
@@ -26,7 +27,8 @@
         ${pkgs.tailscale}/bin/tailscale up --reset \
           --auth-key file:///run/secrets/tailscale-key \
           --ssh \
-          --accept-dns=true
+          --accept-dns=true \
+          --advertise-exit-node
       else
         echo "No tailscale auth key found, skipping"
       fi

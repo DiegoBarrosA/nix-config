@@ -121,13 +121,6 @@ with lib;
       mode = "0400";
     };
 
-    # secrets."nvidia-api-key" = {
-    #   owner = "diego";
-    #   group = "users";
-    #   mode = "0400";
-    #   sopsFile = inputs.private-config.secretFiles.nvidiaApiKey;
-    # };
-
     # secrets."deepseek-api-key" = {
     #   owner = "diego";
     #   group = "users";
@@ -153,6 +146,13 @@ with lib;
     #   group = "users";
     #   mode = "0400";
     # };
+
+    # Proton VPN WireGuard private key for exit node
+    secrets."protonvpn-key" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
 
     # OpenCode server password for remote Android/web access
     # Used by services.opencode-server for Basic Auth

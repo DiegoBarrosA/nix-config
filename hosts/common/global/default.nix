@@ -1,15 +1,16 @@
 # This file (and the global directory) holds config that i use on all hosts
-{ inputs, outputs, customPkgs ? {}, ... }: {
+{ inputs, outputs, customPkgs ? {}, desktop ? null, ... }: {
   imports = [
     inputs.home-manager.nixosModules.home-manager
     ./openssh.nix
     ./locale.nix
+    ../optional/desktop/select.nix
   ];
   networking.domain = "mineral.network";
 
   home-manager.useGlobalPkgs = true;
   home-manager.extraSpecialArgs = {
-    inherit inputs outputs customPkgs;
+    inherit inputs outputs customPkgs desktop;
     inherit (inputs) nix-colors;
     privateConfig = inputs.private-config or { };
   };

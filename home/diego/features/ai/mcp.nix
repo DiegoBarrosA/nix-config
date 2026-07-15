@@ -7,7 +7,6 @@
 {
   programs.mcp-config = {
     enable = true;
-    obsidian.enable = true;
     mcpNixos.enable = true;
     mcpTelegram.enable = true;
     jobspy = {

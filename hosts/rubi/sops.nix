@@ -48,23 +48,9 @@ with lib;
       mode = "0400";
     };
 
-    secrets."nvidia-api-key" = {
-      owner = "diego";
-      group = "users";
-      mode = "0400";
-      sopsFile = inputs.private-config.secretFiles.nvidiaApiKey;
-    };
-
-    # Anthropic Claude API key (NVIDIA org, usage-based) — shares nvidia.yaml.
-    # Consumed by the work profile's provider."anthropic" via rubiSecretEnv
-    # (ANTHROPIC_API_KEY = /run/secrets/anthropic-api-key). Without this the
-    # anthropic SDK errors with "x-api-key header is required".
-    secrets."anthropic-api-key" = {
-      owner = "diego";
-      group = "users";
-      mode = "0400";
-      sopsFile = inputs.private-config.secretFiles.nvidiaApiKey;
-    };
+    # Work inference and Anthropic (anthropic-api-key) secrets are declared
+    # by the customer module (private-config: the active customer's secrets
+    # module), imported via nixosModules.work.
 
     # GitHub token (from private-config)
     secrets."github-token" = {

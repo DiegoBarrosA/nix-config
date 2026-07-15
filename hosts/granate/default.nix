@@ -17,16 +17,16 @@
     ./hardware-configuration.nix
 
     # Core services
-    ../common/optional/tailscale.nix
-    ../common/optional/syncthing.nix
-    ../common/optional/sops-secrets.nix
+    ../common/optional/network/tailscale.nix
+    ../common/optional/network/syncthing.nix
+    ../common/optional/system/sops-secrets.nix
 
     # Backup module
-    ../common/optional/rclone-storagebox-backup.nix
-    ../common/optional/hetzner-optimizations.nix
+    ../common/optional/system/rclone-storagebox-backup.nix
+    ../common/optional/system/hetzner-optimizations.nix
 
     # Boot configuration
-    ../common/optional/systemdboot.nix
+    ../common/optional/system/systemdboot.nix
   ];
 
   services.rclone-storagebox-backup = {
