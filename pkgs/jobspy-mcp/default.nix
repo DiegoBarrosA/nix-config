@@ -1,7 +1,11 @@
 { pkgs, ... }:
 
 let
-  python = pkgs.python3.withPackages (ps: with ps; [ jobspy ]);
+  python = pkgs.python3.withPackages (ps: [
+    (ps.jobspy.overridePythonAttrs (_: {
+      pythonRelaxDeps = true;
+    }))
+  ]);
 in
 pkgs.stdenv.mkDerivation {
   pname = "jobspy-mcp";

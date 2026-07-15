@@ -40,6 +40,11 @@
     customPkgs.coderabbit-cli
   ];
 
+  # VSCode with official AI agent extensions (Claude Code + opencode),
+  # Stylix-themed. Replaces the previous ad-hoc pkgs.vscode-fhs install with an
+  # HM-managed, declarative setup (see features/cli/vscode.nix).
+  programs.vscode-custom.enable = true;
+
   # GTK bookmarks for file manager (using config.home.homeDirectory to avoid hardcoding)
   gtk.gtk3.bookmarks = [
     "file://${config.home.homeDirectory}/Documents"
@@ -222,27 +227,26 @@
     # is dropped (type `work` instead). The work API-key env-var name and the
     # secretEnv entry backing it also come from private-config
     # (workInferenceEnvVar / workSecretEnv).
-    dispatcher.contexts =
-      {
-        personal = {
-          scriptName = "ocp";
-          apiKeyEnvVar = "OPENCODE_API_KEY";
-        };
-        "opencode-go" = {
-          scriptName = "ocp";
-          apiKeyEnvVar = "OPENCODE_API_KEY";
-        };
-        groq = {
-          scriptName = "ocg";
-          apiKeyEnvVar = "GROQ_API_KEY";
-        };
-      }
-      // lib.optionalAttrs ((privateConfig.workProfile or null) != null) {
-        work = {
-          scriptName = privateConfig.workProfile.scriptName;
-          apiKeyEnvVar = privateConfig.workInferenceEnvVar;
-        };
+    dispatcher.contexts = {
+      personal = {
+        scriptName = "ocp";
+        apiKeyEnvVar = "OPENCODE_API_KEY";
       };
+      "opencode-go" = {
+        scriptName = "ocp";
+        apiKeyEnvVar = "OPENCODE_API_KEY";
+      };
+      groq = {
+        scriptName = "ocg";
+        apiKeyEnvVar = "GROQ_API_KEY";
+      };
+    }
+    // lib.optionalAttrs ((privateConfig.workProfile or null) != null) {
+      work = {
+        scriptName = privateConfig.workProfile.scriptName;
+        apiKeyEnvVar = privateConfig.workInferenceEnvVar;
+      };
+    };
 
     # workSecretEnv already carries the work inference key entry, so no
     # customer-named literal is needed here.

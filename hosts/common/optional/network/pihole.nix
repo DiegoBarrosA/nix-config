@@ -78,15 +78,19 @@ in
       settings = {
         misc = {
           dnsmasq_lines = [
-            "interface=enp7s0"
+            "no-hosts"
             "interface=tailscale0"
+            "interface=enp7s0"
+            "bind-interfaces"
+            "address=/minerales.network/${config.networking.warpExit.cobaltoTailscaleIp}"
           ];
         };
         dns = {
-          upstream_servers = cfg.upstreamServers;
+          upstreams = cfg.upstreamServers;
         };
         webserver = {
           api.cli_pw = true;
+          port = toString cfg.webPort;
         };
       };
 
@@ -108,8 +112,12 @@ in
       ports = [ cfg.webPort ];
     };
 
-    # Don't start dnsmasq alongside Pi-hole
-    services.dnsmasq.enable = lib.mkForce false;
+    # The pihole-ftl-setup service is missing PIHOLE_CONFIG in its environment,
+    # so getFTLConfigValue returns wrong paths (e.g. /etc/pihole/gravity.db
+    # instead of /var/lib/pihole/gravity.db), causing downloads to silently fail.
+    # Propagate from the main FTL service.
+    systemd.services.pihole-ftl-setup.environment.PIHOLE_CONFIG =
+      config.systemd.services.pihole-ftl.environment.PIHOLE_CONFIG;
 
   };
 }

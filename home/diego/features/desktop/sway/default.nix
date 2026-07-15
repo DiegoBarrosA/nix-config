@@ -555,7 +555,6 @@ in
     grim
     slurp
     wl-clipboard
-    xdg-desktop-portal-wlr
     xdg-utils
     networkmanagerapplet
     # Helper scripts
@@ -573,18 +572,6 @@ in
     XDG_SESSION_TYPE=wayland
     XDG_CURRENT_DESKTOP=sway
   '';
-
-  xdg.configFile."xdg-desktop-portal/portals.conf".text = ''
-    [preferred]
-    default=gtk
-    org.freedesktop.impl.portal.ScreenCast=wlr
-    org.freedesktop.impl.portal.Screenshot=wlr
-  '';
-  # NOTE: the xdg-desktop-portal-wlr chooser (slurp) is configured at the
-  # NixOS level in hosts/rubi/default.nix (xdg.portal.wlr.settings). The
-  # portal is launched with --config=<NixOS-generated file>, which overrides
-  # any ~/.config/xdg-desktop-portal-wlr/config written here, so we do not
-  # manage it from home-manager.
 
   wayland.windowManager.sway = {
     enable = true;
@@ -864,6 +851,8 @@ in
         # Launch-or-focus shortcuts
         "Mod4+f" = "exec launch-or-focus firefox-devedition 5 firefox-devedition";
         "Mod4+g" = "exec launch-or-focus thunderbird 6 thunderbird";
+
+        "Mod4+d" = "exec launch-or-focus dev.zed.Zed 9 zeditor";
         "Mod4+e" = "exec yazi-launcher";
         "Mod4+n" = "exec launch-or-focus obsidian 8 obsidian";
 

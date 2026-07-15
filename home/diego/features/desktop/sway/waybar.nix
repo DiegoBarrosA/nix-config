@@ -30,6 +30,7 @@ in
           "sway/workspaces"
         ];
         modules-center = [
+          "sway/window"
         ];
         modules-right = [
           "tray"
@@ -48,11 +49,12 @@ in
           format-icons = {
             "5" = "";
             "6" = "";
-            "7" = "";
+            "7" = (u "f802");
             "8" = "";
-            "9" = "";
-            "focused" = "";
-            "default" = "";
+            "9" = (u "f5fc");
+            "10" = "";
+            "default" = (u "f22d");
+            "focused" = (u "f192");
             "high-priority-named" = [
               "5"
               "6"
@@ -206,6 +208,8 @@ in
       }
 
       window#waybar #workspaces button {
+        font-family:  "Font Awesome 7 Brands", "Font Awesome 7 Free";
+        font-weight: normal;
         padding: 0 8px;
         background-image: none;
         border: none;
@@ -221,6 +225,8 @@ in
 
       window#waybar #workspaces button * {
         text-shadow: none;
+        font-family: "Font Awesome 7 Brands", "Font Awesome 7 Free";
+        font-weight: normal;
       }
 
       window#waybar #workspaces button.urgent:not(.focused),
@@ -248,6 +254,7 @@ in
       window#waybar #workspaces button.active,
       window#waybar #workspaces button.active * {
         color: #${colors.base0D};
+        font-weight: 400;
       }
 
       window#waybar #workspaces button.focused,

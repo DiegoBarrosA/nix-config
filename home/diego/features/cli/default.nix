@@ -11,6 +11,7 @@ in
     ./zoxide.nix
     ./helix.nix
     ./zed.nix
+    ./vscode.nix
     ./pfetch.nix
     ./git.nix
     ./starship.nix

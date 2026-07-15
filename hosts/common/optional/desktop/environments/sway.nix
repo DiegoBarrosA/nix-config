@@ -33,24 +33,19 @@
   security.pam.services.greetd.enableGnomeKeyring = true;
   security.pam.services.swaylock = { };
 
+  # Tell GTK apps and Electron/Chromium to use the XDG portal for file dialogs.
+  # Without this, browsers try to spawn a native file chooser which fails on
+  # pure Wayland (no X11 fallback), so "Upload file" clicks silently do nothing.
+  environment.sessionVariables.GTK_USE_PORTAL = "1";
+
   # XDG Desktop Portals for wlroots/Sway
   xdg.portal = {
     enable = true;
     wlr = {
       enable = true;
-      # The wlr portal needs a "chooser" to pick which output/window to
-      # capture. Without it, screencast falls through to uninstalled dmenu
-      # programs and reports "no output found", which surfaces in Firefox as
-      # `NotAllowedError` on getDisplayMedia(). slurp gives an interactive
-      # on-screen output/region selector. This MUST be set here at the NixOS
-      # level: xdg.portal.wlr.enable generates the config file and launches
-      # the portal with --config=<that file>, which overrides any
-      # ~/.config/xdg-desktop-portal-wlr/config from home-manager.
       settings.screencast = {
-        chooser_type = "simple";
-        chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";
-        # Cap frame rate; without this the portal may stall on damage-only
-        # updates and the consumer sees a frozen stream.
+        chooser_type = "dmenu";
+        chooser_cmd = "${pkgs.fuzzel}/bin/fuzzel --dmenu";
         max_fps = 30;
       };
     };

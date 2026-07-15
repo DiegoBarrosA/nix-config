@@ -21,7 +21,7 @@ rec {
     };
 
   mkHome =
-    system: entrypoint: extraModules:
+    system: entrypoint: extraModules: { desktop ? null }:
     inputs.home-manager.lib.homeManagerConfiguration {
       pkgs = legacyPackages.${system};
       extraSpecialArgs = {
@@ -29,6 +29,7 @@ rec {
         inherit (inputs) nix-colors;
         customPkgs = packages.${system};
         privateConfig = inputs.private-config or { };
+        inherit desktop;
       };
       modules =
         (builtins.attrValues homeModules)

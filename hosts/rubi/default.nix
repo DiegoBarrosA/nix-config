@@ -3,6 +3,7 @@
   lib,
   config,
   pkgs,
+  desktop,
   ...
 }:
 {
@@ -108,6 +109,13 @@
     };
   };
 
+  # Boot full-speed direct by default. "client" sets loose reverse-path filtering
+  # so that manually toggling an exit node (e.g. the WARP node "pirita" for
+  # CGNAT-broken IPv4 sites) works cleanly:
+  #   enable:  sudo tailscale set --advertise-exit-node=false --exit-node=pirita --exit-node-allow-lan-access=true
+  #   disable: sudo tailscale set --exit-node=
+  services.tailscale.useRoutingFeatures = "client";
+
   # OpenCode server for remote access (Android app + web UI)
   # Binds to 0.0.0.0 but only accessible via Tailscale (trusted interface)
   # UPower for battery reporting
@@ -150,6 +158,17 @@
   services.dbus.enable = true;
   security.sudo.wheelNeedsPassword = false;
 
+  # AMD 680M iGPU: force Mesa radeonsi VA-API/Vulkan drivers explicitly.
+  # AMDVLK was discontinued Sept 2025; RADV is the only AMD Vulkan driver.
+  # gpu_recovery converts a VCN ring timeout into a controlled GPU reset instead
+  # of a hard freeze requiring a reboot.
+  environment.sessionVariables = {
+    LIBVA_DRIVER_NAME = "radeonsi";
+    VDPAU_DRIVER = "radeonsi";
+    AMD_VULKAN_ICD = "RADV";
+  };
+  boot.kernelParams = lib.mkAfter [ "amdgpu.gpu_recovery=1" ];
+
   # Audio (PipeWire for modern desktop)
   services.pipewire = {
     enable = true;
@@ -167,9 +186,9 @@
   };
 
   # Power management for desktop/laptop
-  services.logind = {
-    lidSwitch = "ignore";
-    lidSwitchDocked = "ignore";
+  services.logind.settings.Login = {
+    HandleLidSwitch = "ignore";
+    HandleLidSwitchDocked = "ignore";
   };
   services.power-profiles-daemon.enable = true;
   services.thermald.enable = true;
@@ -194,7 +213,8 @@
       inherit inputs;
       inherit (inputs) nix-colors;
       customPkgs = inputs.self.packages."x86_64-linux";
-      privateConfig = inputs.private-config.opencodeConfig or { };
+      privateConfig = inputs.private-config or { };
+      inherit desktop;
     };
     users.diego = {
       imports = [
