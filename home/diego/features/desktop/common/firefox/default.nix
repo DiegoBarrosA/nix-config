@@ -66,6 +66,29 @@ in
     isDefault = true;
     path = "dev-edition-default";
     extensions.force = true;
+
+    # WebRTC outbound video bitrate bounds (kbps). Firefox ships max_bitrate=1000,
+    # which caps *total* WebRTC video at 1 Mbps. Google Meet screen sharing uses
+    # 3-layer VP8 simulcast (180p/360p/720p); at a 1 Mbps ceiling the allocator
+    # only funds the two small layers and the 720p top layer encodes 0 frames, so
+    # attendees viewing the presentation full-size see a frozen image (confirmed
+    # via about:webrtc: outbound-rtp `f` layer stuck at framesEncoded=0). Raising
+    # the ceiling lets the top layer be funded; raising start/min speeds the ramp
+    # so it doesn't crawl up from the default 220 kbps. Defaults were 100/220/1000.
+    settings = {
+      "media.peerconnection.video.min_bitrate" = 512;
+      "media.peerconnection.video.start_bitrate" = 1500;
+      "media.peerconnection.video.max_bitrate" = 8000;
+
+      # AMD 680M (VCN3 / RDNA 2): AV1 VA-API decode triggers a VCN ring timeout
+      # (~10 s, the kernel GPU hang-check interval) during WebRTC sessions, freezing
+      # the screen share. Firefox has no VA-API hardware encoder on Linux — only the
+      # decoder is affected. Disabling AV1 keeps H.264/VP9 hardware-accelerated
+      # while preventing the VCN crash (Mesa bug #5500). dmabuf enables zero-copy
+      # DMA-BUF frame delivery on Wayland.
+      "media.av1.enabled" = false;
+      "widget.dmabuf.force-enabled" = true;
+    };
   };
 
   stylix.targets.firefox = {

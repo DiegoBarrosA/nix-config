@@ -135,11 +135,6 @@ let
   # applications size (11) * 4/3 renders the UI a bit small, and Zed has no
   # icon theme by default (null -> generic/small icons).
   baseSettings = {
-    # Font families come from the shared fontProfiles (same as terminal/helix).
-    # mkForce: Stylix's Zed target also sets these; ours must win. Strip the
-    # fontconfig alias asterisk from "Jost*" — Zed wants the plain family name.
-    "buffer_font_family" = lib.mkForce config.fontProfiles.monospace.family;
-    "ui_font_family" = lib.mkForce (lib.removeSuffix "*" config.fontProfiles.regular.family);
     "buffer_font_size" = lib.mkForce 15;
     "ui_font_size" = lib.mkForce 16;
     "agent_font_size" = 15;
@@ -205,7 +200,7 @@ in
       # `appearance` renders as "unspecified" — which Zed rejects, silently
       # falling back to the default theme. Post-process Stylix's generated
       # theme JSON to force every variant's appearance to "dark".
-      themes.stylix = lib.mkForce (
+      themes.stylix = lib.mkIf (config.stylix.enable or false) (lib.mkForce (
         let
           upstream = config.lib.stylix.colors {
             templateRepo = inputs.stylix.inputs.tinted-zed;
@@ -216,7 +211,7 @@ in
           ${pkgs.jq}/bin/jq '.themes |= map(.appearance = "dark")' \
             ${upstream} > "$out"
         ''
-      );
+      ));
 
       extensions = [
         "base16"
@@ -237,9 +232,15 @@ in
         "bash"
       ];
 
-      userSettings = baseSettings // {
-        vim_mode = true;
-      };
+      userSettings = baseSettings
+        // lib.optionalAttrs (config.fontProfiles.enable && config.fontProfiles.monospace.family != null) {
+          # mkForce: Stylix's Zed target also sets these; ours must win.
+          "buffer_font_family" = lib.mkForce config.fontProfiles.monospace.family;
+          "ui_font_family" = lib.mkForce (lib.removeSuffix "*" config.fontProfiles.regular.family);
+        }
+        // {
+          vim_mode = true;
+        };
 
       userKeymaps = [
         {

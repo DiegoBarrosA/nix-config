@@ -19,7 +19,7 @@
 
     # Core services
     ../common/optional/network/tailscale.nix
-    ../common/optional/network/protonvpn-exit.nix
+    ../common/optional/network/warp-exit.nix # "pirita" WARP exit-node container
     ../common/optional/desktop/devices.nix
     ../common/optional/network/hosts.nix
     ../common/optional/system/environment.nix
@@ -145,10 +145,71 @@
     ];
   };
 
+  # Enable Pi-hole DNS server — used by the exit-node DNS chain to resolve
+  # minerales.network (via custom dnsmasq entries in pihole.nix).
+  networking.pihole.enable = true;
+
   # Server configuration
   security.polkit.enable = true;
   services.dbus.enable = true;
   security.sudo.wheelNeedsPassword = false;
+
+  # Act as a plain Tailscale exit node (cobalto already advertises one via the
+  # shared tailscale.nix). "server" enables IP forwarding + masquerade so other
+  # tailnet devices (rubi, iPhone) can route their internet through cobalto.
+  # Combined with the WAN CAKE shaper below, cobalto becomes an SQM gateway that
+  # kills PLDT uplink bufferbloat for every device using it as an exit node.
+  services.tailscale.useRoutingFeatures = "server";
+
+  # Cobalto's tailnet IP — used by pirita's DNS forwarder and Pi-hole to resolve
+  # minerales.network for exit-node clients (see warp-exit.nix, pihole.nix).
+  networking.warpExit.cobaltoTailscaleIp = "100.69.115.53";
+
+  # WAN egress SQM: shape internet-bound traffic with CAKE to ~90% of the PLDT
+  # upload rate so the queue forms here (and drains smartly) instead of piling up
+  # in the ISP router's dumb buffer. Local LAN/tailnet destinations are exempted
+  # so media serving (Jellyfin/Samba) to the LAN is NOT throttled to WAN speed.
+  # Tune WAN_RATE: lower if latency-under-load is still high, raise if throughput
+  # feels capped. Test with: ping 1.1.1.1 while saturating the uplink.
+  systemd.services.wan-sqm = {
+    description = "CAKE SQM on WAN egress (anti-bufferbloat)";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      TC=${pkgs.iproute2}/bin/tc
+      DEV=enp7s0
+      # Tuned empirically: latency-under-load stays ~30ms at 200, ~67ms at 240,
+      # then collapses to ~2000ms at 270 (true uplink ceiling). 200 gives lowest
+      # latency + margin below the cliff. Re-tune if the PLDT plan changes.
+      WAN_RATE=200mbit
+
+      $TC qdisc del dev $DEV root 2>/dev/null || true
+
+      # HTB just splits traffic into two classes; CAKE does the actual shaping.
+      # default 10 = internet (shaped); local dsts are filtered into 20 (unshaped).
+      $TC qdisc add dev $DEV root handle 1: htb default 10
+      $TC class add dev $DEV parent 1: classid 1:10 htb rate 1000mbit ceil 1000mbit
+      $TC class add dev $DEV parent 1: classid 1:20 htb rate 1000mbit ceil 1000mbit
+      # CAKE with per-internal-host fairness (so one device can't starve others).
+      $TC qdisc add dev $DEV parent 1:10 handle 10: cake bandwidth $WAN_RATE nat dual-srchost
+      $TC qdisc add dev $DEV parent 1:20 handle 20: fq_codel
+
+      # Exempt local IPv4 destinations from shaping -> class 1:20
+      $TC filter add dev $DEV parent 1: protocol ip prio 1 u32 match ip dst 192.168.0.0/16 flowid 1:20
+      $TC filter add dev $DEV parent 1: protocol ip prio 1 u32 match ip dst 10.0.0.0/8 flowid 1:20
+      $TC filter add dev $DEV parent 1: protocol ip prio 1 u32 match ip dst 100.64.0.0/10 flowid 1:20
+      # Exempt local IPv6 (tailnet ULA + link-local) -> class 1:20.
+      # IPv6 filters must use a different priority band than IPv4 (prio 2), else
+      # tc rejects them with "Protocol mismatch for filter with specified priority".
+      $TC filter add dev $DEV parent 1: protocol ipv6 prio 2 u32 match ip6 dst fd7a:115c:a1e0::/48 flowid 1:20
+      $TC filter add dev $DEV parent 1: protocol ipv6 prio 2 u32 match ip6 dst fe80::/10 flowid 1:20
+    '';
+  };
 
   # Disable 32-bit OpenGL (no 32-bit apps on this server; avoids nixpkgs i686-linux eval issue)
   hardware.graphics.enable32Bit = false;
@@ -185,16 +246,6 @@
     host = "127.0.0.1";
     port = 4096;
     passwordFile = config.sops.secrets."opencode-server-password".path;
-  };
-
-  # Proton VPN exit node for bypassing PLDT CGNAT
-  # iPhone selects cobalto as Tailscale exit node → traffic routes through Proton VPN
-  networking.protonvpnExit = {
-    enable = true;
-    privateKeyFile = config.sops.secrets."protonvpn-key".path;
-    address = "10.2.0.2/32";
-    peerPublicKey = "F7z+SRMw1d3o1lQbWObWN7GBbHeUZNCC+PCpPy+SOQ8=";
-    peerEndpoint = "138.199.50.106:51820";
   };
 
   system.stateVersion = "22.11";

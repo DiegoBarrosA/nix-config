@@ -88,8 +88,13 @@
       nixosModules = import ./modules/nixos;
       homeModules = import ./modules/home-manager // {
         inherit (inputs.ai-tooling.homeManagerModules)
-          mcp-config opencode-config claude-code-config
-          cursor-config antigravity-config ai-skills;
+          mcp-config
+          opencode-config
+          claude-code-config
+          cursor-config
+          antigravity-config
+          ai-skills
+          ;
       };
       devShells = forAllSystems (system: {
         default = inputs.nixpkgs.legacyPackages.${system}.callPackage ./shell.nix { };
@@ -136,7 +141,7 @@
       nixosConfigurations = {
         cobalto = myLib.mkHost "x86_64-linux" "cobalto" { };
         granate = myLib.mkHost "x86_64-linux" "granate" { };
-        rubi = myLib.mkHost "x86_64-linux" "rubi" { desktop = "gnome"; };
+        rubi = myLib.mkHost "x86_64-linux" "rubi" { desktop = "sway"; };
       };
 
       # Deploy-rs configuration
@@ -201,11 +206,11 @@
 
       # --- MOVE homeConfigurations TO TOP LEVEL ---
       homeConfigurations = {
-        "diego@cobalto" = myLib.mkHome "x86_64-linux" ./home/diego/cobalto.nix [ ];
+        "diego@cobalto" = myLib.mkHome "x86_64-linux" ./home/diego/cobalto.nix [ ] { };
         "diego@rubi" = myLib.mkHome "x86_64-linux" ./home/diego/rubi.nix [
           inputs.private-config.homeManagerModules.workExtras
-        ];
-        "diego@lapislazuli" = myLib.mkHome "aarch64-darwin" ./home/diego/lapislazuli.nix [ ];
+        ] { desktop = "sway"; };
+        "diego@lapislazuli" = myLib.mkHome "aarch64-darwin" ./home/diego/lapislazuli.nix [ ] { };
       };
 
       # Nix-on-Droid configurations (Android)

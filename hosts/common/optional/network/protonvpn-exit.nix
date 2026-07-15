@@ -92,8 +92,12 @@ in
         ${pkgs.nftables}/bin/nft add chain inet protonvpn-exit counter-prerouting { type filter hook prerouting priority -1\; policy accept\; }
         ${pkgs.nftables}/bin/nft add rule inet protonvpn-exit counter-prerouting iifname "tailscale0" counter
         ${pkgs.nftables}/bin/nft add rule inet protonvpn-exit counter-prerouting oifname "tailscale0" counter
-        # MSS clamping for forwarded traffic (avoids PMTU issues over WireGuard)
-        ${pkgs.nftables}/bin/nft add rule inet protonvpn-exit counter-prerouting iifname "tailscale0" tcp flags syn tcp option maxseg size set 1350
+        # MSS clamping for forwarded traffic (avoids PMTU issues over WireGuard).
+        # proton0 MTU is 1280, so MSS must be <= 1240 (1280 - 20 IP - 20 TCP).
+        # The previous 1350 exceeded the MTU and black-holed full-size packets
+        # (TLS certs, web pages) while small packets still passed. (rt mtu is not
+        # usable here: the prerouting hook has no route yet.)
+        ${pkgs.nftables}/bin/nft add rule inet protonvpn-exit counter-prerouting iifname "tailscale0" tcp flags syn tcp option maxseg size set 1240
         # SNAT in ip table: rewrite src to proton0 IP so return traffic comes back through tunnel
         ${pkgs.nftables}/bin/nft add table ip protonvpn-exit-nat
         ${pkgs.nftables}/bin/nft add chain ip protonvpn-exit-nat masq-postrouting { type nat hook postrouting priority srcnat\; policy accept\; }

@@ -134,6 +134,8 @@ in
     };
   };
 
+  home.pointerCursor.enable = lib.mkIf (desktop == "sway") true;
+
   # Icon theme (Stylix doesn't handle icons)
   # Use Papirus with custom folder color matching our accent (base0D).
   # Sway only: GNOME/KDE keep their native icons (Adwaita/Breeze).
