@@ -29,7 +29,7 @@ in
         text = "${colors.base05}ff";
         match = "${colors.base0C}ff";
         selection = "${colors.base00}ff";
-        selection-text = "${colors.base04}ff";
+        selection-text = "${colors.base0D}ff";
         selection-match = "${colors.base0A}ff";
         border = "${colors.base02}ff";
         prompt = "${colors.base05}ff";

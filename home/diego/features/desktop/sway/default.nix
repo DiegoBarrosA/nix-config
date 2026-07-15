@@ -204,7 +204,7 @@ let
     #
     # Usage:
     #   scrcpy-stream toggle               - toggle mirroring (default)
-    #   scrcpy-stream start                 - start mirroring on workspace 0
+    #   scrcpy-stream start                 - start mirroring on workspace 10
     #   scrcpy-stream stop                  - stop mirroring
     #   scrcpy-stream status                - show ADB device status
     #   scrcpy-stream list                  - list connected ADB devices
@@ -279,8 +279,8 @@ let
         exit 1
       fi
 
-      # Switch to workspace 0 before launching
-      swaymsg 'workspace number 0'
+      # Switch to workspace 10 before launching
+      swaymsg 'workspace number 10'
 
       # Launch scrcpy with optimal defaults:
       #   --turn-screen-off : conserve phone battery
@@ -295,11 +295,11 @@ let
         --no-audio \
         --window-title "Android (scrcpy)" &
 
-      # Wait for window to appear then ensure it's on workspace 0
+      # Wait for window to appear then ensure it's on workspace 10
       sleep 1
-      swaymsg "[title=\"Android (scrcpy)\"] move workspace number 0" 2>/dev/null || true
+      swaymsg "[title=\"Android (scrcpy)\"] move workspace number 10" 2>/dev/null || true
 
-      notify-send "scrcpy" "Android mirror started on workspace 0"
+      notify-send "scrcpy" "Android mirror started on workspace 10"
     }
 
     stop_mirror() {
@@ -453,7 +453,7 @@ let
         echo ""
         echo "Mirror / control an Android device via scrcpy."
         echo ""
-        echo "Wired:  Connect USB → toggle starts mirroring on workspace 0"
+        echo "Wired:  Connect USB → toggle starts mirroring on workspace 10"
         echo ""
         echo "Wireless setup (first time only):"
         echo "  1. Connect USB → scrcpy-stream wireless"
@@ -532,6 +532,7 @@ in
     ./mako.nix
     ./swaylock.nix
     ./fuzzel.nix
+    ./bluetooth.nix
   ];
 
   # Cliphist clipboard manager (systemd service)
@@ -550,11 +551,10 @@ in
     autotiling-rs
     polkit_gnome
     # Screenshot tools
-    flameshot
+    swappy
     grim
     slurp
     wl-clipboard
-    xdg-desktop-portal-wlr
     xdg-utils
     networkmanagerapplet
     # Helper scripts
@@ -568,31 +568,10 @@ in
     scrcpy
   ];
 
-  # Flameshot configuration for Wayland (use grim adapter instead of dbus)
-  xdg.configFile."flameshot/flameshot.ini".text = ''
-    [General]
-    useGrimAdapter=true
-    showStartupLaunchMessage=false
-    savePath=${config.home.homeDirectory}/Pictures
-    saveAsFileExtension=png
-  '';
-
   xdg.configFile."environment.d/xdg.conf".text = ''
     XDG_SESSION_TYPE=wayland
     XDG_CURRENT_DESKTOP=sway
   '';
-
-  xdg.configFile."xdg-desktop-portal/portals.conf".text = ''
-    [preferred]
-    default=gtk
-    org.freedesktop.impl.portal.ScreenCast=wlr
-    org.freedesktop.impl.portal.Screenshot=wlr
-  '';
-  # NOTE: the xdg-desktop-portal-wlr chooser (slurp) is configured at the
-  # NixOS level in hosts/rubi/default.nix (xdg.portal.wlr.settings). The
-  # portal is launched with --config=<NixOS-generated file>, which overrides
-  # any ~/.config/xdg-desktop-portal-wlr/config written here, so we do not
-  # manage it from home-manager.
 
   wayland.windowManager.sway = {
     enable = true;
@@ -687,9 +666,20 @@ in
       window.commands = [
         {
           criteria = {
-            app_id = "flameshot";
+            app_id = "swappy";
           };
-          command = "border pixel 0, floating enable, fullscreen disable, move absolute position 0 0";
+          command = "floating enable";
+        }
+        # Inhibit idle while Firefox is focused so swayidle doesn't fire the lock
+        # timer during screen shares (the XDG Inhibit portal isn't supported by
+        # xdg-desktop-portal-wlr, so apps can't prevent lock via the portal).
+        {
+          criteria.app_id = "firefox-devedition";
+          command = "inhibit_idle focus";
+        }
+        {
+          criteria.app_id = "firefox";
+          command = "inhibit_idle focus";
         }
       ];
 
@@ -789,7 +779,7 @@ in
         "XF86AudioMicMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
 
         # Screenshots
-        "Mod4+Shift+s" = "exec flameshot gui";
+        "Mod4+Shift+s" = "exec grim -g \"$(slurp)\" - | swappy -f -";
         "Print" = "exec grim - | wl-copy";
         "Mod4+Shift+a" = "exec grim -g \"$(slurp)\" ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png";
 
@@ -826,7 +816,7 @@ in
         "Mod4+7" = "workspace number 7";
         "Mod4+8" = "workspace number 8";
         "Mod4+9" = "workspace number 9";
-        "Mod4+0" = "workspace number 0";
+        "Mod4+0" = "workspace number 10";
 
         # Horizontal workspace switching
         "Mod4+Tab" = "workspace next";
@@ -842,7 +832,7 @@ in
         "Mod4+Shift+7" = "move container to workspace number 7";
         "Mod4+Shift+8" = "move container to workspace number 8";
         "Mod4+Shift+9" = "move container to workspace number 9";
-        "Mod4+Shift+0" = "move container to workspace number 0";
+        "Mod4+Shift+0" = "move container to workspace number 10";
 
         # Layout
         "Mod4+b" = "splith";
@@ -861,6 +851,8 @@ in
         # Launch-or-focus shortcuts
         "Mod4+f" = "exec launch-or-focus firefox-devedition 5 firefox-devedition";
         "Mod4+g" = "exec launch-or-focus thunderbird 6 thunderbird";
+
+        "Mod4+d" = "exec launch-or-focus dev.zed.Zed 9 zeditor";
         "Mod4+e" = "exec yazi-launcher";
         "Mod4+n" = "exec launch-or-focus obsidian 8 obsidian";
 
@@ -877,8 +869,7 @@ in
 
         # Android mirroring & control (scrcpy)
         "Mod4+Shift+o" = "exec scrcpy-stream toggle"; # Toggle Android mirror
-        "Mod4+Ctrl+o" =
-          "exec scrcpy-stream status && notify-send 'scrcpy' \"$(scrcpy-stream status)\""; # Show status
+        "Mod4+Ctrl+o" = "exec scrcpy-stream status && notify-send 'scrcpy' \"$(scrcpy-stream status)\""; # Show status
 
         # Swap workspaces between outputs
         "Mod4+Ctrl+Left" = "exec swap-workspace-output left";

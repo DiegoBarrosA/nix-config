@@ -204,13 +204,17 @@ flycheck_*.el
 # -----------------------------------------------------------------------------
 # AI/Editor Tools
 # -----------------------------------------------------------------------------
-# OpenCode AI agent plans (ephemeral)
-.opencode/plans/
-
-# AI tool ephemeral state directories
-.claude/
+# Agent scratch dirs (never commit)
 .omo/
+.opencode/
 .superpowers/
+node_modules/
+
+# Syncthing conflict copies
+*sync-conflict*
+
+# Additional AI tool directories
+.claude/
 .cursor/
 docs/superpowers/
 

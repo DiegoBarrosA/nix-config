@@ -3,14 +3,7 @@
   inputs = {
 
     hardware.url = "github:nixos/nixos-hardware";
-    nixos-apple-silicon.url = "github:tpwrules/nixos-apple-silicon";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-24.11";
-    musnix.url = "github:musnix/musnix";
-    darwin = {
-      url = "github:lnl7/nix-darwin/master";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nix-on-droid = {
       url = "github:nix-community/nix-on-droid/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -22,18 +15,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    zjstatus = {
-      url = "github:dj95/zjstatus";
-    };
     sops-nix = {
       url = "github:mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    emacs-overlay.url = "github:nix-community/emacs-overlay";
-    nix-doom-emacs.url = "github:nix-community/nix-doom-emacs";
     nix-colors.url = "github:misterio77/nix-colors";
-
-    themes.url = "github:misterio77/themes";
 
     stylix.url = "github:danth/stylix";
 
@@ -62,11 +48,27 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Agent skills for Obsidian (kepano/obsidian-skills). Consumed as raw
+    # SKILL.md files via programs.ai-skills.extraSkillSources, so flake=false.
+    obsidian-skills = {
+      url = "github:kepano/obsidian-skills";
+      flake = false;
+    };
+
+    # Reusable AI/agent tooling modules (extracted from this repo)
+    ai-tooling = {
+      url = "github:DiegoBarrosA/nix-ai-tooling";
+    };
+
     # Private local config (not pushed to github)
     clin.url = "github:reekta92/clin-rs";
 
     private-config = {
-      url = "git+ssh://git@github.com/DiegoBarrosA/nix-private-config.git";
+      # TEMP: pinned to the in-flight cleanup branch (this nix-config branch
+      # consumes the neutral work* exports, which don't exist on
+      # private-config master yet). Drop ?ref when both cleanup branches
+      # merge.
+      url = "git+ssh://git@github.com/DiegoBarrosA/nix-private-config.git?ref=employer-cleanup";
       flake = true;
     };
   };
@@ -84,7 +86,16 @@
       forAllSystems = inputs.nixpkgs.lib.genAttrs supportedSystems;
       overlays = import ./overlays { inherit inputs; };
       nixosModules = import ./modules/nixos;
-      homeModules = import ./modules/home-manager;
+      homeModules = import ./modules/home-manager // {
+        inherit (inputs.ai-tooling.homeManagerModules)
+          mcp-config
+          opencode-config
+          claude-code-config
+          cursor-config
+          antigravity-config
+          ai-skills
+          ;
+      };
       devShells = forAllSystems (system: {
         default = inputs.nixpkgs.legacyPackages.${system}.callPackage ./shell.nix { };
       });
@@ -109,34 +120,29 @@
         let
           pkgs = legacyPackages.${system};
           lib = inputs.nixpkgs.lib;
-          privatePackages = inputs.private-config.packages.${system} or {};
+          privatePackages = inputs.private-config.packages.${system} or { };
         in
-        import ./pkgs { inherit pkgs lib privatePackages; } // {
+        import ./pkgs { inherit pkgs lib privatePackages; }
+        // {
           clin = inputs.clin.packages.${system}.default;
           coderabbit-cli = inputs.llm-agents.packages.${system}.coderabbit-cli;
         }
       );
-      nixosConfigurations =
-        let
-          mkHost =
-            system: hostname:
-            inputs.nixpkgs.lib.nixosSystem {
-              pkgs = legacyPackages.${system};
-              modules = [ ./hosts/${hostname} ] ++ (builtins.attrValues nixosModules);
-              # MODIFICATION 2: Changed 'outputs' to 'self'
-              specialArgs = {
-                inherit inputs;
-                outputs = self;
-                self = self;
-                customPkgs = packages.${system};
-              };
-            };
-        in
-        {
-          cobalto = mkHost "x86_64-linux" "cobalto";
-          granate = mkHost "x86_64-linux" "granate";
-          rubi = mkHost "x86_64-linux" "rubi";
-        };
+      myLib = import ./lib {
+        inherit
+          inputs
+          self
+          legacyPackages
+          packages
+          homeModules
+          nixosModules
+          ;
+      };
+      nixosConfigurations = {
+        cobalto = myLib.mkHost "x86_64-linux" "cobalto" { };
+        granate = myLib.mkHost "x86_64-linux" "granate" { };
+        rubi = myLib.mkHost "x86_64-linux" "rubi" { desktop = "sway"; };
+      };
 
       # Deploy-rs configuration
       deploy = {
@@ -200,48 +206,11 @@
 
       # --- MOVE homeConfigurations TO TOP LEVEL ---
       homeConfigurations = {
-        "diego@cobalto" = inputs.home-manager.lib.homeManagerConfiguration {
-          pkgs = legacyPackages."x86_64-linux";
-          extraSpecialArgs = {
-            inherit inputs;
-            inherit (inputs) nix-colors;
-            customPkgs = packages."x86_64-linux";
-            privateConfig = inputs.private-config or { };
-          };
-          modules = (builtins.attrValues homeModules) ++ [
-            inputs.stylix.homeModules.stylix
-            inputs.private-config.homeManagerModules.employerMcpConfig
-            ./home/diego/cobalto.nix
-          ];
-        };
-        "diego@rubi" = inputs.home-manager.lib.homeManagerConfiguration {
-          pkgs = legacyPackages."x86_64-linux";
-          extraSpecialArgs = {
-            inherit inputs;
-            inherit (inputs) nix-colors;
-            customPkgs = packages."x86_64-linux";
-            privateConfig = inputs.private-config or { };
-          };
-          modules = (builtins.attrValues homeModules) ++ [
-            inputs.stylix.homeModules.stylix
-            inputs.private-config.homeManagerModules.employerMcpConfig
-            ./home/diego/rubi.nix
-          ];
-        };
-        "diego@lapislazuli" = inputs.home-manager.lib.homeManagerConfiguration {
-          pkgs = legacyPackages."aarch64-darwin";
-          extraSpecialArgs = {
-            inherit inputs;
-            inherit (inputs) nix-colors;
-            customPkgs = packages."aarch64-darwin";
-            privateConfig = inputs.private-config or { };
-          };
-          modules = (builtins.attrValues homeModules) ++ [
-            inputs.stylix.homeModules.stylix
-            inputs.private-config.homeManagerModules.employerMcpConfig
-            ./home/diego/lapislazuli.nix
-          ];
-        };
+        "diego@cobalto" = myLib.mkHome "x86_64-linux" ./home/diego/cobalto.nix [ ] { };
+        "diego@rubi" = myLib.mkHome "x86_64-linux" ./home/diego/rubi.nix [
+          inputs.private-config.homeManagerModules.workExtras
+        ] { desktop = "sway"; };
+        "diego@lapislazuli" = myLib.mkHome "aarch64-darwin" ./home/diego/lapislazuli.nix [ ] { };
       };
 
       # Nix-on-Droid configurations (Android)

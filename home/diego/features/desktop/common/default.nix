@@ -3,6 +3,7 @@
   lib,
   outputs,
   config,
+  desktop ? null,
   ...
 }:
 {
@@ -18,7 +19,6 @@
     ./syncthing.nix
     ./pavucontrol.nix
     ./localsend.nix
-    # ./obsidian.nix
     ./alacritty.nix
     ./obs-studio.nix
     ./mpv.nix
@@ -39,8 +39,12 @@
     color-scheme = lib.mkDefault (
       if config.colorscheme.mode == "light" then "prefer-light" else "prefer-dark"
     );
-    cursor-theme = config.stylix.cursor.name;
     # cursor-size is set by Stylix's GTK module
+  }
+  # Sway only: apply the Stylix (Bibata) cursor. GNOME/KDE keep their native
+  # cursor, so don't reference config.stylix.cursor (which is unset there).
+  // lib.optionalAttrs (desktop == "sway") {
+    cursor-theme = config.stylix.cursor.name;
   };
 
 }

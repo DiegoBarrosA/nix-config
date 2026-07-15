@@ -5,11 +5,12 @@
   pkgs,
   inputs,
   customPkgs,
+  desktop ? null,
   privateConfig ? { },
   ...
 }:
 {
-  colorscheme.type = "black-metal-venom";
+  colorscheme.type = "material-darker";
 
   imports = [
     # Rubi-local toggles for desktop setup.
@@ -28,13 +29,21 @@
     ./global
     ./features/cli
     ./features/desktop/common # Firefox, Qt, Stylix
-    ./features/desktop/sway # Sway desktop configuration
     ./features/ai
     ./features/ai/pixel-office.nix # Pixel Office dashboard + plugin (replaces Caffa blob-office)
     ./features/desktop/obsidian.nix
+  ]
+  ++ lib.optional (desktop != null) ./features/desktop/${desktop};
+
+  home.packages = [
+    customPkgs.clin
+    customPkgs.coderabbit-cli
   ];
 
-  home.packages = [ customPkgs.clin customPkgs.coderabbit-cli ];
+  # VSCode with official AI agent extensions (Claude Code + opencode),
+  # Stylix-themed. Replaces the previous ad-hoc pkgs.vscode-fhs install with an
+  # HM-managed, declarative setup (see features/cli/vscode.nix).
+  programs.vscode-custom.enable = true;
 
   # GTK bookmarks for file manager (using config.home.homeDirectory to avoid hardcoding)
   gtk.gtk3.bookmarks = [
@@ -44,31 +53,30 @@
     "file://${config.home.homeDirectory}/Projects"
   ];
 
-  # OpenCode MCP configuration (managed by modules/home-manager/opencode-config.nix)
+  # OpenCode MCP configuration (managed by the nix-ai-tooling opencode-config module)
   # MCP servers are shared with Zed, Claude Code, Cursor, Antigravity via programs.mcp-config
   programs.opencode-config = {
     enable = true;
 
-    # Work machine: NVIDIA inference only — no Go/Zen (personal resources)
+    # Work machine: work-provider inference only — no Go/Zen (personal resources)
     opencodeGo.enable = false;
     opencodeZen.enable = false;
 
     extraConfig = privateConfig.opencodeConfig or { };
 
     profiles =
-      lib.optionalAttrs ((privateConfig.rubiWorkProfile or null) != null) {
-        # opencode-work → NVIDIA inference only (employer resources, from private-config)
-        work = privateConfig.rubiWorkProfile; # scriptName "ocw" comes from private repo
+      lib.optionalAttrs ((privateConfig.workProfile or null) != null) {
+        # opencode-work → work-provider inference only (work resources, from private-config)
+        work = privateConfig.workProfile; # scriptName "ocw" comes from private repo
       }
       // {
-        # opencode-personal → Go/Zen (Big Pickle) + Groq (no employer resources)
+        # opencode-personal → Go/Zen (Big Pickle) + Groq (no work resources)
         personal = {
           scriptName = "ocp";
-          # Personal profile: no employer MCP servers (jira/confluence/trello/
-          # tempo/netsuite). Only general + personal tooling. Keeps employer
+          # Personal profile: no work MCP servers (project trackers etc.).
+          # Only general + personal tooling. Keeps work
           # tool definitions out of personal-context sessions entirely.
           mcpServers = [
-            "obsidian"
             "nixos"
             "telegram"
             "jobspy"
@@ -124,7 +132,7 @@
                 };
               };
             };
-            # Personal profile uses Big Pickle for all agents (no employer resources)
+            # Personal profile uses Big Pickle for all agents (no work resources)
             agent = (import ./features/ai/opencode-personal.nix).config.agent // {
               title.model = "opencode/big-pickle";
               summary.model = "opencode/big-pickle";
@@ -149,7 +157,7 @@
               };
             };
             # Disable the chatty MCP servers globally; they are re-enabled
-            # per-agent above. The lean default keeps obsidian/nixos/telegram/
+            # per-agent above. The lean default keeps nixos/telegram/
             # jobspy hot (small tool counts) while gating the big ones.
             tools = {
               "github_*" = false;
@@ -163,7 +171,6 @@
           # Groq models are small/fast — keep the tool surface minimal to avoid
           # blowing the context window with MCP tool definitions.
           mcpServers = [
-            "obsidian"
             "nixos"
           ];
           config = {
@@ -213,40 +220,70 @@
         };
       };
 
-    secretEnv = (privateConfig.rubiSecretEnv or { }) // {
-      NVIDIA_API_KEY = "/run/secrets/nvidia-api-key";
+    # Billing-context dispatcher (`oc`): routes to the right profile wrapper
+    # script based on $OPENCODE_BILLING_CONTEXT. Neutral contexts are literal;
+    # the work context is sourced from private-config (customer values live
+    # there), keyed by the neutral keyword "work" — the old customer keyword
+    # is dropped (type `work` instead). The work API-key env-var name and the
+    # secretEnv entry backing it also come from private-config
+    # (workInferenceEnvVar / workSecretEnv).
+    dispatcher.contexts = {
+      personal = {
+        scriptName = "ocp";
+        apiKeyEnvVar = "OPENCODE_API_KEY";
+      };
+      "opencode-go" = {
+        scriptName = "ocp";
+        apiKeyEnvVar = "OPENCODE_API_KEY";
+      };
+      groq = {
+        scriptName = "ocg";
+        apiKeyEnvVar = "GROQ_API_KEY";
+      };
+    }
+    // lib.optionalAttrs ((privateConfig.workProfile or null) != null) {
+      work = {
+        scriptName = privateConfig.workProfile.scriptName;
+        apiKeyEnvVar = privateConfig.workInferenceEnvVar;
+      };
+    };
+
+    # workSecretEnv already carries the work inference key entry, so no
+    # customer-named literal is needed here.
+    secretEnv = (privateConfig.workSecretEnv or { }) // {
       GROQ_API_KEY = "/run/secrets/groq-api-key";
     };
 
     # Skills are sourced from the vault via programs.ai-skills (all prompts migrated there).
     skills = { };
-    agents = (import ./features/ai/gsd-core-agents.nix).agents // (import ./features/ai/coderabbit-agent.nix);
+    agents =
+      (import ./features/ai/gsd-core-agents.nix).agents // (import ./features/ai/coderabbit-agent.nix);
     # Pixel Office plugin (pixel-office.js) is provided by ./features/ai/pixel-office.nix
     commands = (import ./features/ai/gsd-core-agents.nix).commands // {
       "review" = ''
----
-description: Run CodeRabbit AI review on uncommitted changes or against base branch
-argument-hint: "[--type uncommitted | --base main]"
-tools:
-  bash: true
----
-<objective>
-Run CodeRabbit CLI review on the current workspace.
-</objective>
+        ---
+        description: Run CodeRabbit AI review on uncommitted changes or against base branch
+        argument-hint: "[--type uncommitted | --base main]"
+        tools:
+          bash: true
+        ---
+        <objective>
+        Run CodeRabbit CLI review on the current workspace.
+        </objective>
 
-<context>
-User arguments: $ARGUMENTS
-</context>
+        <context>
+        User arguments: $ARGUMENTS
+        </context>
 
-<process>
-1. Parse $ARGUMENTS:
-   - If `--type uncommitted` or no flag: `cr review --agent --type uncommitted`
-   - If `--base <branch>`: `cr review --agent --base <branch>`
-   - Otherwise: `cr review --agent --type uncommitted`
-2. Run the command and capture JSON output
-3. Present findings in three tiers: **Critical**, **Warning**, **Info**
-4. If user asks to fix issues, suggest `/gsd-code-review --fix`
-</process>
+        <process>
+        1. Parse $ARGUMENTS:
+           - If `--type uncommitted` or no flag: `cr review --agent --type uncommitted`
+           - If `--base <branch>`: `cr review --agent --base <branch>`
+           - Otherwise: `cr review --agent --type uncommitted`
+        2. Run the command and capture JSON output
+        3. Present findings in three tiers: **Critical**, **Warning**, **Info**
+        4. If user asks to fix issues, suggest `/gsd-code-review --fix`
+        </process>
       '';
     };
     references = (import ./features/ai/gsd-core-agents.nix).references;

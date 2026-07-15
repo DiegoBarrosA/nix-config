@@ -3,6 +3,7 @@
   lib,
   config,
   pkgs,
+  desktop,
   ...
 }:
 {
@@ -20,7 +21,7 @@
     inputs.stylix.nixosModules.stylix
 
     # Core services
-    ../common/optional/tailscale.nix
+    ../common/optional/network/tailscale.nix
     ./sops.nix # rubi-specific SOPS secrets (minimal for desktop)
 
     # Impermanence (rubi-specific for desktop)
@@ -30,32 +31,25 @@
     ./bootloader.nix
 
     # USB/iOS/device mounting support
-    ../common/optional/devices.nix
+    ../common/optional/desktop/devices.nix
 
     # Steam gaming (GameMode, gamescope, Proton-GE) tuned for the 680M APU
-    ../common/optional/steam.nix
+    ../common/optional/desktop/steam.nix
 
     # OpenCode remote access (API + web UI)
-    ../common/optional/opencode-server.nix
+    ../common/optional/ai/opencode-server.nix
 
     # Local LLM inference (Vulkan on AMD 680M APU — model cache at /var/lib/llama-cpp)
-    ../common/optional/llama-cpp-server.nix
+    ../common/optional/ai/llama-cpp-server.nix
 
     # libvirt/KVM + virt-manager (Windows 11 VM with virtio-gpu)
-    # ../common/optional/virtualization.nix
+    # ../common/optional/desktop/virtualization.nix
     inputs.nixvirt.nixosModules.default
     # ./win11-vm.nix
 
-    # Employer security / VPN modules (from private-config)
-    inputs.private-config.nixosModules.carbonBlack
-    inputs.private-config.nixosModules.nvidiaVpn
-    inputs.private-config.nixosModules.atlassianMcpSecrets
-
-    # Prisma Access VPN (employer-specific, from private-config)
-    inputs.private-config.nixosModules.prismaAccess
-
-    # Prisma Browser (employer-specific, from private-config)
-    inputs.private-config.nixosModules.prismaBrowser
+    # Work (customer) system module — VPN, endpoint security, work secrets.
+    # Contents are defined entirely in private-config.
+    inputs.private-config.nixosModules.work
   ];
 
   # TTY console font - large bold Terminus for hacky TUI aesthetic
@@ -90,69 +84,12 @@
     };
   };
 
-  # Enable Sway (provides system-level support: PAM, setuid wrappers, etc.)
-  programs.sway = {
-    enable = true;
-    wrapperFeatures.gtk = true; # GTK apps use correct theming
-
-    # Export Qt env vars so apps launched from Sway keybindings get the Stylix theme
-    extraSessionCommands = ''
-      export QT_QPA_PLATFORMTHEME="qt5ct"
-      export QT_STYLE_OVERRIDE="kvantum"
-      export QT_PLUGIN_PATH="$HOME/.nix-profile/lib/qt-5.15.18/plugins:$HOME/.nix-profile/lib/qt-6/plugins"
-      export QML2_IMPORT_PATH="$HOME/.nix-profile/lib/qt-5.15.18/qml:$HOME/.nix-profile/lib/qt-6/qml"
-    '';
-  };
-
-  # greetd + tuigreet display manager
-  services.greetd = {
-    enable = true;
-    settings = {
-      default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session --sessions /run/current-system/sw/share/wayland-sessions";
-        user = "greeter";
-      };
-    };
-  };
-
-  # XDG Desktop Portals for wlroots/Sway
-  xdg.portal = {
-    enable = true;
-    wlr = {
-      enable = true;
-      # The wlr portal needs a "chooser" to pick which output/window to
-      # capture. Without it, screencast falls through to uninstalled dmenu
-      # programs and reports "no output found", which surfaces in Firefox as
-      # `NotAllowedError` on getDisplayMedia(). slurp gives an interactive
-      # on-screen output/region selector. This MUST be set here at the NixOS
-      # level: xdg.portal.wlr.enable generates the config file and launches
-      # the portal with --config=<that file>, which overrides any
-      # ~/.config/xdg-desktop-portal-wlr/config from home-manager.
-      settings.screencast = {
-        chooser_type = "simple";
-        chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";
-      };
-    };
-    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
-    config.sway = {
-      default = "gtk";
-      "org.freedesktop.impl.portal.ScreenCast" = "wlr";
-      "org.freedesktop.impl.portal.Screenshot" = "wlr";
-    };
-  };
-
-  # Keyring for secrets (works with Sway via PAM)
-  services.gnome.gnome-keyring.enable = true;
-  security.pam.services.greetd.enableGnomeKeyring = true;
-  security.pam.services.swaylock = { };
-
   # Desktop-specific packages
   environment.systemPackages = with pkgs; [
     # System utilities
     pciutils
     usbutils
     lshw
-    file-roller
     qt6.qtwayland
     sbctl
     openssl
@@ -172,6 +109,13 @@
     };
   };
 
+  # Boot full-speed direct by default. "client" sets loose reverse-path filtering
+  # so that manually toggling an exit node (e.g. the WARP node "pirita" for
+  # CGNAT-broken IPv4 sites) works cleanly:
+  #   enable:  sudo tailscale set --advertise-exit-node=false --exit-node=pirita --exit-node-allow-lan-access=true
+  #   disable: sudo tailscale set --exit-node=
+  services.tailscale.useRoutingFeatures = "client";
+
   # OpenCode server for remote access (Android app + web UI)
   # Binds to 0.0.0.0 but only accessible via Tailscale (trusted interface)
   # UPower for battery reporting
@@ -182,26 +126,11 @@
     host = "0.0.0.0";
     port = 4096;
     passwordFile = config.sops.secrets."opencode-server-password".path;
-    # Load API keys for model providers and MCP servers
+    # Personal API keys only. Work provider/MCP env (inference API, project
+    # trackers, wiki, time tracking) is contributed by the customer module
+    # (private-config: the active customer's defaults module) and merges here.
     secretEnv = {
       OPENCODE_API_KEY = config.sops.secrets."opencode-api-key".path;
-      NVIDIA_API_KEY = config.sops.secrets."nvidia-api-key".path;
-      JIRA_BASE_URL = config.sops.secrets."jira-base-url".path;
-      JIRA_EMAIL = config.sops.secrets."jira-email".path;
-      JIRA_API_KEY = config.sops.secrets."jira-api-key".path;
-      CONFLUENCE_BASE_URL = config.sops.secrets."confluence-base-url".path;
-      CONFLUENCE_EMAIL = config.sops.secrets."confluence-email".path;
-      CONFLUENCE_API_KEY = config.sops.secrets."confluence-api-key".path;
-      TRELLO_API_KEY = config.sops.secrets."trello-api-key".path;
-      TRELLO_API_TOKEN = config.sops.secrets."trello-api-token".path;
-      OBSIDIAN_API_KEY = config.sops.secrets."obsidian-api-key".path;
-      TEMPO_API_TOKEN = config.sops.secrets."tempo-api-key".path;
-      TEMPO_JIRA_API_TOKEN = config.sops.secrets."tempo-jira-api-key".path;
-      TEMPO_JIRA_EMAIL = config.sops.secrets."tempo-jira-email".path;
-      TEMPO_JIRA_BASE_URL = config.sops.secrets."tempo-jira-base-url".path;
-      JIRA_DC_BASE_URL = config.sops.secrets."jira-dc-base-url".path;
-      JIRA_DC_EMAIL = config.sops.secrets."jira-dc-email".path;
-      JIRA_DC_API_KEY = config.sops.secrets."jira-dc-api-key".path;
       GITHUB_TOKEN = config.sops.secrets."github-token".path;
     };
   };
@@ -229,6 +158,17 @@
   services.dbus.enable = true;
   security.sudo.wheelNeedsPassword = false;
 
+  # AMD 680M iGPU: force Mesa radeonsi VA-API/Vulkan drivers explicitly.
+  # AMDVLK was discontinued Sept 2025; RADV is the only AMD Vulkan driver.
+  # gpu_recovery converts a VCN ring timeout into a controlled GPU reset instead
+  # of a hard freeze requiring a reboot.
+  environment.sessionVariables = {
+    LIBVA_DRIVER_NAME = "radeonsi";
+    VDPAU_DRIVER = "radeonsi";
+    AMD_VULKAN_ICD = "RADV";
+  };
+  boot.kernelParams = lib.mkAfter [ "amdgpu.gpu_recovery=1" ];
+
   # Audio (PipeWire for modern desktop)
   services.pipewire = {
     enable = true;
@@ -246,9 +186,9 @@
   };
 
   # Power management for desktop/laptop
-  services.logind = {
-    lidSwitch = "ignore";
-    lidSwitchDocked = "ignore";
+  services.logind.settings.Login = {
+    HandleLidSwitch = "ignore";
+    HandleLidSwitchDocked = "ignore";
   };
   services.power-profiles-daemon.enable = true;
   services.thermald.enable = true;
@@ -259,20 +199,9 @@
   # Printing support
   services.printing.enable = true;
 
-  # Prisma Access Agent VPN (from private-config module)
-  # autoStart must stay true to avoid a mkIf bug in the private-config module
-  # (setting it false leaves environment.etc."xdg/autostart/PAGui.desktop".source
-  # without a value). Instead, strip wantedBy from both services so neither
-  # starts at boot. Use `vpn-on` / `vpn-off` to control manually.
-  services.prismaAccess = {
-    enable = true;
-    autoStart = true;
-  };
-  systemd.services.paa.wantedBy = lib.mkForce [ ];
-  systemd.user.services.paa-gui.wantedBy = lib.mkForce [ ];
-
-  # Prisma Browser (from private-config module)
-  services.prismaBrowser.enable = true;
+  # Prisma Access Agent VPN + Prisma Browser enables, boot-autostart strip, and
+  # VPN state persistence are contributed by the customer module
+  # (private-config: the active customer's defaults module).
 
   # Enable nix-ld for running unpatched binaries
   programs.nix-ld.enable = true;
@@ -284,7 +213,8 @@
       inherit inputs;
       inherit (inputs) nix-colors;
       customPkgs = inputs.self.packages."x86_64-linux";
-      privateConfig = inputs.private-config.opencodeConfig or { };
+      privateConfig = inputs.private-config or { };
+      inherit desktop;
     };
     users.diego = {
       imports = [
@@ -293,14 +223,14 @@
         ../../modules/home-manager/fonts.nix
         ../../modules/home-manager/kanshi.nix
         ../../modules/home-manager/monitors.nix
-        ../../modules/home-manager/obsidian-config.nix
-        ../../modules/home-manager/opencode-config.nix
-        ../../modules/home-manager/mcp-config.nix
-        ../../modules/home-manager/antigravity-config.nix
-        ../../modules/home-manager/claude-code-config.nix
-        ../../modules/home-manager/cursor-config.nix
-        ../../modules/home-manager/ai-skills.nix
-        inputs.private-config.homeManagerModules.employerMcpConfig
+        inputs.ai-tooling.homeManagerModules.opencode-config
+        inputs.ai-tooling.homeManagerModules.mcp-config
+        inputs.ai-tooling.homeManagerModules.antigravity-config
+        inputs.ai-tooling.homeManagerModules.claude-code-config
+        inputs.ai-tooling.homeManagerModules.cursor-config
+        inputs.ai-tooling.homeManagerModules.ai-skills
+        inputs.private-config.homeManagerModules.workMcpConfig
+        inputs.private-config.homeManagerModules.workExtras
         ../../home/diego/rubi.nix
       ];
     };

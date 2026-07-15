@@ -1,10 +1,7 @@
 { config, ... }: let
   colors = config.colorscheme.colors;
 in {
-  programs.swayimg = {
-    enable = true;
-    settings.general.overlay = "yes";
-  };
+  programs.swayimg.enable = true;
   # Themed swayimg config
   xdg.configFile."swayimg/config" = {
     text = ''
