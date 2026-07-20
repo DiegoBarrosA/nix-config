@@ -70,6 +70,7 @@
     "systemd.show_status=false"
     "udev.log_level=3"
     "nowatchdog"
+    "amdgpu.gpu_recovery=1"
   ];
 
   # Nix configuration
@@ -82,6 +83,10 @@
       experimental-features = "nix-command flakes";
       auto-optimise-store = true;
     };
+    # Feed the sops-managed GitHub token to Nix so flake fetches are
+    # authenticated (avoids the 60 req/hr unauthenticated rate limit).
+    # The template renders the token into a valid nix.conf snippet at runtime.
+    extraOptions = "!include /etc/nix/github-access-token.conf";
   };
 
   # Desktop-specific packages
@@ -99,7 +104,11 @@
   # Networking
   networking = {
     hostName = "rubi";
-    networkmanager.enable = true;
+    networkmanager = {
+      enable = true;
+      wifi.backend = "iwd";
+    };
+    wireless.iwd.enable = true;
     firewall = {
       enable = true;
       allowedTCPPorts = [
@@ -167,7 +176,6 @@
     VDPAU_DRIVER = "radeonsi";
     AMD_VULKAN_ICD = "RADV";
   };
-  boot.kernelParams = lib.mkAfter [ "amdgpu.gpu_recovery=1" ];
 
   # Audio (PipeWire for modern desktop)
   services.pipewire = {
@@ -219,6 +227,7 @@
     users.diego = {
       imports = [
         inputs.stylix.homeModules.stylix
+        inputs.plasma-manager.homeModules.plasma-manager
         ../../modules/home-manager/colors.nix
         ../../modules/home-manager/fonts.nix
         ../../modules/home-manager/kanshi.nix

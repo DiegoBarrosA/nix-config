@@ -23,6 +23,7 @@ in
     ./yazi.nix
     ./zathura.nix
     ./bottom.nix
+    ./yazelix.nix
   ];
 
   home.packages =

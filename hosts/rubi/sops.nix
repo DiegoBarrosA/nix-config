@@ -106,4 +106,15 @@ with lib;
       mode = "0400";
     };
   };
+
+  # Render the GitHub token into a nix.conf-format snippet so the nix daemon
+  # can include it. Raw secret is just the token string; nix.conf needs the
+  # "access-tokens = github.com=<token>" form.
+  sops.templates."nix-github-access-token" = {
+    content = "access-tokens = github.com=${config.sops.placeholder."github-token"}";
+    path = "/etc/nix/github-access-token.conf";
+    owner = "root";
+    group = "root";
+    mode = "0400";
+  };
 }
