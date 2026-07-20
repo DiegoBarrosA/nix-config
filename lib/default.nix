@@ -36,6 +36,7 @@ rec {
         ++ [
           inputs.stylix.homeModules.stylix
           inputs.private-config.homeManagerModules.workMcpConfig
+          inputs.yazelix.homeManagerModules.default
           entrypoint
         ]
         ++ extraModules;

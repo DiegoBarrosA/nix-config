@@ -23,6 +23,13 @@
 
     stylix.url = "github:danth/stylix";
 
+    # Declarative KDE Plasma configuration (KWin, effects, shortcuts, etc.)
+    plasma-manager = {
+      url = "github:nix-community/plasma-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
+
     # NixVirt for declarative libvirt VM definitions
     nixvirt = {
       url = "github:AshleyYakeley/NixVirt";
@@ -58,6 +65,11 @@
     # Reusable AI/agent tooling modules (extracted from this repo)
     ai-tooling = {
       url = "github:DiegoBarrosA/nix-ai-tooling";
+    };
+
+    yazelix = {
+      url = "github:luccahuguet/yazelix/stable";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # Private local config (not pushed to github)
