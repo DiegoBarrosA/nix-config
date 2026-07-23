@@ -1,6 +1,24 @@
 { config, lib, pkgs, ... }:
 let
   cfg = config.networking.warpExit;
+
+  # tinyproxy config for the WARP-egress HTTP proxy (pirita-proxy sidecar).
+  # Binds inside pirita's netns; only the host loopback can reach it (via the
+  # 127.0.0.1:8889 port publish on pirita). Allow the podman gateway + localhost.
+  piritaProxyConf = pkgs.writeText "tinyproxy.conf" ''
+    User nobody
+    Group nogroup
+    Port 8889
+    Listen 0.0.0.0
+    Timeout 600
+    MaxClients 100
+    Allow 127.0.0.1
+    Allow 10.88.0.0/16
+    Allow 192.168.1.0/24
+    ConnectPort 443
+    ConnectPort 563
+    LogLevel Warning
+  '';
 in
 {
   options.networking.warpExit = {
@@ -107,6 +125,9 @@ in
         pirita = {
           image = "docker.io/qmcgaw/gluetun:latest";
           autoStart = true;
+          # Publish the tinyproxy port (running in this netns) to the host loopback
+          # so host services (Invidious) can send YouTube API traffic out via WARP.
+          ports = [ "127.0.0.1:8889:8889" ];
           extraOptions = [
             "--cap-add=NET_ADMIN"
             "--device=/dev/net/tun:/dev/net/tun"
@@ -158,6 +179,23 @@ in
           };
           volumes = [
             "/var/lib/pirita-tailscale:/var/lib/tailscale"
+          ];
+        };
+
+        # tinyproxy sidecar sharing pirita's netns: an HTTP CONNECT forward proxy
+        # that egresses through WARP. Invidious points its `http_proxy` here so
+        # YouTube InnerTube API calls (/youtubei/v1/next) leave from WARP's IP
+        # instead of the residential IP that YouTube 400s. Listens on 8889,
+        # published to the host loopback via pirita's port mapping above.
+        pirita-proxy = {
+          image = "docker.io/vimagick/tinyproxy:latest";
+          autoStart = true;
+          dependsOn = [ "pirita" ];
+          extraOptions = [
+            "--network=container:pirita"
+          ];
+          volumes = [
+            "${piritaProxyConf}:/etc/tinyproxy/tinyproxy.conf:ro"
           ];
         };
       };

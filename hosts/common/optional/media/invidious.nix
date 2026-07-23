@@ -90,6 +90,16 @@ in
       ];
       invidious_companion_key = companionSecret;
       default_user_preferences = {};
+      # Route YouTube InnerTube API calls (esp. /youtubei/v1/next) through the
+      # WARP-egress HTTP proxy (pirita-proxy) so they leave from Cloudflare's IP
+      # instead of the residential IP that YouTube rejects with HTTP 400. This
+      # does NOT proxy the companion connection (stays local) or video streams.
+      http_proxy = {
+        user = "";
+        password = "";
+        host = "127.0.0.1";
+        port = 8889;
+      };
     };
   };
 
