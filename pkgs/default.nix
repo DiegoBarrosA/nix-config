@@ -13,4 +13,5 @@ in
   jobspy-mcp = pkgs.callPackage ./jobspy-mcp { };
   thunderbird-mcp = pkgs.callPackage ./thunderbird-mcp { };
   codex-acp = pkgs.callPackage ./codex-acp { };
+  invidious-companion = pkgs.callPackage ./invidious-companion { };
 } // privatePackages
