@@ -90,41 +90,61 @@ let
     esac
   '';
 
-  web-search = pkgs.writeShellScriptBin "web-search" ''
+  rofi-launcher = pkgs.writeShellScriptBin "rofi-launcher" ''
     #!/usr/bin/env bash
     #
-    # Web search using rofi
+    # Combined app launcher + web search for rofi
     #
 
-    ENGINES=(
-        "Google|https://www.google.com/search?q="
-        "GitHub|https://github.com/search?q="
-        "YouTube|https://www.youtube.com/results?search_query="
-        "Wikipedia|https://en.wikipedia.org/wiki/Special:Search?search="
-        "StackOverflow|https://stackoverflow.com/search?q="
-        "Reddit|https://www.reddit.com/search?q="
-        "MDN|https://developer.mozilla.org/en-US/search?q="
-        "NixOS Packages|https://search.nixos.org/packages?query="
+    # Search shortcuts: SHORTCUT|NAME|URL_TEMPLATE
+    SEARCH=(
+        "g|Google|https://www.google.com/search?q="
+        "gh|GitHub|https://github.com/search?q="
+        "yt|YouTube|https://www.youtube.com/results?search_query="
+        "ddg|DuckDuckGo|https://lite.duckduckgo.com/lite?q="
+        "wiki|Wikipedia|https://en.wikipedia.org/wiki/Special:Search?search="
+        "so|StackOverflow|https://stackoverflow.com/search?q="
+        "r|Reddit|https://www.reddit.com/search?q="
+        "mdn|MDN|https://developer.mozilla.org/en-US/search?q="
+        "np|NixOS Packages|https://search.nixos.org/packages?query="
     )
 
-    LIST=$(printf '%s\n' "''${ENGINES[@]%%|*}")
-    ENGINE=$(echo "$LIST" | rofi -dmenu -p "Search")
-    [ -z "$ENGINE" ] && exit 0
-
-    URL=""
-    for entry in "''${ENGINES[@]}"; do
-        NAME="''${entry%%|*}"
-        if [ "$ENGINE" = "$NAME" ]; then
-            URL="''${entry#*|}"
-            break
-        fi
+    # Build entry list
+    for entry in "''${SEARCH[@]}"; do
+        IFS='|' read -r shortcut name _ <<< "$entry"
+        echo " $shortcut  $name"
     done
-    [ -z "$URL" ] && exit 0
 
-    QUERY=$(echo "" | rofi -dmenu -p "$ENGINE")
-    [ -z "$QUERY" ] && exit 0
+    # Add desktop apps
+    for dir in /run/current-system/sw/share/applications "$HOME/.nix-profile/share/applications"; do
+        [ -d "$dir" ] || continue
+        for f in "$dir"/*.desktop; do
+            [ -f "$f" ] || continue
+            grep -q '^NoDisplay=true' "$f" && continue
+            name=$(sed -n 's/^Name=//p' "$f" | head -1)
+            exec_line=$(sed -n 's/^Exec=//p' "$f" | head -1 | sed 's/%[fFuU]//g;s/ --/%--/g')
+            [ -n "$name" ] && [ -n "$exec_line" ] && echo "$name|$exec_line"
+        done
+    done | sort -u | rofi -dmenu -show run -i -p "Launcher" \
+        | {
+            IFS='|' read -r selection exec_line
+            [ -z "$selection" ] && exit 0
 
-    xdg-open "$URL$QUERY"
+            # Check if it's a search shortcut (starts with space)
+            if [[ "$selection" =~ ^\  ]]; then
+                shortcut=$(echo "$selection" | awk '{print $2}')
+                for entry in "''${SEARCH[@]}"; do
+                    IFS='|' read -r s _ url <<< "$entry"
+                    if [ "$shortcut" = "$s" ]; then
+                        query=$(echo "$selection" | sed 's/^ *[^ ]* *[^ ]* *//')
+                        [ -n "$query" ] && xdg-open "$url$query"
+                        exit 0
+                    fi
+                done
+            else
+                [ -n "$exec_line" ] && exec $exec_line
+            fi
+        }
   '';
 
   # Script to manage virtual output for phone streaming via Sunshine
