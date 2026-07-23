@@ -9,7 +9,7 @@ stdenv.mkDerivation rec {
 
   src = fetchzip {
     url = "https://github.com/iv-org/invidious-companion/releases/download/release-master/invidious_companion-x86_64-unknown-linux-gnu.tar.gz";
-    hash = "sha256-AqxoNcZ4Rs69o/wdMwlc00DBj3V7nG/p14P47aERoAs=";
+    hash = "sha256-nJXrz3voEjf8yGAwEHUlZN5JJptwU7LvTiwBjJ/5zyc=";
     stripRoot = false;
   };
 
