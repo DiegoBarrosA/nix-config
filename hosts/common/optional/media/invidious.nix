@@ -6,22 +6,16 @@ let
   cfg = config.services.invidious;
   defaultUser = "diego";
   invidiousPassword = "5jjugQJQzqTuTHEMmTs5Zy7U1R585XBD";
-  passwordFile = "/run/invidious/password";
-  pgContainer = "invidious-postgres";
-  pgService = "podman-${pgContainer}";
-  companionContainer = "invidious-companion";
-  companionService = "podman-${companionContainer}";
   companionSecret = "p2UX7EBHxazhKqNM"; # 16 chars
   yatteeContainer = "yattee-server";
   yatteeService = "podman-${yatteeContainer}";
   yatteePort = 8085;
-  invidiousUser = "diego";
 
   syncSubscriptionsScript = pkgs.writeShellScript "sync-invidious-to-yattee" ''
     set -euo pipefail
 
-    SUBS=$(PGPASSWORD=invidious ${pkgs.postgresql_16}/bin/psql -h localhost -p 5433 -U invidious -d invidious -t -A \
-      -c "SELECT unnest(subscriptions) FROM users WHERE email = '${invidiousUser}';")
+    SUBS=$(sudo -u invidious psql -d invidious -t -A \
+      -c "SELECT unnest(subscriptions) FROM users WHERE email = '${defaultUser}';")
 
     YATTEE_DATA=$(${pkgs.podman}/bin/podman volume inspect yattee-data --format '{{.Mountpoint}}' 2>/dev/null || echo "")
     if [ -z "$YATTEE_DATA" ]; then
@@ -53,7 +47,6 @@ let
 
   createUserScript = pkgs.writeShellScript "invidious-create-user" ''
     set -e
-    PASSWORD="$(cat ${passwordFile})"
     HOST="http://127.0.0.1:${toString cfg.port}"
 
     ${pkgs.curl}/bin/curl -sf -o /dev/null \
@@ -63,16 +56,12 @@ let
     HASH=$(${pkgs.python3.withPackages (ps: [ ps.bcrypt ])}/bin/python3 -c "
 import bcrypt, sys
 sys.stdout.write(bcrypt.hashpw(sys.argv[1].encode(), bcrypt.gensalt(rounds=12)).decode())
-" "$PASSWORD")
+" "${invidiousPassword}")
 
-    cat > /tmp/invidious-create-user.sql <<PSQLSTOP
-INSERT INTO users (email, password, preferences)
-VALUES ('${defaultUser}@localhost', :'hash', '{}')
-ON CONFLICT (email) DO UPDATE SET password = :'hash';
-PSQLSTOP
-    PGPASSWORD=invidious ${pkgs.postgresql_16}/bin/psql -h localhost -p 5433 -U invidious -d invidious \
-      -v hash="$HASH" -f /tmp/invidious-create-user.sql
-    rm -f /tmp/invidious-create-user.sql
+    sudo -u invidious psql -d invidious -c \
+      "INSERT INTO users (email, password, preferences)
+       VALUES ('${defaultUser}@localhost', '$HASH', '{}')
+       ON CONFLICT (email) DO UPDATE SET password = '$HASH';"
     echo "Invidious admin user created/verified"
   '';
 in
@@ -80,9 +69,12 @@ in
   services.invidious = {
     enable = true;
     port = 3000;
+    address = "0.0.0.0";
+    domain = "invidious.minerales.network";
+
+    database.createLocally = true;
+
     settings = {
-      host_binding = mkForce "0.0.0.0";
-      domain = "invidious.minerales.network";
       external_port = 443;
       https_only = true;
       registration_enabled = true;
@@ -91,20 +83,104 @@ in
       statistics_enabled = true;
       admins = [ defaultUser ];
       invidious_companion = [
-        { private_url = "http://192.168.1.85:8282/companion"; }
+        { private_url = "http://127.0.0.1:8282/companion"; }
       ];
       invidious_companion_key = companionSecret;
       default_user_preferences = {};
-      db = mkForce {
-        user = "invidious";
-        password = "invidious";
-        host = "localhost";
-        port = 5433;
-        dbname = "invidious";
-      };
     };
   };
 
+  # One-shot migration: copy PostgreSQL data from podman volume to native PostgreSQL
+  # This runs before postgresql starts. Safe to re-run (idempotent).
+  systemd.services.invidious-pg-migration = {
+    description = "Migrate Invidious PostgreSQL data from podman to native";
+    before = [ "postgresql.target" ];
+    wantedBy = [ "postgresql.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = let
+      pgDataDir = config.services.postgresql.dataDir;
+    in ''
+      set -euo pipefail
+
+      # If native data dir already has a PG_VERSION, migration already done
+      if [ -f "${pgDataDir}/PG_VERSION" ]; then
+        echo "invidious-pg-migration: already migrated, skipping"
+        exit 0
+      fi
+
+      # Find the podman volume mount point for invidious-pgdata
+      VOLUME_MP=$(${pkgs.podman}/bin/podman volume inspect invidious-pgdata --format '{{.Mountpoint}}' 2>/dev/null || echo "")
+      if [ -z "$VOLUME_MP" ]; then
+        echo "invidious-pg-migration: no podman volume invidious-pgdata found, starting fresh"
+        exit 0
+      fi
+
+      if [ ! -f "$VOLUME_MP/PG_VERSION" ]; then
+        echo "invidious-pg-migration: podman volume has no PG_VERSION, starting fresh"
+        exit 0
+      fi
+
+      echo "invidious-pg-migration: copying data from $VOLUME_MP to ${pgDataDir}"
+      mkdir -p "${pgDataDir}"
+      ${pkgs.rsync}/bin/rsync -a --delete "$VOLUME_MP/" "${pgDataDir}/"
+      chown -R postgres:postgres "${pgDataDir}"
+      echo "invidious-pg-migration: done"
+    '';
+  };
+
+  # Native companion service — replaces the podman container
+  systemd.services.invidious-companion = {
+    description = "Invidious Companion (YouTube video stream handler)";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "simple";
+      DynamicUser = true;
+      StateDirectory = "invidious-companion";
+      Environment = [
+        "SERVER_SECRET_KEY=${companionSecret}"
+        "HOST=127.0.0.1"
+        "PORT=8282"
+        "SERVER_BASE_PATH=/companion"
+        "CACHE_DIRECTORY=/var/lib/invidious-companion"
+      ];
+      ExecStart = "${pkgs.invidious-companion}/bin/invidious-companion";
+      Restart = "always";
+      RestartSec = 2;
+      StartLimitBurst = 10;
+      # Security hardening (from upstream systemd unit)
+      NoNewPrivileges = true;
+      PrivateDevices = true;
+      PrivateTmp = true;
+      ProtectSystem = "strict";
+      ProtectHome = true;
+      ProtectKernelLogs = true;
+      ProtectKernelModules = true;
+      ProtectControlGroups = true;
+      RestrictAddressFamilies = [ "AF_INET" "AF_INET6" ];
+      RestrictNamespaces = true;
+      SystemCallArchitectures = "native";
+      ReadWritePaths = [ "/var/lib/invidious-companion" ];
+    };
+  };
+
+  systemd.services.invidious-create-user = {
+    description = "Create default Invidious user";
+    after = [ "invidious.service" ];
+    wants = [ "invidious.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = createUserScript;
+      RemainAfterExit = true;
+    };
+  };
+
+  # Yattee server — kept as podman container (no native alternative)
   virtualisation.podman = {
     enable = true;
     defaultNetwork.settings.dns_enabled = true;
@@ -112,30 +188,6 @@ in
 
   virtualisation.oci-containers = {
     backend = "podman";
-    containers.${pgContainer} = {
-      image = "docker.io/postgres:16-alpine";
-      autoStart = true;
-      ports = [ "127.0.0.1:5433:5432" ];
-      environment = {
-        POSTGRES_DB = "invidious";
-        POSTGRES_USER = "invidious";
-        POSTGRES_PASSWORD = "invidious";
-      };
-      volumes = [
-        "invidious-pgdata:/var/lib/postgresql/data:rw"
-      ];
-    };
-    containers.${companionContainer} = {
-      image = "quay.io/invidious/invidious-companion:latest";
-      autoStart = true;
-      extraOptions = [ "--network=host" ];
-      environment = {
-        SERVER_SECRET_KEY = companionSecret;
-      };
-      volumes = [
-        "invidious-companion-cache:/var/tmp/youtubei.js:rw"
-      ];
-    };
     containers.${yatteeContainer} = {
       image = "docker.io/yattee/yattee-server:latest";
       autoStart = true;
@@ -156,15 +208,6 @@ in
     };
   };
 
-  systemd.services.${pgService} = {
-    serviceConfig.Restart = mkForce "always";
-  };
-
-  systemd.services.${companionService} = {
-    serviceConfig.Restart = mkForce "always";
-    serviceConfig.StartLimitBurst = 10;
-  };
-
   systemd.services.${yatteeService} = {
     serviceConfig.Restart = mkForce "always";
     postStart = let
@@ -177,7 +220,6 @@ in
           exit 0
         fi
         echo "[yattee-iptables-cleanup] Current container ID: $CURRENT_ID"
-        # 1) Remove stale HOSTPORT-DNAT entries (all except current container)
         STALE_HOSTPORT=$(${pkgs.iptables}/bin/iptables -t nat -S NETAVARK-HOSTPORT-DNAT 2>/dev/null \
           | ${pkgs.gnugrep}/bin/grep 'tcp .*--dport ${toString yatteePort}' \
           | ${pkgs.gnugrep}/bin/grep -v "$CURRENT_ID" || true)
@@ -198,80 +240,10 @@ in
     '';
   };
 
-  systemd.tmpfiles.rules = [
-    "d /run/invidious 0750 invidious invidious -"
-  ];
-
-  systemd.services.invidious-write-password = {
-    description = "Write Invidious admin password";
-    after = [ "systemd-tmpfiles-setup.service" ];
-    before = [ "invidious-create-user.service" ];
-    wantedBy = [ "invidious-create-user.service" ];
-    requiredBy = [ "invidious-create-user.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-    script = ''
-      mkdir -p /run/invidious
-      install -m 0400 -o invidious -g invidious \
-        ${pkgs.writeText "invidious-password" invidiousPassword} ${passwordFile}
-    '';
-  };
-
-  systemd.services.invidious = let
-    writableConfigFile = "/var/lib/invidious/config/config.yml";
-    settingsFile = (pkgs.formats.json {}).generate "invidious-settings" cfg.settings;
-  in {
-    after = mkAfter [ "${companionService}.service" ];
-    wants = [ "${companionService}.service" ];
-
-    serviceConfig.StateDirectory = "invidious";
-    serviceConfig.StateDirectoryMode = "0750";
-    serviceConfig.WorkingDirectory = "/var/lib/invidious";
-
-    script = lib.mkForce ''
-      # Generate hmac_key if missing
-      HMAC_KEY_FILE="/var/lib/invidious/hmac_key"
-      if [ ! -e "$HMAC_KEY_FILE" ]; then
-        ${pkgs.pwgen}/bin/pwgen 20 1 > "$HMAC_KEY_FILE"
-        chmod 0600 "$HMAC_KEY_FILE"
-      fi
-
-      # Merge config parts into YAML
-      mkdir -p /var/lib/invidious/config
-      configParts=()
-      configParts+=("$(${pkgs.jq}/bin/jq -R '{"hmac_key":.}' <"$HMAC_KEY_FILE")")
-      configParts+=("$(< ${settingsFile})")
-      configParts+=('{"port":${toString cfg.port}}')
-
-      mergedConfig="$(${pkgs.jq}/bin/jq -s 'reduce .[] as $item ({}; . * $item)' <<<"''${configParts[*]}")"
-      echo "$mergedConfig" | ${pkgs.yq-go}/bin/yq -P > "${writableConfigFile}"
-      chmod 0640 "${writableConfigFile}"
-
-      export INVIDIOUS_CONFIG_FILE="${writableConfigFile}"
-      exec ${cfg.package}/bin/invidious
-    '';
-  };
-
-  systemd.services.invidious-create-user = {
-    description = "Create default Invidious user";
-    after = [ "invidious.service" "${pgService}.service" "${companionService}.service" "invidious-write-password.service" ];
-    wants = [ "invidious.service" "${pgService}.service" "${companionService}.service" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = createUserScript;
-      User = "invidious";
-      Group = "invidious";
-      RemainAfterExit = true;
-    };
-  };
-
   systemd.services.invidious-sync-subscriptions = {
     description = "Sync Invidious subscriptions to Yattee Server";
-    after = [ "${yatteeService}.service" "${pgService}.service" ];
-    wants = [ "${yatteeService}.service" "${pgService}.service" ];
+    after = [ "${yatteeService}.service" ];
+    wants = [ "${yatteeService}.service" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";
