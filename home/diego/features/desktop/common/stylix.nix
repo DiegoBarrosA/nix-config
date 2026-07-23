@@ -132,7 +132,6 @@ in
       waybar.enable = false;
       mako.enable = false;
       swaylock.enable = false;
-      fuzzel.enable = false;
       bat.enable = true;
       helix.enable = true;
       # Zellij themed manually (features/cli/zellij.nix) due to tab-bar

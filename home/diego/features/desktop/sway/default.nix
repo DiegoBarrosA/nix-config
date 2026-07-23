@@ -64,12 +64,12 @@ let
   power-menu = pkgs.writeShellScriptBin "power-menu" ''
     #!/usr/bin/env bash
     #
-    # Power menu using fuzzel
+    # Power menu using rofi
     #
 
     OPTIONS=" Lock\n Logout\n Suspend\n Reboot\n Shutdown"
 
-    CHOICE=$(echo -e "$OPTIONS" | fuzzel --dmenu --prompt "Power: ")
+    CHOICE=$(echo -e "$OPTIONS" | rofi -dmenu -p "Power")
 
     case "$CHOICE" in
         *"Lock")
@@ -88,6 +88,43 @@ let
             systemctl poweroff
             ;;
     esac
+  '';
+
+  web-search = pkgs.writeShellScriptBin "web-search" ''
+    #!/usr/bin/env bash
+    #
+    # Web search using rofi
+    #
+
+    ENGINES=(
+        "Google|https://www.google.com/search?q="
+        "GitHub|https://github.com/search?q="
+        "YouTube|https://www.youtube.com/results?search_query="
+        "Wikipedia|https://en.wikipedia.org/wiki/Special:Search?search="
+        "StackOverflow|https://stackoverflow.com/search?q="
+        "Reddit|https://www.reddit.com/search?q="
+        "MDN|https://developer.mozilla.org/en-US/search?q="
+        "NixOS Packages|https://search.nixos.org/packages?query="
+    )
+
+    LIST=$(printf '%s\n' "''${ENGINES[@]%%|*}")
+    ENGINE=$(echo "$LIST" | rofi -dmenu -p "Search")
+    [ -z "$ENGINE" ] && exit 0
+
+    URL=""
+    for entry in "''${ENGINES[@]}"; do
+        NAME="''${entry%%|*}"
+        if [ "$ENGINE" = "$NAME" ]; then
+            URL="''${entry#*|}"
+            break
+        fi
+    done
+    [ -z "$URL" ] && exit 0
+
+    QUERY=$(echo "" | rofi -dmenu -p "$ENGINE")
+    [ -z "$QUERY" ] && exit 0
+
+    xdg-open "$URL$QUERY"
   '';
 
   # Script to manage virtual output for phone streaming via Sunshine
@@ -580,7 +617,7 @@ in
     ./kanshi.nix
     ./mako.nix
     ./swaylock.nix
-    ./fuzzel.nix
+    ./rofi.nix
     ./bluetooth.nix
   ];
 
@@ -599,7 +636,7 @@ in
     jq
     autotiling-rs
     polkit_gnome
-    raffi
+    rofi
     # Screenshot tools
     swappy
     grim
@@ -611,6 +648,7 @@ in
     launch-or-focus
     yazi-launcher
     power-menu
+    web-search
     sunshine-stream
     swap-workspace-output
     scrcpy-stream
@@ -637,7 +675,7 @@ in
       up = "k";
       right = "l";
       terminal = "alacritty";
-      menu = "raffi -p";
+      menu = "rofi -show drun";
 
       bars = [ ];
 
@@ -817,7 +855,7 @@ in
         "Mod4+w" = "kill";
 
         "Mod4+p" = "floating enable, sticky enable";
-        "Mod4+space" = "exec raffi -p | xargs swaymsg exec --";
+        "Mod4+space" = "exec rofi -show drun";
         "Mod4+Shift+c" = "reload";
         "Mod4+Shift+e" = "exec power-menu";
         "Mod4+Escape" = "exec swaylock -f";
@@ -838,7 +876,10 @@ in
         "Mod4+Shift+a" = "exec grim -g \"$(slurp)\" ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png";
 
         # Clipboard history
-        "Mod4+c" = "exec cliphist list | fuzzel --dmenu | cliphist decode | wl-copy";
+        "Mod4+c" = "exec cliphist list | rofi -dmenu | cliphist decode | wl-copy";
+
+        # Web search
+        "Mod4+s" = "exec web-search";
 
         # Focus movement
         "Mod4+h" = "focus left";
@@ -906,7 +947,7 @@ in
         "Mod4+f" = "exec launch-or-focus firefox-devedition 5 firefox-devedition";
         "Mod4+g" = "exec launch-or-focus thunderbird 6 thunderbird";
 
-        "Mod4+d" = "exec code-cursor-fhs";
+        "Mod4+d" = "exec cursor";
         "Mod4+e" = "exec yazi-launcher";
         "Mod4+n" = "exec launch-or-focus obsidian 8 obsidian";
 

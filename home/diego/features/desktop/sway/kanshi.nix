@@ -25,10 +25,10 @@ let
     esac
   '';
 
-  # UI for switching modes using fuzzel
+  # UI for switching modes using rofi
   displayModeUI = pkgs.writeShellScriptBin "display-mode-selector" ''
     CHOICE=$(printf 'Single (Laptop)\nDocked (Samsung)\nTriple (All Monitors)' \
-      | fuzzel --dmenu --prompt "Display Mode: ")
+      | rofi -dmenu -p "Display Mode")
     case "$CHOICE" in
       "Single (Laptop)")
         kanshi-switch single
