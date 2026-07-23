@@ -93,58 +93,103 @@ let
   rofi-launcher = pkgs.writeShellScriptBin "rofi-launcher" ''
     #!/usr/bin/env bash
     #
-    # Combined app launcher + web search for rofi
+    # Combined app launcher + web search for rofi.
+    # Type "<shorthand> <query>" to search directly, e.g. "g nixos" or "ddg wayland".
     #
 
-    # Search shortcuts: SHORTCUT|NAME|URL_TEMPLATE
+    # shorthand|Name|URL_TEMPLATE
     SEARCH=(
         "g|Google|https://www.google.com/search?q="
         "gh|GitHub|https://github.com/search?q="
         "yt|YouTube|https://www.youtube.com/results?search_query="
         "ddg|DuckDuckGo|https://lite.duckduckgo.com/lite?q="
-        "wiki|Wikipedia|https://en.wikipedia.org/wiki/Special:Search?search="
-        "so|StackOverflow|https://stackoverflow.com/search?q="
         "r|Reddit|https://www.reddit.com/search?q="
         "mdn|MDN|https://developer.mozilla.org/en-US/search?q="
+        "so|StackOverflow|https://stackoverflow.com/search?q="
         "np|NixOS Packages|https://search.nixos.org/packages?query="
     )
 
-    # Build entry list
-    for entry in "''${SEARCH[@]}"; do
-        IFS='|' read -r shortcut name _ <<< "$entry"
-        echo " $shortcut  $name"
-    done
-
-    # Add desktop apps
-    for dir in /run/current-system/sw/share/applications "$HOME/.nix-profile/share/applications"; do
-        [ -d "$dir" ] || continue
-        for f in "$dir"/*.desktop; do
-            [ -f "$f" ] || continue
-            grep -q '^NoDisplay=true' "$f" && continue
-            name=$(sed -n 's/^Name=//p' "$f" | head -1)
-            exec_line=$(sed -n 's/^Exec=//p' "$f" | head -1 | sed 's/%[fFuU]//g;s/ --/%--/g')
-            [ -n "$name" ] && [ -n "$exec_line" ] && echo "$name|$exec_line"
+    url_for() {
+        local key="$1"
+        for entry in "''${SEARCH[@]}"; do
+            IFS='|' read -r s _ url <<< "$entry"
+            [ "$s" = "$key" ] && { printf '%s' "$url"; return 0; }
         done
-    done | sort -u | rofi -dmenu -show run -i -p "Launcher" \
-        | {
-            IFS='|' read -r selection exec_line
-            [ -z "$selection" ] && exit 0
+        return 1
+    }
 
-            # Check if it's a search shortcut (starts with space)
-            if [[ "$selection" =~ ^\  ]]; then
-                shortcut=$(echo "$selection" | awk '{print $2}')
-                for entry in "''${SEARCH[@]}"; do
-                    IFS='|' read -r s _ url <<< "$entry"
-                    if [ "$shortcut" = "$s" ]; then
-                        query=$(echo "$selection" | sed 's/^ *[^ ]* *[^ ]* *//')
-                        [ -n "$query" ] && xdg-open "$url$query"
-                        exit 0
-                    fi
-                done
-            else
-                [ -n "$exec_line" ] && exec $exec_line
-            fi
-        }
+    do_search() {
+        # $1 = shorthand, $2 = query (may be empty)
+        local url query
+        url=$(url_for "$1") || return 1
+        query="$2"
+        if [ -z "$query" ]; then
+            query=$(echo "" | rofi -dmenu -p "$1")
+            [ -z "$query" ] && exit 0
+        fi
+        # URL-encode spaces
+        query=''${query// /%20}
+        xdg-open "$url$query"
+        exit 0
+    }
+
+    # Parse every .desktop file in a single awk pass into "Name<TAB>Exec" lines.
+    # This is much faster than spawning sed/grep per file.
+    app_pairs() {
+        awk -F= '
+            FNR==1 { name=""; exec=""; nodisplay=0 }
+            /^\[Desktop Entry\]/ { inde=1; next }
+            /^\[/ && !/^\[Desktop Entry\]/ { inde=0 }
+            inde && $1=="Name" && name=="" { name=$2 }
+            inde && $1=="Exec" && exec=="" { $1=""; sub(/^=/,""); e=$0; sub(/^ /,"",e); exec=e }
+            inde && $1=="NoDisplay" && $2=="true" { nodisplay=1 }
+            ENDFILE {
+                if (name != "" && exec != "" && !nodisplay) {
+                    gsub(/%[fFuUdDnNickvm]/, "", exec)
+                    sub(/[ \t]+$/, "", exec)
+                    print name "\t" exec
+                }
+            }
+        ' /run/current-system/sw/share/applications/*.desktop \
+          "$HOME"/.nix-profile/share/applications/*.desktop 2>/dev/null | sort -u
+    }
+
+    APP_PAIRS=$(app_pairs)
+
+    list_all() {
+        for entry in "''${SEARCH[@]}"; do
+            IFS='|' read -r s name _ <<< "$entry"
+            printf '%s  %s  (search)\n' "$s" "$name"
+        done
+        printf '%s\n' "$APP_PAIRS" | cut -f1
+    }
+
+    SELECTION=$(list_all | rofi -dmenu -i -p "")
+    [ -z "$SELECTION" ] && exit 0
+
+    # 1) Inline query: "<shorthand> <query...>"
+    FIRST=''${SELECTION%% *}
+    REST=""
+    case "$SELECTION" in
+        *" "*) REST=''${SELECTION#* } ;;
+    esac
+    if url_for "$FIRST" >/dev/null 2>&1; then
+        do_search "$FIRST" "$REST"
+    fi
+
+    # 2) Selected a search hint line: "<shorthand>  <Name>  (search)"
+    case "$SELECTION" in
+        *"  (search)")
+            do_search "$FIRST" ""
+            ;;
+    esac
+
+    # 3) Otherwise treat as an app name — look up its Exec from the cached pairs
+    EXEC_LINE=$(printf '%s\n' "$APP_PAIRS" | awk -F'\t' -v n="$SELECTION" '$1==n {print $2; exit}')
+    [ -n "$EXEC_LINE" ] && exec $EXEC_LINE
+
+    # 4) Fallback: run whatever was typed as a command
+    exec $SELECTION
   '';
 
   # Script to manage virtual output for phone streaming via Sunshine
@@ -668,7 +713,7 @@ in
     launch-or-focus
     yazi-launcher
     power-menu
-    web-search
+    rofi-launcher
     sunshine-stream
     swap-workspace-output
     scrcpy-stream
@@ -695,7 +740,7 @@ in
       up = "k";
       right = "l";
       terminal = "alacritty";
-      menu = "rofi -show drun";
+      menu = "rofi-launcher";
 
       bars = [ ];
 
@@ -875,7 +920,7 @@ in
         "Mod4+w" = "kill";
 
         "Mod4+p" = "floating enable, sticky enable";
-        "Mod4+space" = "exec rofi -show drun";
+        "Mod4+space" = "exec rofi-launcher";
         "Mod4+Shift+c" = "reload";
         "Mod4+Shift+e" = "exec power-menu";
         "Mod4+Escape" = "exec swaylock -f";
@@ -899,7 +944,7 @@ in
         "Mod4+c" = "exec cliphist list | rofi -dmenu | cliphist decode | wl-copy";
 
         # Web search
-        "Mod4+s" = "exec web-search";
+        "Mod4+s" = "exec rofi-launcher";
 
         # Focus movement
         "Mod4+h" = "focus left";

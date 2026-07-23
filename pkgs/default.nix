@@ -14,4 +14,5 @@ in
   thunderbird-mcp = pkgs.callPackage ./thunderbird-mcp { };
   codex-acp = pkgs.callPackage ./codex-acp { };
   invidious-companion = pkgs.callPackage ./invidious-companion { };
+  claude-desktop = pkgs.callPackage ./claude-desktop { };
 } // privatePackages

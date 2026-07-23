@@ -38,6 +38,7 @@
   home.packages = [
     customPkgs.clin
     customPkgs.coderabbit-cli
+    customPkgs.claude-desktop
   ];
 
   # VSCode with official AI agent extensions (Claude Code + opencode),

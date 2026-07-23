@@ -41,7 +41,7 @@ let
       --uc-highlight-colour: #${c.base02}; /* secondary background */
       --uc-inverted-colour: #${c.base05};  /* primary text */
       --uc-muted-colour: #${c.base04};     /* muted text */
-      --uc-accent-colour: var(--uc-identity-colour-purple);
+      --uc-accent-colour: var(--uc-identity-colour-blue);
     }
 
     /* --- Below: verbatim reassignments from upstream cascade-colours.css.
@@ -167,14 +167,12 @@ in
       "media.peerconnection.video.start_bitrate" = 1500;
       "media.peerconnection.video.max_bitrate" = 8000;
 
-      # AMD 680M (VCN3 / RDNA 2): AV1 VA-API decode triggers a VCN ring timeout
-      # (~10 s, the kernel GPU hang-check interval) during WebRTC sessions, freezing
-      # the screen share. Firefox has no VA-API hardware encoder on Linux — only the
-      # decoder is affected. Disabling AV1 keeps H.264/VP9 hardware-accelerated
-      # while preventing the VCN crash (Mesa bug #5500). dmabuf enables zero-copy
-      # DMA-BUF frame delivery on Wayland.
-      "media.av1.enabled" = false;
-      "widget.dmabuf.force-enabled" = true;
+      # AMD 680M (VCN3 / RDNA 2): VA-API decode (incoming video from participants)
+      # conflicts with wlr-screencopy (outgoing screen capture) via DMA-BUF resource
+      # contention, freezing the share after ~10 s. Disabling the FFmpeg VA-API path
+      # removes the conflict; video playback uses a separate decode path unaffected.
+      # Same root cause affects Brave — see hosts/rubi/default.nix for system fix.
+      "media.ffmpeg.vaapi.enabled" = false;
 
       # Cascade theme requirements:
       # userChrome.css must be enabled for custom chrome to load, and
