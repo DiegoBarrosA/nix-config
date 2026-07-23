@@ -5,7 +5,7 @@ in
 {
   xdg.configFile = {
     "rofi/config.rasi".text = ''
-      @import "theme.rasi"
+      @theme "theme.rasi"
 
       configuration {
         show-icons: false;
