@@ -1,16 +1,15 @@
 {
   lib,
   stdenv,
-  fetchzip,
+  fetchurl,
 }:
 stdenv.mkDerivation rec {
   pname = "invidious-companion";
   version = "unstable-2025-07-22";
 
-  src = fetchzip {
+  src = fetchurl {
     url = "https://github.com/iv-org/invidious-companion/releases/download/release-master/invidious_companion-x86_64-unknown-linux-gnu.tar.gz";
-    hash = "sha256-nJXrz3voEjf8yGAwEHUlZN5JJptwU7LvTiwBjJ/5zyc=";
-    stripRoot = false;
+    hash = "sha256-fHEKHQi4Q+JLVDSN2gT9YdoigkdLd4DiItkjqs8ZE/0=";
   };
 
   # Deno-compiled binaries embed code in a custom ELF section that any
@@ -25,6 +24,7 @@ stdenv.mkDerivation rec {
   sourceRoot = ".";
 
   installPhase = ''
+    tar xzf $src
     install -Dm755 invidious_companion $out/bin/invidious-companion
   '';
 
