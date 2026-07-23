@@ -64,6 +64,8 @@ in
         space.space = "file_picker";
         space.w = ":w";
         space.q = ":q";
+        # Reload all buffers after agent edits (Helix has no auto-reload)
+        space.r = ":reload-all";
       };
     };
     languages = with pkgs; {

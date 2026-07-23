@@ -47,12 +47,12 @@ in
           all-outputs = true;
           format = "{icon}";
           format-icons = {
-            "5" = "";
-            "6" = "";
+            "5" = (u "f0ac");
+            "6" = (u "f674");
             "7" = (u "f802");
-            "8" = "";
-            "9" = (u "f5fc");
-            "10" = "";
+            "8" = (u "f60f");
+            "9" = (u "f1c9");
+            "10" = (u "f086");
             "default" = (u "f22d");
             "focused" = (u "f192");
             "high-priority-named" = [
@@ -149,6 +149,7 @@ in
           format-disconnected = "${u "f071"} Disconnected";
           tooltip-format-wifi = "{essid} ({signalStrength}%)";
           tooltip-format-ethernet = "{ifname}";
+          on-click = "alacritty -e wifitui";
         };
 
         pulseaudio = {
@@ -163,7 +164,7 @@ in
               "${u "f028"}"
             ];
           };
-          on-click = "alacritty -e ncpamixer";
+          on-click = "alacritty -e wiremix";
         };
 
         bluetooth = {
@@ -208,7 +209,7 @@ in
       }
 
       window#waybar #workspaces button {
-        font-family:  "Font Awesome 7 Brands", "Font Awesome 7 Free";
+        font-family: "Font Awesome 7 Brands", "Font Awesome 7 Free Solid";
         font-weight: normal;
         padding: 0 8px;
         background-image: none;
@@ -225,7 +226,7 @@ in
 
       window#waybar #workspaces button * {
         text-shadow: none;
-        font-family: "Font Awesome 7 Brands", "Font Awesome 7 Free";
+        font-family: "Font Awesome 7 Brands", "Font Awesome 7 Free Solid";
         font-weight: normal;
       }
 
@@ -344,10 +345,6 @@ in
       #bluetooth.off,
       #bluetooth.disabled {
         color: #${colors.base03};
-      }
-
-      #tray {
-        background-color: #${colors.base01};
       }
 
       #tray > .passive {

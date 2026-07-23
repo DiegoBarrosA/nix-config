@@ -15,6 +15,7 @@ in {
   fonts.fontconfig.enable = true;
   home.packages = with pkgs; [
     nerd-fonts.fantasque-sans-mono
+    nerd-fonts.symbols-only
     font-awesome
     source-han-mono
     source-han-sans

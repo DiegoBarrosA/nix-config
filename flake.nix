@@ -23,6 +23,13 @@
 
     stylix.url = "github:danth/stylix";
 
+    # Cascade: minimalistic, keyboard-centered userChrome theme. Consumed as
+    # raw chrome/ files (no flake), symlinked into the Firefox profile.
+    cascade = {
+      url = "github:cascadefox/cascade";
+      flake = false;
+    };
+
     # Declarative KDE Plasma configuration (KWin, effects, shortcuts, etc.)
     plasma-manager = {
       url = "github:nix-community/plasma-manager";
@@ -65,11 +72,6 @@
     # Reusable AI/agent tooling modules (extracted from this repo)
     ai-tooling = {
       url = "github:DiegoBarrosA/nix-ai-tooling";
-    };
-
-    yazelix = {
-      url = "github:luccahuguet/yazelix/stable";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # Private local config (not pushed to github)
@@ -162,7 +164,7 @@
           cobalto = {
             hostname = "cobalto"; # Use Tailscale hostname
             fastConnection = false;
-            remoteBuild = false; # Build locally, then copy to remote
+            remoteBuild = true; # Build on cobalto (avoids copying large closures)
             magicRollback = false; # network (tailscaled) restarts mid-activation sever the confirm SSH
             autoRollback = false;
             profiles = {

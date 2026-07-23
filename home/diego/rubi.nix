@@ -118,17 +118,32 @@
             };
             provider."local-llm" = {
               npm = "@ai-sdk/openai-compatible";
-              name = "Local LLM (llama.cpp)";
+              name = "Local LLM (Ollama)";
               options = {
-                baseURL = "http://localhost:11435/v1";
-                apiKey = "local";
+                baseURL = "http://localhost:11434/v1";
+                apiKey = "ollama";
               };
               models = {
-                "qwen2.5-coder-7b" = {
-                  name = "Qwen2.5 Coder 7B (local)";
+                "qwen3:4b" = {
+                  name = "Qwen3 4B (local, fast tool calling)";
+                  limit = {
+                    context = 32768;
+                    output = 8192;
+                  };
                 };
-                "gemma3-4b" = {
-                  name = "Gemma 3 4B (local)";
+                "qwen2.5:14b" = {
+                  name = "Qwen2.5 14B (local, tool calling)";
+                  limit = {
+                    context = 32768;
+                    output = 8192;
+                  };
+                };
+                "qwen2.5-coder:14b" = {
+                  name = "Qwen2.5 Coder 14B (local, code only)";
+                  limit = {
+                    context = 32768;
+                    output = 8192;
+                  };
                 };
               };
             };

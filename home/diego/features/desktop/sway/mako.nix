@@ -7,17 +7,17 @@ in
   services.mako = {
     enable = true;
     settings = {
-      font = "${fontProfiles.monospace.family} 12";
+      font = "${fontProfiles.regular.family} 14";
       max-visible = 5;
       sort = "-time";
       layer = "overlay";
-      anchor = "top-right";
+      anchor = "top-center";
       margin = "10";
       padding = "12";
       width = 350;
       height = 120;
       border-size = 2;
-      border-radius = 4;
+      border-radius = 0;
       icons = 1;
       icon-path = "/usr/share/icons/Papirus-Dark";
       max-icon-size = 48;
@@ -25,7 +25,7 @@ in
       ignore-timeout = 0;
       background-color = "#${colors.base00}FA";
       text-color = "#${colors.base05}";
-      border-color = "#${colors.base0D}";
+      border-color = "#${colors.base02}";
       progress-color = "over #${colors.base0C}";
 
       "urgency=low" = {
@@ -47,6 +47,19 @@ in
         text-color = "#${colors.base00}";
         border-color = "#${colors.base08}";
         default-timeout = 0;
+      };
+
+      # Volume/brightness OSD: compact, fast, replaces itself via synchronous hint
+      "category=volume" = {
+        default-timeout = 1500;
+        height = 60;
+        border-color = "#${colors.base0C}";
+      };
+
+      "category=brightness" = {
+        default-timeout = 1500;
+        height = 60;
+        border-color = "#${colors.base0A}";
       };
     };
   };

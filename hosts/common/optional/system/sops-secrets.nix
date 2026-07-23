@@ -161,6 +161,21 @@ with lib;
       group = "users";
       mode = "0400";
     };
+
+    # Vaultwarden admin panel token
+    # Generate with: openssl rand -base64 48
+    secrets."vaultwarden-admin-token" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
+    # Resend API key for Vaultwarden SMTP
+    secrets."resend-api-key" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
   };
 
   systemd.services."sops-install-secrets" = {

@@ -55,11 +55,17 @@ in
 
     # Cursor theme - Bibata themed to Stylix scheme.
     # Sway only: GNOME/KDE keep their native cursor (Adwaita/Breeze).
-    cursor = lib.mkIf (desktop == "sway") {
-      package = bibataStylix;
-      name = "Bibata-Stylix";
-      size = 28;
-    };
+    cursor =
+      lib.mkIf
+        (builtins.elem desktop [
+          "sway"
+          "cosmic"
+        ])
+        {
+          package = bibataStylix;
+          name = "Bibata-Stylix";
+          size = 28;
+        };
 
     # Fonts configuration
     fonts = {
@@ -98,19 +104,25 @@ in
 
     # Target-specific settings
     targets = {
-      # GTK app theming: enabled on Sway/KDE; disabled on GNOME so GTK apps
-      # use native Adwaita (per "GNOME native only" — no Stylix gtk/shell).
+      # GTK app theming: enabled on Sway; disabled on GNOME (native Adwaita)
+      # and on KDE (native Breeze — keep Stylix for TUI only, not KDE GUI apps).
       gtk = {
-        enable = desktop != "gnome";
+        enable =
+          !(builtins.elem desktop [
+            "gnome"
+            "kde"
+          ]);
       };
 
       # GNOME Shell integration: disabled on GNOME so the shell stays native.
       # (Has effect only under a GNOME session anyway.)
       gnome.enable = desktop != "gnome";
 
-      # Qt theming via Kvantum (generated from base16 colors)
+      # Qt theming via Kvantum (generated from base16 colors).
+      # Disabled on KDE: Plasma's own Breeze/Qt theming is used for GUI apps,
+      # so Stylix stays out of KDE GUI apps (TUI-only under KDE).
       qt = {
-        enable = true;
+        enable = desktop != "kde";
         # Use xdg-desktop-portal for native file dialogs
         standardDialogs = "xdgdesktopportal";
       };
@@ -134,57 +146,84 @@ in
     };
   };
 
-  home.pointerCursor.enable = lib.mkIf (desktop == "sway") true;
+  home.pointerCursor.enable = lib.mkIf (builtins.elem desktop [
+    "sway"
+    "cosmic"
+  ]) true;
 
   # Icon theme (Stylix doesn't handle icons)
   # Use Papirus with custom folder color matching our accent (base0D).
   # Sway only: GNOME/KDE keep their native icons (Adwaita/Breeze).
-  gtk.iconTheme = lib.mkIf (desktop == "sway") (
-    let
-      # Map our accent color to closest Papirus folder color
-      # base0D = #82aaff (blue) -> "blue" or "indigo"
-      # You can change this to: blue, indigo, cyan, teal, violet, etc.
-      folderColor = "indigo";
-      papirusWithFolders = pkgs.papirus-icon-theme.override {
-        color = folderColor;
-      };
-    in
-    {
-      name = "Papirus-Dark";
-      package = papirusWithFolders;
-    }
-  );
+  gtk.iconTheme =
+    lib.mkIf
+      (builtins.elem desktop [
+        "sway"
+        "cosmic"
+      ])
+      (
+        let
+          # Map our accent color to closest Papirus folder color
+          # base0D = #82aaff (blue) -> "blue" or "indigo"
+          # You can change this to: blue, indigo, cyan, teal, violet, etc.
+          folderColor = "indigo";
+          papirusWithFolders = pkgs.papirus-icon-theme.override {
+            color = folderColor;
+          };
+        in
+        {
+          name = "Papirus-Dark";
+          package = papirusWithFolders;
+        }
+      );
 
   # Symlink icon + cursor themes for GTK/Snap/sandboxed apps. Sway only;
   # GNOME/KDE ship their own icon/cursor sets.
-  xdg.dataFile = lib.mkIf (desktop == "sway") (
-    let
-      folderColor = "indigo";
-      papirusWithFolders = pkgs.papirus-icon-theme.override {
-        color = folderColor;
-      };
-    in
-    {
-      "icons/Papirus".source = "${papirusWithFolders}/share/icons/Papirus";
-      "icons/Papirus-Dark".source = "${papirusWithFolders}/share/icons/Papirus-Dark";
-      "icons/Papirus-Light".source = "${papirusWithFolders}/share/icons/Papirus-Light";
-      # Cursor theme for Snap apps and other sandboxed applications
-      "icons/Bibata-Stylix".source = "${bibataStylix}/share/icons/Bibata-Stylix";
-    }
-  );
+  xdg.dataFile =
+    lib.mkIf
+      (builtins.elem desktop [
+        "sway"
+        "cosmic"
+      ])
+      (
+        let
+          folderColor = "indigo";
+          papirusWithFolders = pkgs.papirus-icon-theme.override {
+            color = folderColor;
+          };
+        in
+        {
+          "icons/Papirus".source = "${papirusWithFolders}/share/icons/Papirus";
+          "icons/Papirus-Dark".source = "${papirusWithFolders}/share/icons/Papirus-Dark";
+          "icons/Papirus-Light".source = "${papirusWithFolders}/share/icons/Papirus-Light";
+          # Cursor theme for Snap apps and other sandboxed applications
+          "icons/Bibata-Stylix".source = "${bibataStylix}/share/icons/Bibata-Stylix";
+        }
+      );
 
   # Also symlink to ~/.icons for older apps and Snap compatibility (Sway only)
-  home.file.".icons/Bibata-Stylix" = lib.mkIf (desktop == "sway") {
-    source = "${bibataStylix}/share/icons/Bibata-Stylix";
-  };
+  home.file.".icons/Bibata-Stylix" =
+    lib.mkIf
+      (builtins.elem desktop [
+        "sway"
+        "cosmic"
+      ])
+      {
+        source = "${bibataStylix}/share/icons/Bibata-Stylix";
+      };
 
   # Propagate GTK theme to apps via XSettings. Needed on Sway/Wayland (GNOME/KDE
   # run their own settings daemon, and this references the Sway-only iconTheme).
-  services.xsettingsd = lib.mkIf (desktop == "sway") {
-    enable = true;
-    settings = {
-      "Net/ThemeName" = "${config.gtk.theme.name}";
-      "Net/IconThemeName" = "${config.gtk.iconTheme.name}";
-    };
-  };
+  services.xsettingsd =
+    lib.mkIf
+      (builtins.elem desktop [
+        "sway"
+        "cosmic"
+      ])
+      {
+        enable = true;
+        settings = {
+          "Net/ThemeName" = "${config.gtk.theme.name}";
+          "Net/IconThemeName" = "${config.gtk.iconTheme.name}";
+        };
+      };
 }

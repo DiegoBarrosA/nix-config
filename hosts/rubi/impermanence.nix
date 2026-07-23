@@ -53,11 +53,11 @@
       # libvirt VM state (disks, OVMF nvram, swtpm TPM state)
       "/var/lib/libvirt"
 
-      # llama.cpp model cache (large files, must persist across reboots)
+      # Ollama model cache (large files, must persist across reboots)
       {
-        directory = "/var/lib/llama-cpp";
-        user = "llama";
-        group = "llama";
+        directory = "/var/lib/ollama";
+        user = "ollama";
+        group = "ollama";
         mode = "0755";
       }
 

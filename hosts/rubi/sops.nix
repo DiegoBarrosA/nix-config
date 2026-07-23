@@ -115,6 +115,6 @@ with lib;
     path = "/etc/nix/github-access-token.conf";
     owner = "root";
     group = "root";
-    mode = "0400";
+    mode = "0444";
   };
 }

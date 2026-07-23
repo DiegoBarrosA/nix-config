@@ -91,9 +91,10 @@ in
       statistics_enabled = true;
       admins = [ defaultUser ];
       invidious_companion = [
-        { private_url = "http://127.0.0.1:8282/companion"; }
+        { private_url = "http://192.168.1.85:8282/companion"; }
       ];
       invidious_companion_key = companionSecret;
+      default_user_preferences = {};
       db = mkForce {
         user = "invidious";
         password = "invidious";
@@ -127,7 +128,7 @@ in
     containers.${companionContainer} = {
       image = "quay.io/invidious/invidious-companion:latest";
       autoStart = true;
-      ports = [ "127.0.0.1:8282:8282" ];
+      extraOptions = [ "--network=host" ];
       environment = {
         SERVER_SECRET_KEY = companionSecret;
       };
@@ -139,11 +140,14 @@ in
       image = "docker.io/yattee/yattee-server:latest";
       autoStart = true;
       ports = [ "127.0.0.1:${toString yatteePort}:${toString yatteePort}" ];
+      extraOptions = [ "--add-host=host.containers.internal:host-gateway" ];
       environment = {
         HOST = "0.0.0.0";
         PORT = toString yatteePort;
         CORS_ALLOW_ALL = "true";
-        INVIDIOUS_INSTANCE = "http://127.0.0.1:3000";
+        INVIDIOUS_INSTANCE_URL = "http://host.containers.internal:3000";
+        ADMIN_USERNAME = "diego";
+        ADMIN_PASSWORD = invidiousPassword;
       };
       volumes = [
         "yattee-downloads:/downloads:rw"
@@ -156,8 +160,42 @@ in
     serviceConfig.Restart = mkForce "always";
   };
 
+  systemd.services.${companionService} = {
+    serviceConfig.Restart = mkForce "always";
+    serviceConfig.StartLimitBurst = 10;
+  };
+
   systemd.services.${yatteeService} = {
     serviceConfig.Restart = mkForce "always";
+    postStart = let
+      cleanupScript = pkgs.writeShellScript "clean-stale-netavark-rules" ''
+        set -u
+        echo "[yattee-iptables-cleanup] Running postStart cleanup..."
+        CURRENT_ID=$(${pkgs.podman}/bin/podman inspect ${yatteeContainer} --format '{{.Id}}' 2>/dev/null || echo "")
+        if [ -z "$CURRENT_ID" ]; then
+          echo "[yattee-iptables-cleanup] No running container found, skipping."
+          exit 0
+        fi
+        echo "[yattee-iptables-cleanup] Current container ID: $CURRENT_ID"
+        # 1) Remove stale HOSTPORT-DNAT entries (all except current container)
+        STALE_HOSTPORT=$(${pkgs.iptables}/bin/iptables -t nat -S NETAVARK-HOSTPORT-DNAT 2>/dev/null \
+          | ${pkgs.gnugrep}/bin/grep 'tcp .*--dport ${toString yatteePort}' \
+          | ${pkgs.gnugrep}/bin/grep -v "$CURRENT_ID" || true)
+        if [ -n "$STALE_HOSTPORT" ]; then
+          echo "$STALE_HOSTPORT" | ${pkgs.gnused}/bin/sed 's|^-A |${pkgs.iptables}/bin/iptables -t nat -D |' \
+            | while IFS= read -r cmd; do
+                echo "[yattee-iptables-cleanup] Executing: $cmd"
+                eval "$cmd" || echo "[yattee-iptables-cleanup] eval failed (exit $?)"
+              done
+        else
+          echo "[yattee-iptables-cleanup] No stale HOSTPORT-DNAT entries."
+        fi
+        echo "[yattee-iptables-cleanup] Done."
+      '';
+    in ''
+      sleep 2
+      ${cleanupScript}
+    '';
   };
 
   systemd.tmpfiles.rules = [
@@ -181,9 +219,39 @@ in
     '';
   };
 
-  systemd.services.invidious = {
+  systemd.services.invidious = let
+    writableConfigFile = "/var/lib/invidious/config/config.yml";
+    settingsFile = (pkgs.formats.json {}).generate "invidious-settings" cfg.settings;
+  in {
     after = mkAfter [ "${companionService}.service" ];
     wants = [ "${companionService}.service" ];
+
+    serviceConfig.StateDirectory = "invidious";
+    serviceConfig.StateDirectoryMode = "0750";
+    serviceConfig.WorkingDirectory = "/var/lib/invidious";
+
+    script = lib.mkForce ''
+      # Generate hmac_key if missing
+      HMAC_KEY_FILE="/var/lib/invidious/hmac_key"
+      if [ ! -e "$HMAC_KEY_FILE" ]; then
+        ${pkgs.pwgen}/bin/pwgen 20 1 > "$HMAC_KEY_FILE"
+        chmod 0600 "$HMAC_KEY_FILE"
+      fi
+
+      # Merge config parts into YAML
+      mkdir -p /var/lib/invidious/config
+      configParts=()
+      configParts+=("$(${pkgs.jq}/bin/jq -R '{"hmac_key":.}' <"$HMAC_KEY_FILE")")
+      configParts+=("$(< ${settingsFile})")
+      configParts+=('{"port":${toString cfg.port}}')
+
+      mergedConfig="$(${pkgs.jq}/bin/jq -s 'reduce .[] as $item ({}; . * $item)' <<<"''${configParts[*]}")"
+      echo "$mergedConfig" | ${pkgs.yq-go}/bin/yq -P > "${writableConfigFile}"
+      chmod 0640 "${writableConfigFile}"
+
+      export INVIDIOUS_CONFIG_FILE="${writableConfigFile}"
+      exec ${cfg.package}/bin/invidious
+    '';
   };
 
   systemd.services.invidious-create-user = {

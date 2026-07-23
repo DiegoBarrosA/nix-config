@@ -39,8 +39,8 @@
     # OpenCode remote access (API + web UI)
     ../common/optional/ai/opencode-server.nix
 
-    # Local LLM inference (Vulkan on AMD 680M APU — model cache at /var/lib/llama-cpp)
-    ../common/optional/ai/llama-cpp-server.nix
+    # Local LLM inference (Vulkan on AMD 680M APU) — disabled for now
+    # ../common/optional/ai/ollama-vulkan.nix
 
     # libvirt/KVM + virt-manager (Windows 11 VM with virtio-gpu)
     # ../common/optional/desktop/virtualization.nix
@@ -104,11 +104,7 @@
   # Networking
   networking = {
     hostName = "rubi";
-    networkmanager = {
-      enable = true;
-      wifi.backend = "iwd";
-    };
-    wireless.iwd.enable = true;
+    networkmanager.enable = true;
     firewall = {
       enable = true;
       allowedTCPPorts = [
@@ -127,7 +123,6 @@
 
   # OpenCode server for remote access (Android app + web UI)
   # Binds to 0.0.0.0 but only accessible via Tailscale (trusted interface)
-  # UPower for battery reporting
   services.upower.enable = true;
 
   services.opencode-server = {
@@ -135,32 +130,22 @@
     host = "0.0.0.0";
     port = 4096;
     passwordFile = config.sops.secrets."opencode-server-password".path;
-    # Personal API keys only. Work provider/MCP env (inference API, project
-    # trackers, wiki, time tracking) is contributed by the customer module
-    # (private-config: the active customer's defaults module) and merges here.
     secretEnv = {
       OPENCODE_API_KEY = config.sops.secrets."opencode-api-key".path;
       GITHUB_TOKEN = config.sops.secrets."github-token".path;
     };
   };
 
-  # llama.cpp local inference for OpenCode subagents
-  # AMD 680M APU: Vulkan via RADV, shared system memory
-  # Models download from HuggingFace on first start (~5GB for qwen2.5-coder-7b)
-  services.llama-cpp-server = {
-    enable = true;
-    model = "bartowski/Qwen2.5-Coder-7B-Instruct-GGUF:Q4_K_M";
-    port = 11435;
-    host = "127.0.0.1";
-    openFirewall = false;
-    contextSize = 24576; # 24K context for OpenCode's large system prompts
-    gpuLayers = 99;
-    modelsDirectory = "/var/lib/llama-cpp";
-    extraArgs = [
-      "--alias"
-      "qwen2.5-coder-7b"
-    ];
-  };
+  # services.ollama-vulkan = {
+  #   enable = false; # Disabled — re-enable when ready to retry local LLM
+  #   host = "127.0.0.1";
+  #   port = 11434;
+  #   loadModels = [
+  #     "qwen3:4b"          # Primary tool-calling model (fast, streaming-compatible)
+  #     "qwen2.5:14b"       # Larger model for complex reasoning (no streaming tool calls)
+  #     "qwen2.5-coder:14b" # Code generation (no tool calling, use for autocomplete)
+  #   ];
+  # };
 
   # Security
   security.polkit.enable = true;

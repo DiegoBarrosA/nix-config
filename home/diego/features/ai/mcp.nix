@@ -53,12 +53,6 @@
     # $env.JIRA_DC_EMAIL = "your-email@example.com"
     # $env.JIRA_DC_API_KEY = "your-api-key"
 
-    # Trello Cloud MCP
-    # Get API key from: https://trello.com/power-ups/admin
-    # Get token from: https://trello.com/1/authorize?expiration=never&scope=read,write,account&response_type=token&key=YOUR_API_KEY
-    # $env.TRELLO_API_KEY = "your-32-character-api-key"
-    # $env.TRELLO_API_TOKEN = "your-api-token"
-
     # Obsidian REST API
     # $env.OBSIDIAN_API_KEY = "your-obsidian-api-key"
 

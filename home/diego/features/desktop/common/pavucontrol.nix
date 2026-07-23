@@ -1,3 +1,3 @@
 { pkgs, ... }: {
-  home.packages = with pkgs; [ ncpamixer ];
+  home.packages = with pkgs; [ wiremix ];
 }

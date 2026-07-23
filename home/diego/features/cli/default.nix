@@ -10,7 +10,6 @@ in
   imports = [
     ./zoxide.nix
     ./helix.nix
-    ./zed.nix
     ./vscode.nix
     ./pfetch.nix
     ./git.nix
@@ -23,7 +22,6 @@ in
     ./yazi.nix
     ./zathura.nix
     ./bottom.nix
-    ./yazelix.nix
   ];
 
   home.packages =

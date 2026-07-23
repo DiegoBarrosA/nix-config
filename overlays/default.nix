@@ -19,6 +19,31 @@
       clockSupport = true;
     });
 
+    # homepage-dashboard: build from dev branch for syncthing widget (PR #6865, merged 2026-07-13)
+    # Remove once nixpkgs ships a version ≥ 1.14.0
+    homepage-dashboard = prev.homepage-dashboard.overrideAttrs (oldAttrs: {
+      version = "1.13.2-dev-unstable";
+      src = final.fetchFromGitHub {
+        owner = "gethomepage";
+        repo = "homepage";
+        rev = "84c7e5126977ca2f58ccf3caa46c88eaf670c5dd";
+        hash = "sha256-qR81EMAJL2tL9BshzQuEOV9fFCHidXRHJM4gPFGy2Vo=";
+      };
+      pnpmDeps = final.fetchPnpmDeps {
+        pname = "homepage-dashboard";
+        version = "1.13.2-dev-unstable";
+        src = final.fetchFromGitHub {
+          owner = "gethomepage";
+          repo = "homepage";
+          rev = "84c7e5126977ca2f58ccf3caa46c88eaf670c5dd";
+          hash = "sha256-qR81EMAJL2tL9BshzQuEOV9fFCHidXRHJM4gPFGy2Vo=";
+        };
+        pnpm = final.pnpm_10;
+        fetcherVersion = 3;
+        hash = "sha256-zWvSivqwAMO6EFhYgXUyxJQsJTwvhmExu6t+EIwCFqs=";
+      };
+    });
+
 
     # xdg-utils-spawn-terminal = prev.xdg-utils.overrideAttrs (oldAttrs: {
     #   patches = (oldAttrs.patches or [ ]) ++ [ ./xdg-open-spawn-terminal.diff ];

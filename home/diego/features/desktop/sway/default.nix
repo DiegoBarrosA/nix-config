@@ -470,6 +470,55 @@ let
     esac
   '';
 
+  volume-notify = pkgs.writeShellScriptBin "volume-notify" ''
+    #!/usr/bin/env bash
+    case "''${1:-}" in
+      up)   wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ ;;
+      down) wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
+      mute) wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+      mic)
+        wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+        MIC=$(wpctl get-volume @DEFAULT_AUDIO_SOURCE@)
+        if echo "$MIC" | grep -q MUTED; then
+          notify-send -t 1500 -c volume \
+            -h string:x-canonical-private-synchronous:mic \
+            "Microphone" "Muted"
+        else
+          notify-send -t 1500 -c volume \
+            -h string:x-canonical-private-synchronous:mic \
+            "Microphone" "Unmuted"
+        fi
+        exit 0
+        ;;
+    esac
+    INFO=$(wpctl get-volume @DEFAULT_AUDIO_SINK@)
+    VOL=$(echo "$INFO" | awk '{print int($2 * 100)}')
+    if echo "$INFO" | grep -q MUTED; then
+      notify-send -t 1500 -c volume \
+        -h string:x-canonical-private-synchronous:volume \
+        -h int:value:0 \
+        "Volume" "Muted"
+    else
+      notify-send -t 1500 -c volume \
+        -h string:x-canonical-private-synchronous:volume \
+        -h int:value:"$VOL" \
+        "Volume" "$VOL%"
+    fi
+  '';
+
+  brightness-notify = pkgs.writeShellScriptBin "brightness-notify" ''
+    #!/usr/bin/env bash
+    case "''${1:-}" in
+      up)   brillo -A 5 ;;
+      down) brillo -U 5 ;;
+    esac
+    BRI=$(brillo | awk '{print int($1 + 0.5)}')
+    notify-send -t 1500 -c brightness \
+      -h string:x-canonical-private-synchronous:brightness \
+      -h int:value:"$BRI" \
+      "Brightness" "$BRI%"
+  '';
+
   swap-workspace-output = pkgs.writeShellScriptBin "swap-workspace-output" ''
         #!/usr/bin/env bash
         set -euo pipefail
@@ -550,13 +599,14 @@ in
     jq
     autotiling-rs
     polkit_gnome
+    raffi
     # Screenshot tools
     swappy
     grim
     slurp
     wl-clipboard
     xdg-utils
-    networkmanagerapplet
+    wifitui
     # Helper scripts
     launch-or-focus
     yazi-launcher
@@ -564,6 +614,8 @@ in
     sunshine-stream
     swap-workspace-output
     scrcpy-stream
+    volume-notify
+    brightness-notify
     # Android mirroring & control
     scrcpy
   ];
@@ -585,22 +637,22 @@ in
       up = "k";
       right = "l";
       terminal = "alacritty";
-      menu = "fuzzel";
+      menu = "raffi -p";
 
       bars = [ ];
 
       fonts = {
-        names = [ "Jost*" ];
-        size = lib.mkForce 14.0;
+        names = [ "Fantasque Sans Mono" ];
+        size = lib.mkForce 17.0;
       };
 
       window = {
-        border = 2;
+        border = 4;
         hideEdgeBorders = "none";
       };
 
       floating = {
-        border = 2;
+        border = 4;
         modifier = "Mod4";
       };
 
@@ -613,18 +665,18 @@ in
 
       colors = lib.mkForce {
         focused = {
-          border = "#${colors.base03}";
-          background = "#${colors.base03}";
-          text = "#${colors.base05}";
+          border = "#${colors.base0D}";
+          background = "#${colors.base0D}";
+          text = "#${colors.base00}";
           indicator = "#${colors.base04}";
-          childBorder = "#${colors.base03}";
+          childBorder = "#${colors.base0D}";
         };
         focusedInactive = {
-          border = "#${colors.base01}";
-          background = "#${colors.base03}";
-          text = "#${colors.base08}";
+          border = "#${colors.base02}";
+          background = "#${colors.base0D}";
+          text = "#${colors.base00}";
           indicator = "#${colors.base03}";
-          childBorder = "#${colors.base03}";
+          childBorder = "#${colors.base01}";
         };
         unfocused = {
           border = "#${colors.base01}";
@@ -763,20 +815,22 @@ in
         # Basics
         "Mod4+Return" = "exec alacritty";
         "Mod4+w" = "kill";
-        "Mod4+space" = "exec fuzzel";
+
+        "Mod4+p" = "floating enable, sticky enable";
+        "Mod4+space" = "exec raffi -p | xargs swaymsg exec --";
         "Mod4+Shift+c" = "reload";
         "Mod4+Shift+e" = "exec power-menu";
         "Mod4+Escape" = "exec swaylock -f";
 
         # Brightness controls
-        "XF86MonBrightnessUp" = "exec brillo -A 5";
-        "XF86MonBrightnessDown" = "exec brillo -U 5";
+        "XF86MonBrightnessUp" = "exec brightness-notify up";
+        "XF86MonBrightnessDown" = "exec brightness-notify down";
 
         # Volume controls
-        "XF86AudioRaiseVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+";
-        "XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
-        "XF86AudioMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
-        "XF86AudioMicMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
+        "XF86AudioRaiseVolume" = "exec volume-notify up";
+        "XF86AudioLowerVolume" = "exec volume-notify down";
+        "XF86AudioMute" = "exec volume-notify mute";
+        "XF86AudioMicMute" = "exec volume-notify mic";
 
         # Screenshots
         "Mod4+Shift+s" = "exec grim -g \"$(slurp)\" - | swappy -f -";
@@ -852,7 +906,7 @@ in
         "Mod4+f" = "exec launch-or-focus firefox-devedition 5 firefox-devedition";
         "Mod4+g" = "exec launch-or-focus thunderbird 6 thunderbird";
 
-        "Mod4+d" = "exec launch-or-focus dev.zed.Zed 9 zeditor";
+        "Mod4+d" = "exec code-cursor-fhs";
         "Mod4+e" = "exec yazi-launcher";
         "Mod4+n" = "exec launch-or-focus obsidian 8 obsidian";
 

@@ -78,6 +78,18 @@ in
     clientMaxBodySize = "1g";
 
     virtualHosts = {
+      # Catch-all: redirect unknown subdomains to the dashboard
+      "_" = {
+        forceSSL = true;
+        useACMEHost = "minerales.network";
+        serverName = "_";
+        locations."/" = {
+          extraConfig = ''
+            return 302 https://home.minerales.network;
+          '';
+        };
+      };
+
       # Main server dashboard
       "home.minerales.network" = withSSL "home" {
         locations."/" = standardProxy 8082;
@@ -341,6 +353,20 @@ in
           extraConfig = ''
             default_type text/html;
             return 200 '<html><body><h1>TURN Server</h1><p>This is a TURN/STUN server for voice/video calls.</p></body></html>';
+          '';
+        };
+      };
+
+      # Vaultwarden - self-hosted Bitwarden compatible password manager
+      "vault.minerales.network" = withSSL "vault" {
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:8000";
+          proxyWebsockets = true;
+          extraConfig = ''
+            proxy_buffering off;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
           '';
         };
       };

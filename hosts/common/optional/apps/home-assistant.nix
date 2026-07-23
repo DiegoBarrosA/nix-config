@@ -29,7 +29,7 @@
       "esphome"        # HA default
     ];
     extraPackages = ps: with ps; [
-      alexapy              # required by alexa_devices integration
+      # alexapy              # TEMPORARILY DISABLED: broken on Python 3.14
       music-assistant-client # required by built-in music_assistant integration
       python-miio
       python-otbr-api        # required by homekit_controller integration
