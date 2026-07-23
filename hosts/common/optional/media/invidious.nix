@@ -14,7 +14,7 @@ let
   syncSubscriptionsScript = pkgs.writeShellScript "sync-invidious-to-yattee" ''
     set -euo pipefail
 
-    SUBS=$(${pkgs.su}/bin/su -s ${pkgs.bash}/bin/bash invidious -c "${pkgs.postgresql_16}/bin/psql -d invidious -t -A -c \"SELECT unnest(subscriptions) FROM users WHERE email = '${defaultUser}';\"")
+    SUBS=$(${pkgs.su}/bin/su -s /bin/sh postgres -c "${pkgs.postgresql_16}/bin/psql -d invidious -t -A -c \"SELECT unnest(subscriptions) FROM users WHERE email = '${defaultUser}';\"")
 
     YATTEE_DATA=$(${pkgs.podman}/bin/podman volume inspect yattee-data --format '{{.Mountpoint}}' 2>/dev/null || echo "")
     if [ -z "$YATTEE_DATA" ]; then
@@ -57,9 +57,9 @@ import bcrypt, sys
 sys.stdout.write(bcrypt.hashpw(sys.argv[1].encode(), bcrypt.gensalt(rounds=12)).decode())
 " "${invidiousPassword}")
 
-    ${pkgs.su}/bin/su -s /bin/sh invidious -c "${pkgs.postgresql_16}/bin/psql -d invidious -c \
+    ${pkgs.su}/bin/su -s /bin/sh postgres -c "${pkgs.postgresql_16}/bin/psql -d invidious -c \
       \"INSERT INTO users (email, password, preferences)
-       VALUES ('${defaultUser}@localhost', '$HASH', '{}')
+       VALUES ('${defaultUser}', '$HASH', '{}')
        ON CONFLICT (email) DO UPDATE SET password = '$HASH';\""
     echo "Invidious admin user created/verified"
   '';
