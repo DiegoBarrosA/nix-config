@@ -171,6 +171,34 @@ in
     };
   };
 
+  # Clear any stale netavark nftables DNAT rule for port 8282 left over from
+  # the old podman companion container (which mapped 127.0.0.1:8282 -> a
+  # container IP 10.88.0.x). If present, it hijacks loopback traffic to the
+  # now-dead container and Invidious gets "No route to host". Runs as root
+  # after the companion starts.
+  systemd.services.invidious-companion-dnat-cleanup = {
+    description = "Clear stale netavark DNAT rule for Invidious companion port 8282";
+    after = [ "invidious-companion.service" "podman-${yatteeContainer}.service" ];
+    wants = [ "invidious-companion.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      set -u
+      NFT=${pkgs.nftables}/bin/nft
+      CT=${pkgs.conntrack-tools}/bin/conntrack
+      if $NFT list chain inet netavark nv_00000000_10_88_0_0_nm16_dnat 2>/dev/null | ${pkgs.gnugrep}/bin/grep -q "dport 8282"; then
+        echo "[companion-dnat-cleanup] flushing stale 8282 DNAT chain"
+        $NFT flush chain inet netavark nv_00000000_10_88_0_0_nm16_dnat 2>/dev/null || true
+        $CT -F 2>/dev/null || true
+      else
+        echo "[companion-dnat-cleanup] no stale 8282 DNAT rule"
+      fi
+    '';
+  };
+
   systemd.services.invidious-create-user = {
     description = "Create default Invidious user";
     after = [ "invidious.service" ];
