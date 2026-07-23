@@ -45,7 +45,7 @@
       enable = true;
       settings.screencast = {
         chooser_type = "dmenu";
-        chooser_cmd = "${pkgs.fuzzel}/bin/fuzzel --dmenu";
+        chooser_cmd = "${pkgs.rofi}/bin/rofi -dmenu";
         max_fps = 30;
       };
     };

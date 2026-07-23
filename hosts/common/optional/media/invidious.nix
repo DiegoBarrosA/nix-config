@@ -75,6 +75,10 @@ in
     database.createLocally = true;
 
     settings = {
+      db = {
+        user = "invidious";
+        dbname = "invidious";
+      };
       external_port = 443;
       https_only = true;
       registration_enabled = true;

@@ -23,20 +23,20 @@ in
       max-icon-size = 48;
       default-timeout = 5000;
       ignore-timeout = 0;
-      background-color = "#${colors.base00}FA";
+      background-color = "#${colors.base00}FF";
       text-color = "#${colors.base05}";
       border-color = "#${colors.base02}";
       progress-color = "over #${colors.base0C}";
 
       "urgency=low" = {
-        background-color = "#${colors.base00}FA";
+        background-color = "#${colors.base00}FF";
         text-color = "#${colors.base04}";
         border-color = "#${colors.base01}";
         default-timeout = 3000;
       };
 
       "urgency=normal" = {
-        background-color = "#${colors.base00}FA";
+        background-color = "#${colors.base00}FF";
         text-color = "#${colors.base05}";
         border-color = "#${colors.base0D}";
         default-timeout = 5000;
