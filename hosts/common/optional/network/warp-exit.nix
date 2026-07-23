@@ -19,6 +19,14 @@ let
     ConnectPort 563
     LogLevel Warning
   '';
+
+  # tinyproxy resolves upstream hostnames itself; the netns resolv.conf is
+  # Tailscale MagicDNS (100.100.100.100) which isn't reachable via WARP. Point
+  # the proxy at Cloudflare DNS, which IS reachable through the WARP tunnel.
+  piritaProxyResolv = pkgs.writeText "pirita-proxy-resolv.conf" ''
+    nameserver 1.1.1.1
+    nameserver 1.0.0.1
+  '';
 in
 {
   options.networking.warpExit = {
@@ -196,6 +204,7 @@ in
           ];
           volumes = [
             "${piritaProxyConf}:/etc/tinyproxy/tinyproxy.conf:ro"
+            "${piritaProxyResolv}:/etc/resolv.conf:ro"
           ];
         };
       };
