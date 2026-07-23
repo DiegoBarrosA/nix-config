@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # Native Homepage Dashboard with full system integration
@@ -17,20 +22,19 @@
 
   networking.firewall = {
     allowedTCPPorts = [
-      61208  # Glances system monitoring
+      61208 # Glances system monitoring
     ];
   };
 
   services.homepage-dashboard = {
     enable = true;
     openFirewall = true;
-    allowedHosts = "home.minerales.network" ;
+    allowedHosts = "home.minerales.network";
     listenPort = 8082;
 
     settings = {
       title = "Cobalto Media Server";
       theme = "dark";
-      # color = "Material Darker";
       headerStyle = "boxed";
       layout = "columns";
       customTheme = {
@@ -54,9 +58,7 @@
         base0F = "FF5370";
       };
 
-      background = {
-        color = "#212121";
-      };
+      background = "#212121";
 
       customCSS = ''
         .service-group { margin-bottom: 2rem; }
@@ -72,8 +74,11 @@
               icon = "jellyfin.png";
               href = "http://jellyfin.minerales.network";
               description = "Media streaming server";
-              server = "localhost";
-              container = "jellyfin";
+              widget = {
+                type = "jellyfin";
+                url = "http://localhost:8096";
+                key = "{{HOMEPAGE_VAR_JELLYFIN_API_KEY}}";
+              };
             };
           }
           {
@@ -81,6 +86,13 @@
               icon = "transmission.png";
               href = "http://transmission.minerales.network";
               description = "Native BitTorrent client";
+            };
+          }
+          {
+            "Invidious" = {
+              icon = "invidious.png";
+              href = "http://invidious.minerales.network";
+              description = "YouTube frontend";
             };
           }
         ];
@@ -136,21 +148,21 @@
             };
           }
           {
-              "LazyLibrarian" = {
-                icon = "lazylibrarian.png";
-                href = "http://lazylibrarian.minerales.network";
-                description = "Book automation";
-              };
-            }
-            {
-              "Calibre-Web" = {
-               icon = "calibre.png";
-               href = "http://calibre.minerales.network";
-               description = "Ebook library & reader";
-             };
-           }
-           {
-             "Bazarr" = {
+            "LazyLibrarian" = {
+              icon = "lazylibrarian.png";
+              href = "http://lazylibrarian.minerales.network";
+              description = "Book automation";
+            };
+          }
+          {
+            "Calibre-Web" = {
+              icon = "calibre.png";
+              href = "http://calibre.minerales.network";
+              description = "Ebook library & reader";
+            };
+          }
+          {
+            "Bazarr" = {
               icon = "bazarr.png";
               href = "http://bazarr.minerales.network";
               description = "Subtitle manager";
@@ -175,7 +187,7 @@
           {
             "Open-WebUI" = {
               icon = "open-webui.png";
-              href = "http://localhost:8080";
+              href = "https://llm.minerales.network";
               description = "LLM chat interface";
             };
           }
@@ -190,7 +202,7 @@
               description = "File synchronization";
               widget = {
                 type = "syncthing";
-                url = "http://localhost:8384";
+                url = "https://syncthing.minerales.network";
                 key = "{{HOMEPAGE_VAR_SYNCTHING_API_KEY}}";
               };
             };
@@ -212,6 +224,13 @@
 
     widgets = [
       {
+        search = {
+          provider = "custom";
+          url = "https://lite.duckduckgo.com/lite?q=";
+          target = "_blank";
+        };
+      }
+      {
         resources = {
           cpu = true;
           memory = true;
@@ -230,11 +249,11 @@
       {
         "Development" = [
           {
-            "GitHub" = [
+            "nix-config" = [
               {
-                "nix-config" = {
-                  href = "https://github.com/DiegoBarrosA/nix-config";
-                };
+                href = "https://github.com/DiegoBarrosA/nix-config";
+                description = "NixOS configuration repository";
+                icon = "github.png";
               }
             ];
           }
@@ -243,16 +262,20 @@
       {
         "Media" = [
           {
-            "Streaming" = [
+            "YouTube" = [
               {
-                "YouTube" = {
-                  href = "https://youtube.com";
-                };
+                href = "https://youtube.com";
+                description = "Video streaming";
+                icon = "youtube.png";
               }
+            ];
+          }
+          {
+            "Spotify" = [
               {
-                "Spotify" = {
-                  href = "https://spotify.com";
-                };
+                href = "https://spotify.com";
+                description = "Music streaming";
+                icon = "spotify.png";
               }
             ];
           }
@@ -261,196 +284,184 @@
     ];
   };
 
-# Create an environment file at activation time with SOPS secrets
-  # This is read at runtime (not build time) so secrets are available
-  system.activationScripts.homepage-secrets = lib.stringAfter ["homepage-config"] ''
-    mkdir -p /etc/homepage-dashboard
+  systemd.services.homepage-secrets = {
+    description = "Generate Homepage Dashboard secrets env file";
+    before = [ "homepage-dashboard.service" ];
+    requiredBy = [ "homepage-dashboard.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      mkdir -p /etc/homepage-dashboard
+      {
+        echo "# Homepage Dashboard API Keys - generated at service start"
+        for secret_name in jellyfin-api-key prowlarr-api-key sonarr-api-key radarr-api-key lidarr-api-key bazarr-api-key; do
+          env_name="HOMEPAGE_VAR_$(echo "$secret_name" | tr '[:lower:]-' '[:upper:]_')"
+          secret_file="/run/secrets/$secret_name"
+          if [ -f "$secret_file" ] && [ -s "$secret_file" ]; then
+            echo "$env_name=$(cat "$secret_file" | tr -d '\n')"
+          else
+            echo "$env_name="
+          fi
+        done
+        # Extract Syncthing API key from config.xml (SOPS secret doesn't match runtime key)
+        SYNCTHING_CONFIG="/home/diego/.config/syncthing/config.xml"
+        if [ -f "$SYNCTHING_CONFIG" ] && [ -s "$SYNCTHING_CONFIG" ]; then
+          API_KEY=$(grep '<apikey>' "$SYNCTHING_CONFIG" | sed 's/.*<apikey>\(.*\)<\/apikey>.*/\1/')
+          echo "HOMEPAGE_VAR_SYNCTHING_API_KEY=$API_KEY"
+        else
+          echo "HOMEPAGE_VAR_SYNCTHING_API_KEY="
+        fi
+      } > /etc/homepage-dashboard/secrets.env
+      chmod 600 /etc/homepage-dashboard/secrets.env
+    '';
+  };
 
-    # Generate homepage-secrets.env with all API keys
-    {
-       echo "# Homepage Dashboard API Keys - generated at activation"
-       if [ -f "/run/secrets/jellyfin-api-key" ] && [ -s "/run/secrets/jellyfin-api-key" ]; then
-         echo "HOMEPAGE_VAR_JELLYFIN_API_KEY=$(cat /run/secrets/jellyfin-api-key | tr -d '\n')"
-       else
-         echo "HOMEPAGE_VAR_JELLYFIN_API_KEY="
-       fi
-       if [ -f "/run/secrets/prowlarr-api-key" ] && [ -s "/run/secrets/prowlarr-api-key" ]; then
-         echo "HOMEPAGE_VAR_PROWLARR_API_KEY=$(cat /run/secrets/prowlarr-api-key | tr -d '\n')"
-       else
-         echo "HOMEPAGE_VAR_PROWLARR_API_KEY="
-       fi
-       if [ -f "/run/secrets/sonarr-api-key" ] && [ -s "/run/secrets/sonarr-api-key" ]; then
-         echo "HOMEPAGE_VAR_SONARR_API_KEY=$(cat /run/secrets/sonarr-api-key | tr -d '\n')"
-       else
-         echo "HOMEPAGE_VAR_SONARR_API_KEY="
-       fi
-       if [ -f "/run/secrets/radarr-api-key" ] && [ -s "/run/secrets/radarr-api-key" ]; then
-         echo "HOMEPAGE_VAR_RADARR_API_KEY=$(cat /run/secrets/radarr-api-key | tr -d '\n')"
-       else
-         echo "HOMEPAGE_VAR_RADARR_API_KEY="
-       fi
-       if [ -f "/run/secrets/lidarr-api-key" ] && [ -s "/run/secrets/lidarr-api-key" ]; then
-         echo "HOMEPAGE_VAR_LIDARR_API_KEY=$(cat /run/secrets/lidarr-api-key | tr -d '\n')"
-       else
-         echo "HOMEPAGE_VAR_LIDARR_API_KEY="
-       fi
-       if [ -f "/run/secrets/bazarr-api-key" ] && [ -s "/run/secrets/bazarr-api-key" ]; then
-         echo "HOMEPAGE_VAR_BAZARR_API_KEY=$(cat /run/secrets/bazarr-api-key | tr -d '\n')"
-       else
-         echo "HOMEPAGE_VAR_BAZARR_API_KEY="
-       fi
-       if [ -f "/run/secrets/syncthing-api-key" ] && [ -s "/run/secrets/syncthing-api-key" ]; then
-         echo "HOMEPAGE_VAR_SYNCTHING_API_KEY=$(cat /run/secrets/syncthing-api-key | tr -d '\n')"
-       else
-         echo "HOMEPAGE_VAR_SYNCTHING_API_KEY="
-       fi
-     } > /etc/homepage-dashboard/secrets.env
-
-    chmod 600 /etc/homepage-dashboard/secrets.env
-  '';
-
-  # Tell systemd to read the environment file at runtime
-  systemd.services.homepage-dashboard.serviceConfig.EnvironmentFile = "/etc/homepage-dashboard/secrets.env";
+  systemd.services.homepage-dashboard = {
+    after = [ "homepage-secrets.service" ];
+    serviceConfig.EnvironmentFile = "/etc/homepage-dashboard/secrets.env";
+  };
 
   # Copy homepage configuration files to /nix/storage/homepage as reference backup
   # The actual dashboard config is generated inline above by services.homepage-dashboard
   system.activationScripts.homepage-config = ''
-    mkdir -p /nix/storage/homepage
+        mkdir -p /nix/storage/homepage
 
-    cat > /nix/storage/homepage/services.yaml << 'HOMEEOF'
----
-services:
-  - Media:
-      - Jellyfin:
-          href: https://jellyfin.minerales.network
-          description: Media server with hardware acceleration
-          icon: jellyfin.png
-          widget:
-            type: jellyfin
-            url: http://localhost:8096
-            key: {{HOMEPAGE_VAR_JELLYFIN_API_KEY}}
+        cat > /nix/storage/homepage/services.yaml << 'HOMEEOF'
+    ---
+    services:
+      - Media:
+          - Jellyfin:
+              href: https://jellyfin.minerales.network
+              description: Media server with hardware acceleration
+              icon: jellyfin.png
+              widget:
+                type: jellyfin
+                url: http://localhost:8096
+                key: {{HOMEPAGE_VAR_JELLYFIN_API_KEY}}
 
-  - Downloads:
-      - Transmission:
-          href: https://transmission.minerales.network
-          description: Torrent client
-          icon: transmission.png
-          widget:
-            type: transmission
-            url: http://localhost:9091
+      - Downloads:
+          - Transmission:
+              href: https://transmission.minerales.network
+              description: Torrent client
+              icon: transmission.png
+              widget:
+                type: transmission
+                url: http://localhost:9091
 
-  - Synchronization:
-      - Syncthing:
-          href: https://syncthing.minerales.network
-          description: File synchronization
-          icon: syncthing.png
-          widget:
-            type: syncthing
-            url: http://localhost:8384
+      - Synchronization:
+          - Syncthing:
+              href: https://syncthing.minerales.network
+              description: File synchronization
+              icon: syncthing.png
+              widget:
+                type: syncthing
+                url: http://localhost:8384
 
-  - AI/ML:
-      - LLM Hub:
-          href: https://llm.minerales.network
-          description: Large Language Models interface
-          icon: openai.png
+      - AI/ML:
+          - LLM Hub:
+              href: https://llm.minerales.network
+              description: Large Language Models interface
+              icon: openai.png
 
-      - Text Generation:
-          href: https://textgen.minerales.network
-          description: Advanced text generation WebUI
-          icon: huggingface.png
+          - Text Generation:
+              href: https://textgen.minerales.network
+              description: Advanced text generation WebUI
+              icon: huggingface.png
 
-      - Jupyter Lab:
-          href: https://jupyter.minerales.network
-          description: Machine Learning notebooks
-          icon: jupyter.png
-HOMEEOF
+          - Jupyter Lab:
+              href: https://jupyter.minerales.network
+              description: Machine Learning notebooks
+              icon: jupyter.png
+    HOMEEOF
 
-    cat > /nix/storage/homepage/settings.yaml << 'HOMEEOF'
----
-title: Cobalto Media & AI Server
+        cat > /nix/storage/homepage/settings.yaml << 'HOMEEOF'
+    ---
+    title: Cobalto Media & AI Server
 
-theme: dark
+    theme: dark
 
-color: Material Darker
+    color: Material Darker
 
-headerStyle: boxed
+    headerStyle: boxed
 
-layout:
-  Media:
-    style: row
-    columns: 2
-  Downloads:
-    style: row
-    columns: 2
-  Synchronization:
-    style: row
-    columns: 2
-  Management:
-    style: row
-    columns: 3
-  AI/ML:
-    style: row
-    columns: 3
+    layout:
+      Media:
+        style: row
+        columns: 2
+      Downloads:
+        style: row
+        columns: 2
+      Synchronization:
+        style: row
+        columns: 2
+      Management:
+        style: row
+        columns: 3
+      AI/ML:
+        style: row
+        columns: 3
 
-providers:
-  glances: http://localhost:61208
+    providers:
+      glances: http://localhost:61208
 
-quicklaunch:
-  searchDescriptions: true
-  hideInternetSearch: true
-  hideVisitURL: true
-HOMEEOF
+    quicklaunch:
+      searchDescriptions: true
+      hideInternetSearch: true
+      hideVisitURL: true
+    HOMEEOF
 
-    cat > /nix/storage/homepage/widgets.yaml << 'HOMEEOF'
----
-- resources:
-    backend: glances
-    expanded: true
-    cpu: true
-    memory: true
-    disk: /
+        cat > /nix/storage/homepage/widgets.yaml << 'HOMEEOF'
+    ---
+    - resources:
+        backend: glances
+        expanded: true
+        cpu: true
+        memory: true
+        disk: /
 
-- search:
-    provider: duckduckgo
-    target: _blank
+    - search:
+        provider: duckduckgo
+        target: _blank
 
-- datetime:
-    text_size: xl
-    format:
-      timeStyle: short
-      dateStyle: short
-      hourCycle: h23
+    - datetime:
+        text_size: xl
+        format:
+          timeStyle: short
+          dateStyle: short
+          hourCycle: h23
 
-- glances:
-    url: http://localhost:61208
-    version: 4
-    metric: info
-HOMEEOF
+    - glances:
+        url: http://localhost:61208
+        version: 4
+        metric: info
+    HOMEEOF
 
-    cat > /nix/storage/homepage/bookmarks.yaml << 'HOMEEOF'
----
-- Development:
-    - GitHub:
-        - href: https://github.com/DiegoBarrosA/nix-config
-          description: This NixOS configuration repository
-          icon: github.png
+        cat > /nix/storage/homepage/bookmarks.yaml << 'HOMEEOF'
+    ---
+    - Development:
+        - GitHub:
+            - href: https://github.com/DiegoBarrosA/nix-config
+              description: This NixOS configuration repository
+              icon: github.png
 
-    - NixOS:
-        - href: https://nixos.org
-          description: NixOS homepage
-          icon: nixos.png
-        - href: https://search.nixos.org/packages
-          description: NixOS package search
-          icon: nixos.png
+        - NixOS:
+            - href: https://nixos.org
+              description: NixOS homepage
+              icon: nixos.png
+            - href: https://search.nixos.org/packages
+              description: NixOS package search
+              icon: nixos.png
 
-- Documentation:
-    - Services:
-        - href: https://jellyfin.org/docs/
-          description: Jellyfin documentation
-          icon: jellyfin.png
-HOMEEOF
+    - Documentation:
+        - Services:
+            - href: https://jellyfin.org/docs/
+              description: Jellyfin documentation
+              icon: jellyfin.png
+    HOMEEOF
 
-    chown -R 1000:1000 /nix/storage/homepage
-    chmod -R 644 /nix/storage/homepage/*.yaml
+        chown -R 1000:1000 /nix/storage/homepage
+        chmod -R 644 /nix/storage/homepage/*.yaml
   '';
 }

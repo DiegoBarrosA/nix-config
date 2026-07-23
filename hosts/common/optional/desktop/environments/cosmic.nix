@@ -14,7 +14,8 @@
   # Strip COSMIC's default app set — TUI-first, apps come from common/.
   environment.cosmic.excludePackages = with pkgs; [
     cosmic-edit   # text editor  (use helix)
-    cosmic-music  # music player (use mpv)
-    cosmic-reader # document reader (use zathura)
+    cosmic-player # media player (use mpv)
+    cosmic-reader # PDF reader   (use zathura)
+    cosmic-store  # app store    (nix-managed only)
   ];
 }

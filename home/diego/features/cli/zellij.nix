@@ -3,6 +3,21 @@ let
   inherit (config.colorscheme) colors;
 in
 {
+  # dev layout: yazi sidebar | helix | agent terminal
+  xdg.configFile."zellij/layouts/dev.kdl".text = ''
+    layout {
+        pane split_direction="vertical" {
+            pane size="22%" name="files" {
+                command "yazi"
+            }
+            pane name="editor" focus=true {
+                command "hx"
+            }
+            pane size="30%" name="agent"
+        }
+    }
+  '';
+
   programs.zellij = {
     enable = true;
     # Note: enableNushellIntegration doesn't exist in home-manager yet

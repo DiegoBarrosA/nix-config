@@ -155,5 +155,9 @@ in
   hardware.graphics = {
     enable = true;
     # enable32Bit = true;  # Uncomment when nixpkgs i686 issue is fixed
+    extraPackages = with pkgs; [
+      vulkan-loader
+      vulkan-tools
+    ];
   };
 }

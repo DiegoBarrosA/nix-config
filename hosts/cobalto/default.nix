@@ -78,6 +78,7 @@
     ../common/optional/media/miniflux.nix # RSS reader (Stylix-themed), embedded in HA dashboard
     ../common/optional/apps/go2rtc.nix
     ../common/optional/apps/cameras.nix
+    ../common/optional/apps/vaultwarden.nix
     ../common/optional/media/music-assistant.nix
 
     # OpenCode remote access (API + web UI)

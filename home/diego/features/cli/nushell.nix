@@ -34,6 +34,8 @@
 
       # Zellij alias
       zj = "zellij";
+      # Dev layout: yazi sidebar | helix | agent terminal
+      dev = "zellij --layout dev";
     };
 
     extraEnv = ''

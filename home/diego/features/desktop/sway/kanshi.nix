@@ -47,75 +47,71 @@ let
 in
 lib.mkMerge [
   (lib.mkIf enableKanshi {
-    home.packages = [ kanshiSwitch displayModeUI ];
+    home.packages = [
+      kanshiSwitch
+      displayModeUI
+    ];
 
     services.kanshi = {
       enable = true;
 
       settings = [
-      # Single: laptop screen only — disable all external outputs
-      {
-        profile.name = "single";
-        profile.outputs = [
-          {
-            criteria = "eDP-1";
-            position = "0,0";
-            scale = 1.0;
-          }
-          {
-            criteria = "DP-8";
-            status = "disable";
-          }
-          {
-            criteria = "DP-9";
-            status = "disable";
-          }
-        ];
-      }
+        # NOTE: Do NOT add global (non-profile) `output.status = "disable"`
+        # directives here. Global output directives are applied on top of every
+        # matched profile, so a global disable for DP-1/DP-9 overrides a profile
+        # that enables them (this is what killed the Samsung display in docked
+        # mode). Instead, each profile explicitly disables the outputs it does
+        # not use.
 
-      # Docked: laptop + Samsung, disable Arzopa
-      {
-        profile.name = "docked";
-        profile.outputs = [
-          {
-            criteria = "eDP-1";
-            position = "0,0";
-            scale = 1.0;
-          }
-          {
-            criteria = "DP-8";
-            position = "2240,0";
-            scale = 1.0;
-          }
-          {
-            criteria = "DP-9";
-            status = "disable";
-          }
-        ];
-      }
+        # Profiles ordered most-specific first — first matching profile wins
+        {
+          profile.name = "triple";
+          profile.outputs = [
+            {
+              criteria = "eDP-1";
+              position = "0,0";
+              scale = 1.0;
+            }
+            {
+              criteria = "DP-1";
+              position = "2240,0";
+              scale = 1.0;
+            }
+            {
+              criteria = "DP-9";
+              position = "4800,0";
+              scale = 1.0;
+            }
+          ];
+        }
 
-      # Triple: all three monitors
-      {
-        profile.name = "triple";
-        profile.outputs = [
-          {
-            criteria = "eDP-1";
-            position = "0,0";
-            scale = 1.0;
-          }
-          {
-            criteria = "DP-8";
-            position = "2240,0";
-            scale = 1.0;
-          }
-          {
-            criteria = "DP-9";
-            position = "4800,0";
-            scale = 1.0;
-          }
-        ];
-      }
-    ];
+        {
+          profile.name = "docked";
+          profile.outputs = [
+            {
+              criteria = "eDP-1";
+              position = "0,0";
+              scale = 1.0;
+            }
+            {
+              criteria = "DP-1";
+              position = "2240,0";
+              scale = 1.0;
+            }
+          ];
+        }
+
+        {
+          profile.name = "single";
+          profile.outputs = [
+            {
+              criteria = "eDP-1";
+              position = "0,0";
+              scale = 1.0;
+            }
+          ];
+        }
+      ];
     };
 
   })
