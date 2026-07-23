@@ -1,6 +1,9 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 let
   inherit (config.colorscheme) colors;
+  # Passing a font file path lets rofi skip the slow Pango/Fontconfig lookup
+  # (~120ms) and load the font directly via Harfbuzz/Cairo.
+  monoFont = "${pkgs.fantasque-sans-mono}/share/fonts/opentype/FantasqueSansMono-Regular.otf";
 in
 {
   xdg.configFile = {
@@ -10,18 +13,20 @@ in
       configuration {
         show-icons: false;
         terminal: "alacritty";
-        font: "${config.stylix.fonts.monospace.name} 20";
+        font: "Jost* 24";
+        drun-use-desktop-cache: true;
+        matching: "fuzzy";
       }
     '';
 
     "rofi/theme.rasi".text = ''
       * {
           bg:      #${colors.base01}FF;
-          bg-alt:  #${colors.base02}FF;
-          fg:      #${colors.base04}FF;
+          bg-alt:  #${colors.base01}FF;
+          fg:      #${colors.base05}FF;
           accent:  #${colors.base0D}FF;
           urgent:  #${colors.base08}FF;
-          match:   #${colors.base0C}FF;
+          match:   #${colors.base04}FF;
           border:  #${colors.base03}FF;
 
           background-color: transparent;
@@ -33,8 +38,8 @@ in
           background-color: @bg;
           border:           2px;
           border-color:     @border;
-          border-radius:    0px;
-          width:            50%;
+          border-radius:    10px;
+          width:            40%;
           padding:          0;
       }
 
@@ -45,13 +50,16 @@ in
 
       inputbar {
           children: [ prompt, entry ];
+          font: "${monoFont} 32";
+
           background-color: @bg;
           padding: 12px;
       }
 
       prompt {
-          background-color: @accent;
-          text-color:       @bg;
+          font: "Font Awesome 7 Free Solid 32";
+          background-color: @bg;
+          text-color:       @fg;
           padding:          4px 8px;
           margin:           0;
       }
@@ -78,8 +86,10 @@ in
           columns:   1;
           fixed-height: true;
           background-color: @bg;
-          padding:  0;
+          padding:  10;
           scrollbar:        false;
+          fixed-height: false; 
+          dynamic: true;
       }
 
       element {
@@ -88,44 +98,14 @@ in
           text-color:       @fg;
       }
 
-      element normal normal {
+      element selected {
           background-color: @bg;
-          text-color:       @fg;
+          text-color:       @accent;
       }
 
-      element normal alternate {
-          background-color: @bg;
-          text-color:       @fg;
-      }
-
-      element selected normal {
-          background-color: @accent;
-          text-color:       @bg;
-      }
-
-      element selected alternate {
-          background-color: @accent;
-          text-color:       @bg;
-      }
-
-      element-text normal normal {
-          background-color: @bg;
-          text-color:       @fg;
-      }
-
-      element-text normal alternate {
-          background-color: @bg;
-          text-color:       @fg;
-      }
-
-      element-text selected normal {
-          background-color: @accent;
-          text-color:       @bg;
-      }
-
-      element-text selected alternate {
-          background-color: @accent;
-          text-color:       @bg;
+      element-text {
+          background-color: inherit;
+          text-color:       inherit;
       }
 
       element-icon {

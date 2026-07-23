@@ -434,11 +434,11 @@
     "jira-cloud-mcp": {
       "flake": false,
       "locked": {
-        "lastModified": 1778512842,
-        "narHash": "sha256-YaxICugmeYIdvgBx5+c04rObxSooftigjK1lD8UY6oQ=",
+        "lastModified": 1784846136,
+        "narHash": "sha256-wBxBVjXIOMMc/e8sN8bXdKoLrEIRXRobgu1CremcRg8=",
         "ref": "refs/heads/main",
-        "rev": "d8ad085d23d6b9691ce599065b405581f5aef50e",
-        "revCount": 12,
+        "rev": "ab965c4099b3fc2e0cb89c5a1ddc85b87af7b412",
+        "revCount": 13,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/jira-cloud-mcp.git"
       },
@@ -882,14 +882,15 @@
         "jira-data-center-mcp": "jira-data-center-mcp",
         "jira-service-management-forms-mcp": "jira-service-management-forms-mcp",
         "nixpkgs": "nixpkgs_6",
+        "tempo-mcp-server": "tempo-mcp-server",
         "trello-cloud-mcp": "trello-cloud-mcp"
       },
       "locked": {
-        "lastModified": 1784580783,
-        "narHash": "sha256-bFz1Uwhhf5rAx15v5yvJhsO7ozS6ptu553bMuDK6brI=",
+        "lastModified": 1784847009,
+        "narHash": "sha256-a6kw8jmOJecHKr37RY6FOZw6FqNV7wwikMfDYs6H3j4=",
         "ref": "employer-cleanup",
-        "rev": "bd6332b4193c05fa5493268fc115a7e0c0a6757e",
-        "revCount": 71,
+        "rev": "eafddb2dc58e5a8289bc3deb1172af2a72acabb9",
+        "revCount": 72,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/nix-private-config.git"
       },
@@ -1061,6 +1062,22 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "tempo-mcp-server": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1784846728,
+        "narHash": "sha256-YWydsrhPaI+EuRaUXCnoL9Cczf/GjJF4FnnTeiIPexA=",
+        "owner": "DiegoBarrosA",
+        "repo": "tempo-mcp-server",
+        "rev": "5a2b356d2f94ca03db9fe247fb70046ba2974d5f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "DiegoBarrosA",
+        "repo": "tempo-mcp-server",
         "type": "github"
       }
     },

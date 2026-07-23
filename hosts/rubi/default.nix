@@ -43,7 +43,7 @@
     # ../common/optional/ai/ollama-vulkan.nix
 
     # libvirt/KVM + virt-manager (Windows 11 VM with virtio-gpu)
-    # ../common/optional/desktop/virtualization.nix
+    ../common/optional/desktop/virtualization.nix
     inputs.nixvirt.nixosModules.default
     # ./win11-vm.nix
 
@@ -253,5 +253,5 @@
   # this driver were showing up as ~6s items in systemd-analyze blame.
   boot.blacklistedKernelModules = [ "8250" ];
 
-  users.users.diego.extraGroups = [ "docker" ];
+  users.users.diego.extraGroups = [ "docker" "libvirtd" ];
 }
