@@ -79,6 +79,14 @@
 
       # Machine ID
       "/etc/machine-id"
+
+      # systemd credential host key. Used to decrypt LoadCredentialEncrypted
+      # secrets (e.g. libvirtd's secrets-encryption-key, which lives in the
+      # persisted /var/lib/libvirt). Without persisting this, a root wipe
+      # regenerates the host key and libvirtd fails with 243/CREDENTIALS
+      # ("Failed to determine local credential key"). Persist it so the
+      # encrypted libvirt secret stays decryptable across reboots.
+      "/var/lib/systemd/credential.secret"
     ];
 
     users.diego = {
