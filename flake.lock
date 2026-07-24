@@ -450,11 +450,11 @@
     "jira-data-center-mcp": {
       "flake": false,
       "locked": {
-        "lastModified": 1782403284,
-        "narHash": "sha256-Bi1iSN2aXYvm5mKQCPS3Vq36US86FHtmNUs+pAEAB8k=",
+        "lastModified": 1784899010,
+        "narHash": "sha256-mShM0gM9rz43kApYQEFIZdVu2BrbbgaUCGVdSXpJA9s=",
         "ref": "refs/heads/main",
-        "rev": "0aac13d360d24502df485163bf48ab4750f79b72",
-        "revCount": 5,
+        "rev": "ed3dc2c217085b5299266a0c1f0e50abe13a29c2",
+        "revCount": 6,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/jira-data-center-mcp.git"
       },
@@ -886,11 +886,11 @@
         "trello-cloud-mcp": "trello-cloud-mcp"
       },
       "locked": {
-        "lastModified": 1784847009,
-        "narHash": "sha256-a6kw8jmOJecHKr37RY6FOZw6FqNV7wwikMfDYs6H3j4=",
+        "lastModified": 1784899059,
+        "narHash": "sha256-HtROFUJK481XqjnoeCIRW+COAfc5szb4xSlxmyMlYRw=",
         "ref": "employer-cleanup",
-        "rev": "eafddb2dc58e5a8289bc3deb1172af2a72acabb9",
-        "revCount": 72,
+        "rev": "14b26506807fcd51b8fe2db9c02a6b48329178af",
+        "revCount": 77,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/nix-private-config.git"
       },
@@ -1068,11 +1068,11 @@
     "tempo-mcp-server": {
       "flake": false,
       "locked": {
-        "lastModified": 1784846728,
-        "narHash": "sha256-YWydsrhPaI+EuRaUXCnoL9Cczf/GjJF4FnnTeiIPexA=",
+        "lastModified": 1784898828,
+        "narHash": "sha256-3jMdYGL/Fql7P11+hLAkVtjQ8ZR0JVOsTTBnTw8JBCM=",
         "owner": "DiegoBarrosA",
         "repo": "tempo-mcp-server",
-        "rev": "5a2b356d2f94ca03db9fe247fb70046ba2974d5f",
+        "rev": "15a9c3a6b5864179bcd9d736068ab0ec22da9824",
         "type": "github"
       },
       "original": {
