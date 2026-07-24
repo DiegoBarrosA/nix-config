@@ -19,6 +19,21 @@
       API_KEY = "\${JIRA_DC_API_KEY}";
     };
   };
+
+  programs.claude-desktop-config = {
+    enable = true;
+    # Obsidian MCP: uses uvx (available everywhere). Credentials come from
+    # secretEnv (set per-host in e.g. rubi.nix) so no hardcoded values here.
+    extraMcpServers.obsidian = {
+      command = "uvx";
+      args = [ "mcp-obsidian" ];
+      env = {
+        OBSIDIAN_API_KEY = "\${OBSIDIAN_API_KEY}";
+        OBSIDIAN_HOST = "127.0.0.1";
+        OBSIDIAN_PORT = "27123";
+      };
+    };
+  };
   programs.cursor-config.enable = true;
   programs.antigravity-config.enable = true;
 
