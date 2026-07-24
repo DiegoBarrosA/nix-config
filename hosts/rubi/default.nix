@@ -221,9 +221,11 @@
         inputs.ai-tooling.homeManagerModules.mcp-config
         inputs.ai-tooling.homeManagerModules.antigravity-config
         inputs.ai-tooling.homeManagerModules.claude-code-config
+        inputs.ai-tooling.homeManagerModules.claude-desktop-config
         inputs.ai-tooling.homeManagerModules.cursor-config
         inputs.ai-tooling.homeManagerModules.ai-skills
         inputs.private-config.homeManagerModules.workMcpConfig
+        inputs.private-config.homeManagerModules.workClaudeDesktopMcpConfig
         inputs.private-config.homeManagerModules.workExtras
         ../../home/diego/rubi.nix
       ];

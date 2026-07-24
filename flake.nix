@@ -105,6 +105,7 @@
           mcp-config
           opencode-config
           claude-code-config
+          claude-desktop-config
           cursor-config
           antigravity-config
           ai-skills
@@ -223,6 +224,7 @@
         "diego@cobalto" = myLib.mkHome "x86_64-linux" ./home/diego/cobalto.nix [ ] { };
         "diego@rubi" = myLib.mkHome "x86_64-linux" ./home/diego/rubi.nix [
           inputs.private-config.homeManagerModules.workExtras
+          inputs.private-config.homeManagerModules.workClaudeDesktopMcpConfig
         ] { desktop = "sway"; };
         "diego@lapislazuli" = myLib.mkHome "aarch64-darwin" ./home/diego/lapislazuli.nix [ ] { };
       };

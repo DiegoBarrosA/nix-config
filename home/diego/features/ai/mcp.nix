@@ -38,10 +38,22 @@
     # Uncomment and fill in your credentials below
     # This file is sourced by nushell on startup
 
-    # Jira Cloud MCP
-    # $env.JIRA_BASE_URL = "https://your-domain.atlassian.net"
-    # $env.JIRA_EMAIL = "your-email@example.com"
-    # $env.JIRA_API_KEY = "your-api-key"
+    # Jira Cloud MCP — named instances (assembled into JIRA_INSTANCES by the wrapper)
+    if ("/run/secrets/jira-sr-coe-base-url" | path exists) {
+      $env.JIRA_SR_COE_BASE_URL = (open /run/secrets/jira-sr-coe-base-url | str trim)
+      $env.JIRA_SR_COE_EMAIL    = (open /run/secrets/jira-sr-coe-email    | str trim)
+      $env.JIRA_SR_COE_API_KEY  = (open /run/secrets/jira-sr-coe-api-key  | str trim)
+    }
+    if ("/run/secrets/jira-nv-tac-base-url" | path exists) {
+      $env.JIRA_NV_TAC_BASE_URL = (open /run/secrets/jira-nv-tac-base-url | str trim)
+      $env.JIRA_NV_TAC_EMAIL    = (open /run/secrets/jira-nv-tac-email    | str trim)
+      $env.JIRA_NV_TAC_API_KEY  = (open /run/secrets/jira-nv-tac-api-key  | str trim)
+    }
+    if ("/run/secrets/jira-nv-uat1-base-url" | path exists) {
+      $env.JIRA_NV_UAT1_BASE_URL = (open /run/secrets/jira-nv-uat1-base-url | str trim)
+      $env.JIRA_NV_UAT1_EMAIL    = (open /run/secrets/jira-nv-uat1-email    | str trim)
+      $env.JIRA_NV_UAT1_API_KEY  = (open /run/secrets/jira-nv-uat1-api-key  | str trim)
+    }
 
     # Confluence Cloud MCP
     # $env.CONFLUENCE_BASE_URL = "https://your-domain.atlassian.net"

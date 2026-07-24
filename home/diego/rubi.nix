@@ -312,6 +312,12 @@
     };
   };
 
+  # Claude Desktop: resolve ${VAR} placeholders in MCP server env blocks at
+  # activation time by reading actual values from /run/secrets/ files.
+  # privateConfig.secretEnv maps env var names -> sops secret file paths
+  # (defined in customers/nvidia/secret-env.nix in private-config).
+  programs.claude-desktop-config.secretEnv = privateConfig.workSecretEnv or { };
+
   programs.ai-skills.opencodeProfiles = [
     "work"
     "personal"
