@@ -55,10 +55,20 @@
       $env.JIRA_NV_UAT1_API_KEY  = (open /run/secrets/jira-nv-uat1-api-key  | str trim)
     }
 
-    # Confluence Cloud MCP
-    # $env.CONFLUENCE_BASE_URL = "https://your-domain.atlassian.net"
-    # $env.CONFLUENCE_EMAIL = "your-email@example.com"
-    # $env.CONFLUENCE_API_KEY = "your-api-key"
+    # Confluence Cloud MCP — named instances (assembled into CONFLUENCE_INSTANCES by the wrapper)
+    if ("/run/secrets/confluence-main-base-url" | path exists) {
+      $env.CONFLUENCE_BASE_URL     = (open /run/secrets/confluence-main-base-url | str trim)
+      $env.CONFLUENCE_EMAIL        = (open /run/secrets/confluence-main-email    | str trim)
+      $env.CONFLUENCE_API_KEY      = (open /run/secrets/confluence-main-api-key  | str trim)
+      $env.CONFLUENCE_NV_TAC_BASE_URL = (open /run/secrets/confluence-main-base-url | str trim)
+      $env.CONFLUENCE_NV_TAC_EMAIL    = (open /run/secrets/confluence-main-email    | str trim)
+      $env.CONFLUENCE_NV_TAC_API_KEY  = (open /run/secrets/confluence-main-api-key  | str trim)
+    }
+    if ("/run/secrets/confluence-sr-coe-base-url" | path exists) {
+      $env.CONFLUENCE_SR_COE_BASE_URL = (open /run/secrets/confluence-sr-coe-base-url | str trim)
+      $env.CONFLUENCE_SR_COE_EMAIL    = (open /run/secrets/confluence-sr-coe-email    | str trim)
+      $env.CONFLUENCE_SR_COE_API_KEY  = (open /run/secrets/confluence-sr-coe-api-key  | str trim)
+    }
 
     # Jira Data Center MCP (disabled - no tools implemented)
     # $env.JIRA_DC_BASE_URL = "https://jira.your-company.com"
