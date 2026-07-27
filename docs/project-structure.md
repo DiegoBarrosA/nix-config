@@ -4,55 +4,84 @@ title: Project Structure
 nav_order: 2
 ---
 
-This document provides a detailed explanation of the file and directory structure of this NixOS configuration repository.
+This document explains the file and directory structure of this NixOS
+configuration repository. For the higher-level design (the three-repository
+split, the customer contract, secrets tiers), see
+[`ARCHITECTURE.md`](https://github.com/DiegoBarrosA/nix-config/blob/main/ARCHITECTURE.md).
 
-## Root Directory
+```mermaid
+graph TD
+    F["flake.nix"] --> L["lib/<br/>mkHost · mkHome"]
+    F --> H["hosts/"]
+    F --> HM["home/diego/"]
+    F --> M["modules/"]
+    F --> O["overlays/"]
+    F --> P["pkgs/"]
+    H --> HC["common/<br/>global · optional · users"]
+    H --> HH["cobalto · granate · rubi · lonsdaleita"]
+    HM --> HF["features/<br/>ai · cli · desktop"]
+    HM --> HE["cobalto.nix · rubi.nix · lapislazuli.nix · lonsdaleita.nix"]
+    M --> MN["nixos/"]
+    M --> MH["home-manager/"]
 
-- `flake.nix`: The entry point for the Nix Flakes configuration. It defines the inputs, outputs, and system configurations.
-- `iso.nix`: Configuration for building a NixOS ISO image.
-- `README.md`: The main README file for the project.
-- `shell.nix`: A shell environment for development, used with `nix-shell`.
+    classDef root fill:#e8a87c,color:#000
+    classDef dir fill:#7eb8da,color:#000
+    class F root
+    class L,H,HM,M,O,P,HC,HH,HF,HE,MN,MH dir
+```
 
-## `docs/`
+## Root
 
-This directory contains all the documentation for the project, including this document. It is designed to be compatible with GitHub Pages.
+- `flake.nix`: The entry point. Declares inputs, outputs,
+  `nixosConfigurations`, `homeConfigurations`, `nixOnDroidConfigurations`,
+  `deploy` (deploy-rs), and the packages/overlays outputs.
+- `default.nix`, `shell.nix`: Non-flake entry and dev shell (`nix-shell`).
+- `probe.nix`: Small helper for evaluating/inspecting the config.
+- `ARCHITECTURE.md`: High-level design overview.
+- `README.md`: Project intro; points at the docs site.
 
-- `_config.yml`: Jekyll configuration file.
-- `_layouts/`: HTML layouts for the documentation pages.
+_(There is no `iso.nix`, `keys/`, or `scripts/` directory — an installer ISO is
+built by the `build-iso` GitHub Actions workflow instead.)_
 
-## `home/`
+## `lib/`
 
-This directory contains the Home Manager configurations for different users and machines.
-
-- `diego/`: Home Manager configuration for the user `diego`.
-  - `features/`: Modularized features for the user's environment (e.g., `cli`, `desktop`, `emacs`).
-  - `global/`: Global settings for the user.
+`mkHost` and `mkHome` helpers that turn a host name + entry point into the
+corresponding flake output (`default.nix`).
 
 ## `hosts/`
 
-This directory contains the NixOS configurations for each machine.
+NixOS (and nix-on-droid) configuration per machine.
 
-- `common/`: Common configurations shared across all hosts.
-  - `global/`: Global settings for all systems.
-  - `optional/`: Optional features that can be enabled on a per-host basis.
-- `amatista/`, `cobalto/`, etc.: Host-specific configurations.
+- `common/global/`: Imported by every host.
+- `common/optional/{ai,apps,desktop,media,network,system}/`: Opt-in modules,
+  grouped by domain, that a host imports as needed. SOPS base wiring lives in
+  `common/optional/system/`.
+- `common/users/diego/`: User-level system config.
+- `cobalto/`, `granate/`, `rubi/`, `lonsdaleita/`: Per-host entry points. Each
+  encrypted `secrets.yaml` lives beside its host.
 
-## `keys/`
+## `home/`
 
-This directory contains public keys for various services and users. Private keys are ignored by Git.
+Home Manager configuration.
+
+- `diego/features/`: Modular user features (`ai`, `cli`, `desktop`).
+- `diego/global/`: User-wide defaults.
+- `diego/<host>.nix`: Per-host home entry points (`cobalto.nix`, `rubi.nix`,
+  `lapislazuli.nix`, `lonsdaleita.nix`).
 
 ## `modules/`
 
-This directory contains custom NixOS and Home Manager modules.
+Custom option-providing modules, split into `nixos/` and `home-manager/`.
 
 ## `overlays/`
 
-This directory contains Nixpkgs overlays for customizing packages.
+Nixpkgs overlays for customizing or pinning packages.
 
 ## `pkgs/`
 
-This directory contains custom packages that are not available in Nixpkgs.
+Custom packages not in Nixpkgs (exposed via the flake's `packages` output).
 
-## `scripts/`
+## `docs/`
 
-This directory contains various scripts for maintenance, deployment, and other tasks.
+This documentation, built with Jekyll and published to GitHub Pages
+(`_config.yml`, `_layouts/`).

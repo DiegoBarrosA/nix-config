@@ -1,6 +1,12 @@
 # Installing NixOS on Rubi (Dual-Boot with Debian)
 
-This guide covers installing the `rubi` NixOS host configuration on a system that dual-boots with Debian. The installation uses disko for declarative disk partitioning, LUKS encryption with TPM2/FIDO2 hardware-backed unlock, btrfs with impermanence, and COSMIC desktop.
+> **Note:** `rubi` now boots the **Sway** desktop by default (the flake builds it
+> with `desktop = "sway"`, and the DE is swappable via the `desktop` knob). The
+> disk/LUKS/impermanence steps below are current, but the desktop-specific
+> sections still describe the earlier **COSMIC** setup and are kept for reference
+> — substitute the Sway session/greeter where they mention `cosmic-*`.
+
+This guide covers installing the `rubi` NixOS host configuration on a system that dual-boots with Debian. The installation uses disko for declarative disk partitioning, LUKS encryption with TPM2/FIDO2 hardware-backed unlock, btrfs with impermanence, and the Sway desktop.
 
 ## System Overview
 
