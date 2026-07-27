@@ -28,6 +28,7 @@ in
     with pkgs;
     # Core CLI tools (all platforms)
     [
+      ghostty
       timr-tui
       basalt
       comma # Install and run programs by sticking a , before them
