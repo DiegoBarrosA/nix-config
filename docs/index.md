@@ -12,7 +12,7 @@ For detailed information about the project, please refer to the following sectio
 
 - [**Project Structure**](./project-structure.md): A detailed explanation of the file and directory structure.
 - [**Installation**](./installation.md): Instructions on how to set up and install the configuration on a new system.
-- [**Rubi Installation**](./rubi-installation.md): Detailed guide for installing the `rubi` host (COSMIC desktop, dual-boot with Debian, impermanence).
+- [**Rubi Installation**](./rubi-installation.md): Detailed guide for installing the `rubi` host (Sway desktop, dual-boot with Debian, impermanence).
 - [**Usage**](./usage.md): Examples of common tasks and workflows.
 - [**Contributing**](./contributing.md): Guidelines for contributing to the project.
 - [**API Documentation**](./api.md): Information about any external interfaces.
