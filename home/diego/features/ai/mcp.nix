@@ -39,20 +39,20 @@
     # This file is sourced by nushell on startup
 
     # Jira Cloud MCP — named instances (assembled into JIRA_INSTANCES by the wrapper)
-    if ("/run/secrets/jira-sr-coe-base-url" | path exists) {
-      $env.JIRA_SR_COE_BASE_URL = (open /run/secrets/jira-sr-coe-base-url | str trim)
-      $env.JIRA_SR_COE_EMAIL    = (open /run/secrets/jira-sr-coe-email    | str trim)
-      $env.JIRA_SR_COE_API_KEY  = (open /run/secrets/jira-sr-coe-api-key  | str trim)
+    if ("/run/secrets/work-jira-a-base-url" | path exists) {
+      $env.WORK_JIRA_A_BASE_URL = (open /run/secrets/work-jira-a-base-url | str trim)
+      $env.WORK_JIRA_A_EMAIL    = (open /run/secrets/work-jira-a-email    | str trim)
+      $env.WORK_JIRA_A_API_KEY  = (open /run/secrets/work-jira-a-api-key  | str trim)
     }
-    if ("/run/secrets/jira-nv-tac-base-url" | path exists) {
-      $env.JIRA_NV_TAC_BASE_URL = (open /run/secrets/jira-nv-tac-base-url | str trim)
-      $env.JIRA_NV_TAC_EMAIL    = (open /run/secrets/jira-nv-tac-email    | str trim)
-      $env.JIRA_NV_TAC_API_KEY  = (open /run/secrets/jira-nv-tac-api-key  | str trim)
+    if ("/run/secrets/work-jira-b-base-url" | path exists) {
+      $env.WORK_JIRA_B_BASE_URL = (open /run/secrets/work-jira-b-base-url | str trim)
+      $env.WORK_JIRA_B_EMAIL    = (open /run/secrets/work-jira-b-email    | str trim)
+      $env.WORK_JIRA_B_API_KEY  = (open /run/secrets/work-jira-b-api-key  | str trim)
     }
-    if ("/run/secrets/jira-nv-uat1-base-url" | path exists) {
-      $env.JIRA_NV_UAT1_BASE_URL = (open /run/secrets/jira-nv-uat1-base-url | str trim)
-      $env.JIRA_NV_UAT1_EMAIL    = (open /run/secrets/jira-nv-uat1-email    | str trim)
-      $env.JIRA_NV_UAT1_API_KEY  = (open /run/secrets/jira-nv-uat1-api-key  | str trim)
+    if ("/run/secrets/work-jira-c-base-url" | path exists) {
+      $env.WORK_JIRA_C_BASE_URL = (open /run/secrets/work-jira-c-base-url | str trim)
+      $env.WORK_JIRA_C_EMAIL    = (open /run/secrets/work-jira-c-email    | str trim)
+      $env.WORK_JIRA_C_API_KEY  = (open /run/secrets/work-jira-c-api-key  | str trim)
     }
 
     # Confluence Cloud MCP — named instances (assembled into CONFLUENCE_INSTANCES by the wrapper)
@@ -60,14 +60,14 @@
       $env.CONFLUENCE_BASE_URL     = (open /run/secrets/confluence-main-base-url | str trim)
       $env.CONFLUENCE_EMAIL        = (open /run/secrets/confluence-main-email    | str trim)
       $env.CONFLUENCE_API_KEY      = (open /run/secrets/confluence-main-api-key  | str trim)
-      $env.CONFLUENCE_NV_TAC_BASE_URL = (open /run/secrets/confluence-main-base-url | str trim)
-      $env.CONFLUENCE_NV_TAC_EMAIL    = (open /run/secrets/confluence-main-email    | str trim)
-      $env.CONFLUENCE_NV_TAC_API_KEY  = (open /run/secrets/confluence-main-api-key  | str trim)
+      $env.WORK_CONFLUENCE_A_BASE_URL = (open /run/secrets/confluence-main-base-url | str trim)
+      $env.WORK_CONFLUENCE_A_EMAIL    = (open /run/secrets/confluence-main-email    | str trim)
+      $env.WORK_CONFLUENCE_A_API_KEY  = (open /run/secrets/confluence-main-api-key  | str trim)
     }
-    if ("/run/secrets/confluence-sr-coe-base-url" | path exists) {
-      $env.CONFLUENCE_SR_COE_BASE_URL = (open /run/secrets/confluence-sr-coe-base-url | str trim)
-      $env.CONFLUENCE_SR_COE_EMAIL    = (open /run/secrets/confluence-sr-coe-email    | str trim)
-      $env.CONFLUENCE_SR_COE_API_KEY  = (open /run/secrets/confluence-sr-coe-api-key  | str trim)
+    if ("/run/secrets/work-confluence-b-base-url" | path exists) {
+      $env.WORK_CONFLUENCE_B_BASE_URL = (open /run/secrets/work-confluence-b-base-url | str trim)
+      $env.WORK_CONFLUENCE_B_EMAIL    = (open /run/secrets/work-confluence-b-email    | str trim)
+      $env.WORK_CONFLUENCE_B_API_KEY  = (open /run/secrets/work-confluence-b-api-key  | str trim)
     }
 
     # Jira Data Center MCP (disabled - no tools implemented)
