@@ -39,7 +39,7 @@ in
           border:           2px;
           border-color:     @border;
           border-radius:    10px;
-          width:            40%;
+          width:            30%;
           padding:          0;
       }
 
