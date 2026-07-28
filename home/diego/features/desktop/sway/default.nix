@@ -9,6 +9,7 @@ let
   inherit (config) fontProfiles;
   cursorName = config.stylix.cursor.name;
   cursorSize = toString config.stylix.cursor.size;
+  workspaces = import ./workspaces.nix;
 
   # Package helper scripts
   launch-or-focus = pkgs.writeShellScriptBin "launch-or-focus" ''
@@ -69,22 +70,22 @@ let
 
     OPTIONS=" Lock\n Logout\n Suspend\n Reboot\n Shutdown"
 
-    CHOICE=$(echo -e "$OPTIONS" | rofi -dmenu -p "Power")
+    CHOICE=$(echo -e "$OPTIONS" | rofi -dmenu -p "")
 
     case "$CHOICE" in
-        *"Lock")
+        *" Lock")
             swaylock -f
             ;;
-        *"Logout")
+        *" Logout")
             swaymsg exit
             ;;
-        *"Suspend")
+        *" Suspend")
             swaylock -f && systemctl suspend
             ;;
-        *"Reboot")
+        *" Reboot")
             systemctl reboot
             ;;
-        *"Shutdown")
+        *" Shutdown")
             systemctl poweroff
             ;;
     esac
@@ -99,14 +100,14 @@ let
 
     # shorthand|Name|URL_TEMPLATE
     SEARCH=(
-        "g|Google|https://www.google.com/search?q="
-        "gh|GitHub|https://github.com/search?q="
-        "yt|YouTube|https://www.youtube.com/results?search_query="
-        "ddg|DuckDuckGo|https://lite.duckduckgo.com/lite?q="
-        "r|Reddit|https://www.reddit.com/search?q="
-        "mdn|MDN|https://developer.mozilla.org/en-US/search?q="
-        "so|StackOverflow|https://stackoverflow.com/search?q="
-        "np|NixOS Packages|https://search.nixos.org/packages?query="
+        "g| Google|https://www.google.com/search?q="
+        "gh| GitHub|https://github.com/search?q="
+        "yt| YouTube|https://www.youtube.com/results?search_query="
+        "ddg| DuckDuckGo|https://lite.duckduckgo.com/lite?q="
+        "r| Reddit|https://www.reddit.com/search?q="
+        "mdn| MDN|https://developer.mozilla.org/en-US/search?q="
+        "so| StackOverflow|https://stackoverflow.com/search?q="
+        "np| NixOS Packages|https://search.nixos.org/packages?query="
     )
 
     url_for() {
@@ -116,6 +117,39 @@ let
             [ "$s" = "$key" ] && { printf '%s' "$url"; return 0; }
         done
         return 1
+    }
+
+    # Map an app display name to a Font Awesome Free Solid glyph (U+XXXX).
+    # Falls back to a generic window icon for unknown apps.
+    app_icon() {
+        case "$1" in
+            *[Ff]irefox*)                                          printf '' ;;  # globe
+            *[Tt]hunderbird*|*[Ee]mail*|*[Mm]ail*)                printf '' ;;  # envelope
+            *[Oo]bsidian*)                                         printf '' ;;  # gem
+            *[Cc]ursor*|*[Cc]ode*|*[Vv][Ss][Cc]ode*)             printf '' ;;  # code
+            *[Aa]lacritty*|*[Tt]erminal*|*[Kk]itty*|*[Cc]onsole*) printf '' ;; # terminal
+            *[Nn]autilus*|*[Dd]olphin*|*[Ff]iles*|*[Ff]ile*[Mm]anager*) printf '' ;; # folder
+            *[Cc]hrome*|*[Cc]hromium*|*[Bb]rowser*)               printf '' ;;  # globe
+            *[Ss]potify*|*[Mm]usic*|*[Rr]hythm*)                  printf '' ;;  # music note
+            *[Ss]team*|*[Gg]ame*)                                  printf '' ;;  # gamepad
+            *[Ss]lack*|*[Dd]iscord*|*[Tt]eams*|*[Zz]oom*|*[Tt]elegram*) printf '' ;; # comments
+            *[Ss]etting*|*[Pp]referen*|*[Cc]ontrol*[Cc]enter*)    printf '' ;;  # gear
+            *[Cc]alculat*)                                         printf '' ;;  # calculator
+            *[Cc]alendar*)                                         printf '' ;;  # calendar
+            *[Vv]ideo*|*[Mm][Pp][Vv]*|*[Vv][Ll][Cc]*|*[Mm]edia*[Pp]layer*) printf '' ;; # film
+            *[Ii]mage*|*[Pp]hoto*|*[Gg][Ii][Mm][Pp]*|*[Ii]nkscape*) printf '' ;; # image
+            *[Pp][Dd][Ff]*|*[Ee]vince*|*[Oo]kular*)               printf '' ;;  # file-pdf
+            *[Ww]riter*|*[Ll]ib[Oo]ffice*|*[Oo]ffice*|*[Cc]alc*) printf '' ;;  # file-alt
+            *[Bb]luetooth*)                                        printf '' ;;  # bluetooth
+            *[Pp]assword*|*[Kk]eepass*|*[Bb]itwarden*)            printf '' ;;  # key
+            *[Nn]ote*|*[Jj]oplin*|*[Nn]otion*)                    printf '' ;;  # sticky-note
+            *[Pp]rint*)                                            printf '' ;;  # print
+            *[Cc]lock*|*[Tt]imer*)                                 printf '' ;;  # clock
+            *[Mm]ap*|*[Nn]avigat*)                                 printf '' ;;  # map
+            *[Nn]ews*|*[Ff]eed*|*[Rr][Ss][Ss]*)                   printf '' ;;  # rss
+            *[Pp]odcast*|*[Mm]ic*)                                 printf '' ;;  # microphone
+            *)                                                     printf '' ;;  # window (generic)
+        esac
     }
 
     do_search() {
@@ -156,15 +190,27 @@ let
 
     APP_PAIRS=$(app_pairs)
 
+    # Build a display-string→exec map and an ordered display list.
+    # Process substitution keeps the while loop in the current shell so
+    # DISPLAY_EXEC is accessible after the loop (unlike a subshell / $(...)).
+    declare -A DISPLAY_EXEC
+    APP_DISPLAY=""
+    while IFS=$'\t' read -r appname appcmd; do
+        icon=$(app_icon "$appname")
+        display="$icon  $appname"
+        DISPLAY_EXEC["$display"]="$appcmd"
+        APP_DISPLAY+="$display"$'\n'
+    done < <(printf '%s\n' "$APP_PAIRS")
+
     list_all() {
         for entry in "''${SEARCH[@]}"; do
             IFS='|' read -r s name _ <<< "$entry"
             printf '%s  %s  (search)\n' "$s" "$name"
         done
-        printf '%s\n' "$APP_PAIRS" | cut -f1
+        printf '%s' "$APP_DISPLAY"
     }
 
-    SELECTION=$(list_all | rofi -dmenu -i -p "")
+    SELECTION=$(list_all | rofi -dmenu -i -p "")
     [ -z "$SELECTION" ] && exit 0
 
     # 1) Inline query: "<shorthand> <query...>"
@@ -184,8 +230,11 @@ let
             ;;
     esac
 
-    # 3) Otherwise treat as an app name — look up its Exec from the cached pairs
-    EXEC_LINE=$(printf '%s\n' "$APP_PAIRS" | awk -F'\t' -v n="$SELECTION" '$1==n {print $2; exit}')
+    # 3) Look up exec via icon-prefixed display key, fall back to plain name match
+    EXEC_LINE="''${DISPLAY_EXEC[$SELECTION]}"
+    if [ -z "$EXEC_LINE" ]; then
+        EXEC_LINE=$(printf '%s\n' "$APP_PAIRS" | awk -F'\t' -v n="$SELECTION" '$1==n {print $2; exit}')
+    fi
     [ -n "$EXEC_LINE" ] && exec $EXEC_LINE
 
     # 4) Fallback: run whatever was typed as a command
@@ -805,18 +854,7 @@ in
         background = "#${colors.base01}";
       };
 
-      assigns = {
-        "5" = [
-          { app_id = "firefox"; }
-        ];
-        "6" = [
-          { app_id = "thunderbird"; }
-        ];
-        # yazi (launched via yazi-launcher script) is the only app on workspace 7
-        "8" = [
-          { app_id = "obsidian"; }
-        ];
-      };
+      assigns = lib.mapAttrs (_: v: [ { app_id = v.app; } ]) (lib.filterAttrs (_: v: v ? app) workspaces);
 
       window.commands = [
         {
@@ -941,7 +979,7 @@ in
         "Mod4+Shift+a" = "exec grim -g \"$(slurp)\" ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png";
 
         # Clipboard history
-        "Mod4+c" = "exec cliphist list | rofi -dmenu | cliphist decode | wl-copy";
+        "Mod4+c" = "exec cliphist list | rofi -dmenu -p  | cliphist decode | wl-copy";
 
         # Web search
         "Mod4+s" = "exec rofi-launcher";
@@ -1008,13 +1046,9 @@ in
         "Mod4+Shift+minus" = "move scratchpad";
         "Mod4+minus" = "scratchpad show";
 
-        # Launch-or-focus shortcuts
-        "Mod4+f" = "exec launch-or-focus firefox-devedition 5 firefox-devedition";
-        "Mod4+g" = "exec launch-or-focus thunderbird 6 thunderbird";
+        # App shortcuts (generated from workspaces registry — see workspaces.nix)
 
         "Mod4+d" = "exec cursor";
-        "Mod4+e" = "exec yazi-launcher";
-        "Mod4+n" = "exec launch-or-focus obsidian 8 obsidian";
 
         # Display mode switching (kanshi)
         "Mod4+Shift+d" = "exec display-mode-selector";
@@ -1045,7 +1079,13 @@ in
 
         # Resize mode
         "Mod4+r" = "mode resize";
-      };
+      }
+      // lib.mapAttrs' (
+        n: v: lib.nameValuePair "Mod4+${v.key}" "exec launch-or-focus ${v.app} ${n} ${v.launch}"
+      ) (lib.filterAttrs (_: v: (v ? app) && (v ? key)) workspaces)
+      // lib.mapAttrs' (_: v: lib.nameValuePair "Mod4+${v.key}" "exec ${v.launcher}") (
+        lib.filterAttrs (_: v: (v ? launcher) && (v ? key)) workspaces
+      );
 
       modes = {
         resize = {
@@ -1069,8 +1109,7 @@ in
       titlebar_border_thickness 0
       titlebar_padding 8 4
 
-      output * bg   #${colors.base00} solid_color
-
+      output * bg #${colors.base00} solid_color
       bindgesture swipe:4:left workspace prev
       bindgesture swipe:4:right workspace next
 

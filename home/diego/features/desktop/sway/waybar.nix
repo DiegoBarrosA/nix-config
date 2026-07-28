@@ -10,6 +10,8 @@ let
 
   # Decode a \uXXXX escape to the actual Unicode character
   u = code: builtins.fromJSON ''"\u${code}"'';
+
+  workspaces = import ./workspaces.nix;
 in
 {
   programs.waybar = {
@@ -46,30 +48,14 @@ in
           disable-scroll = false;
           all-outputs = true;
           format = "{icon}";
-          format-icons = {
-            "5" = (u "f0ac");
-            "6" = (u "f674");
-            "7" = (u "f802");
-            "8" = (u "f60f");
-            "9" = (u "f1c9");
-            "10" = (u "f086");
-            "default" = (u "f22d");
-            "focused" = (u "f192");
-            "high-priority-named" = [
-              "5"
-              "6"
-              "7"
-              "8"
-              "9"
-              "10"
-            ];
+          format-icons = (lib.mapAttrs (_: v: u v.icon) workspaces) // {
+            "default" = u "f22d";
+            "focused" = u "f192";
+            "high-priority-named" = lib.attrNames workspaces;
           };
-          persistent-workspaces = {
-            "1" = [ ];
-            "2" = [ ];
-            "3" = [ ];
-            "4" = [ ];
-          };
+          persistent-workspaces = lib.mapAttrs (_: _: [ ]) (
+            lib.filterAttrs (_: v: v.persistent or false) workspaces
+          );
         };
 
         "sway/mode" = {
@@ -214,7 +200,7 @@ in
         padding: 0 8px;
         background-image: none;
         border: none;
-        border-radius: 0;
+        border-radius: 8;
         box-shadow: none;
         outline: none;
         text-shadow: none;
