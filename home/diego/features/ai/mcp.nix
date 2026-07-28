@@ -70,10 +70,12 @@
       $env.WORK_CONFLUENCE_B_API_KEY  = (open /run/secrets/work-confluence-b-api-key  | str trim)
     }
 
-    # Jira Data Center MCP (disabled - no tools implemented)
-    # $env.JIRA_DC_BASE_URL = "https://jira.your-company.com"
-    # $env.JIRA_DC_EMAIL = "your-email@example.com"
-    # $env.JIRA_DC_API_KEY = "your-api-key"
+    # Jira Data Center MCP
+    if ("/run/secrets/jira-dc-base-url" | path exists) {
+      $env.JIRA_DC_BASE_URL = (open /run/secrets/jira-dc-base-url | str trim)
+      $env.JIRA_DC_EMAIL    = (open /run/secrets/jira-dc-email    | str trim)
+      $env.JIRA_DC_API_KEY  = (open /run/secrets/jira-dc-api-key  | str trim)
+    }
 
     # Obsidian REST API
     # $env.OBSIDIAN_API_KEY = "your-obsidian-api-key"
