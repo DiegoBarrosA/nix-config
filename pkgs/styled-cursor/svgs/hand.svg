@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <path
+    d="M13,5 L13,18 L9,18 Q7,18 7,20 L7,22 Q7,29 14,29 L20,29 Q27,29 27,22
+       L27,15 Q27,13 25,13 L23,13 Q23,11 21,11 L19,11 L19,5
+       Q19,3 16,3 Q13,3 13,5 Z"
+    fill="@BODY@"
+    stroke="@OUTLINE@"
+    stroke-width="1.5"
+    stroke-linejoin="round"
+    paint-order="stroke"/>
+  <circle cx="16" cy="6" r="1.5" fill="@ACCENT@"/>
+</svg>
