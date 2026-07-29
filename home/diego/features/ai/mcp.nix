@@ -22,6 +22,12 @@
       enable = true;
       autostart = false; # lazily disabled — rarely used; enable on demand
     };
+    notes = {
+      enable = true;
+      # vaultPath defaults to ~/Notes
+      # Uses npx -y @modelcontextprotocol/server-filesystem; override command
+      # to use a nix-packaged binary if preferred.
+    };
   };
 
   # mcp-env.nu template + deprecated-syntax fix (moved from rubi.nix)

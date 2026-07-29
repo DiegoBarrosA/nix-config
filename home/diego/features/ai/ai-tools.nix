@@ -36,6 +36,7 @@
   };
   programs.cursor-config.enable = true;
   programs.antigravity-config.enable = true;
+  programs.jcode-config.enable = true;
 
   programs.ai-skills = {
     enable = true;
@@ -44,5 +45,13 @@
     # kepano/obsidian-skills: obsidian-markdown, obsidian-bases, json-canvas,
     # obsidian-cli, defuddle. Merged alongside the vault skills.
     extraSkillSources = [ "${inputs.obsidian-skills}/skills" ];
+  };
+
+  programs.ai-system-prompt = {
+    enable = true;
+    # vaultPromptsDir defaults to ~/Notes/AI/Prompts
+    # System/*.md files are concatenated in alphabetical order:
+    #   01-identity.md, 03-tools.md, Writing Style Rules.md
+    # tools.claude, tools.cursor, tools.antigravity all default to true
   };
 }
