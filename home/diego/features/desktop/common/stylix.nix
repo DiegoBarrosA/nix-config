@@ -8,23 +8,10 @@
 let
   inherit (config.colorscheme) colors;
 
-  bibataStylix = pkgs.stdenvNoCC.mkDerivation {
-    pname = "bibata-cursors-stylix";
-    version = "2.0.7";
-    buildInputs = [ pkgs.bibata-cursors ];
-    dontUnpack = true;
-    installPhase = ''
-      mkdir -p $out/share/icons/Bibata-Stylix
-      cp -r ${pkgs.bibata-cursors}/share/icons/Bibata-Modern-Classic/* $out/share/icons/Bibata-Stylix/
-      substituteInPlace $out/share/icons/Bibata-Stylix/index.theme \
-        --replace "Bibata-Modern-Classic" "Bibata-Stylix"
-    '';
-    meta = {
-      description = "Bibata cursor (Modern-Classic variant) for Stylix";
-      homepage = "https://github.com/ful1e5/Bibata_Cursor";
-      license = pkgs.lib.licenses.gpl3Only;
-      platforms = pkgs.lib.platforms.linux;
-    };
+  styledCursor = pkgs.callPackage ../../../../../pkgs/styled-cursor {
+    body    = "#${colors.base07}";
+    outline = "#${colors.base00}";
+    accent  = "#${colors.base0D}";
   };
 in
 {
@@ -62,9 +49,9 @@ in
           "cosmic"
         ])
         {
-          package = bibataStylix;
-          name = "Bibata-Stylix";
-          size = 28;
+          package = styledCursor;
+          name    = "styled-cursor";
+          size    = 28;
         };
 
     # Fonts configuration
@@ -143,6 +130,11 @@ in
       mpv.enable = true;
       zathura.enable = true;
     };
+
+    # useGlobalPkgs = true means HM nixpkgs.overlays is unusable; the NixOS
+    # Stylix module isn't enabled here so there's no system-level fallback —
+    # disable to silence the HM evaluation warning.
+    overlays.enable = false;
   };
 
   home.pointerCursor.enable = lib.mkIf (builtins.elem desktop [
@@ -195,19 +187,19 @@ in
           "icons/Papirus-Dark".source = "${papirusWithFolders}/share/icons/Papirus-Dark";
           "icons/Papirus-Light".source = "${papirusWithFolders}/share/icons/Papirus-Light";
           # Cursor theme for Snap apps and other sandboxed applications
-          "icons/Bibata-Stylix".source = "${bibataStylix}/share/icons/Bibata-Stylix";
+          "icons/styled-cursor".source = "${styledCursor}/share/icons/styled-cursor";
         }
       );
 
   # Also symlink to ~/.icons for older apps and Snap compatibility (Sway only)
-  home.file.".icons/Bibata-Stylix" =
+  home.file.".icons/styled-cursor" =
     lib.mkIf
       (builtins.elem desktop [
         "sway"
         "cosmic"
       ])
       {
-        source = "${bibataStylix}/share/icons/Bibata-Stylix";
+        source = "${styledCursor}/share/icons/styled-cursor";
       };
 
   # Propagate GTK theme to apps via XSettings. Needed on Sway/Wayland (GNOME/KDE
