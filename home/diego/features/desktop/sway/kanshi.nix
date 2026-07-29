@@ -25,10 +25,10 @@ let
     esac
   '';
 
-  # UI for switching modes using rofi
+  # UI for switching display modes
   displayModeUI = pkgs.writeShellScriptBin "display-mode-selector" ''
     CHOICE=$(printf 'Single (Laptop)\nDocked (Samsung)\nTriple (All Monitors)' \
-      | rofi -dmenu -p "Display Mode")
+      | tofi --prompt-text="display  ")
     case "$CHOICE" in
       "Single (Laptop)")
         kanshi-switch single

@@ -9,7 +9,42 @@ let
   inherit (config) fontProfiles;
   cursorName = config.stylix.cursor.name;
   cursorSize = toString config.stylix.cursor.size;
-  workspaces = import ./workspaces.nix;
+  workspaces = {
+    "5" = {
+      icon = "f0ac";
+      app = "firefox-devedition";
+      key = "f";
+      launch = "firefox-devedition";
+      persistent = true;
+    };
+    "6" = {
+      icon = "f674";
+      app = "thunderbird";
+      key = "g";
+      launch = "thunderbird";
+      persistent = true;
+    };
+    "7" = {
+      icon = "f802";
+      launcher = "yazi-launcher";
+      key = "e";
+      persistent = true;
+    };
+    "8" = {
+      icon = "f60f";
+      app = "obsidian";
+      key = "n";
+      launch = "obsidian";
+    };
+    "9" = {
+      icon = "f1c9";
+      launcher = "helix-launcher";
+      key = "d";
+    };
+    "10" = {
+      icon = "f086";
+    };
+  };
 
   # Package helper scripts
   launch-or-focus = pkgs.writeShellScriptBin "launch-or-focus" ''
@@ -62,184 +97,40 @@ let
     fi
   '';
 
+  # Launcher for helix on workspace 9 (editor)
+  # Switches to workspace 9; opens helix if empty, or focuses existing
+  helix-launcher = pkgs.writeShellScriptBin "helix-launcher" ''
+    #!/usr/bin/env bash
+    WORKSPACE="9"
+
+    HAS_WINDOWS=$(swaymsg -t get_tree | jq -r "
+      [.. | objects |
+        select(.type == \"workspace\" and .name == \"$WORKSPACE\") |
+        .. | objects |
+        select(.type == \"con\" and .app_id != null)
+      ] | length
+    " 2>/dev/null)
+
+    if [ "$HAS_WINDOWS" -gt 0 ]; then
+      swaymsg "workspace number $WORKSPACE"
+    else
+      swaymsg "workspace number $WORKSPACE; exec alacritty -e hx"
+    fi
+  '';
+
   power-menu = pkgs.writeShellScriptBin "power-menu" ''
     #!/usr/bin/env bash
-    #
-    # Power menu using rofi
-    #
-
-    OPTIONS=" Lock\n Logout\n Suspend\n Reboot\n Shutdown"
-
-    CHOICE=$(echo -e "$OPTIONS" | rofi -dmenu -p "")
-
+    CHOICE=$(printf 'Lock\nLogout\nSuspend\nReboot\nShutdown' \
+      | tofi --prompt-text="power  ")
     case "$CHOICE" in
-        *" Lock")
-            swaylock -f
-            ;;
-        *" Logout")
-            swaymsg exit
-            ;;
-        *" Suspend")
-            swaylock -f && systemctl suspend
-            ;;
-        *" Reboot")
-            systemctl reboot
-            ;;
-        *" Shutdown")
-            systemctl poweroff
-            ;;
+      Lock)     swaylock -f ;;
+      Logout)   swaymsg exit ;;
+      Suspend)  swaylock -f && systemctl suspend ;;
+      Reboot)   systemctl reboot ;;
+      Shutdown) systemctl poweroff ;;
     esac
   '';
 
-  rofi-launcher = pkgs.writeShellScriptBin "rofi-launcher" ''
-    #!/usr/bin/env bash
-    #
-    # Combined app launcher + web search for rofi.
-    # Type "<shorthand> <query>" to search directly, e.g. "g nixos" or "ddg wayland".
-    #
-
-    # shorthand|Name|URL_TEMPLATE
-    SEARCH=(
-        "g| Google|https://www.google.com/search?q="
-        "gh| GitHub|https://github.com/search?q="
-        "yt| YouTube|https://www.youtube.com/results?search_query="
-        "ddg| DuckDuckGo|https://lite.duckduckgo.com/lite?q="
-        "r| Reddit|https://www.reddit.com/search?q="
-        "mdn| MDN|https://developer.mozilla.org/en-US/search?q="
-        "so| StackOverflow|https://stackoverflow.com/search?q="
-        "np| NixOS Packages|https://search.nixos.org/packages?query="
-    )
-
-    url_for() {
-        local key="$1"
-        for entry in "''${SEARCH[@]}"; do
-            IFS='|' read -r s _ url <<< "$entry"
-            [ "$s" = "$key" ] && { printf '%s' "$url"; return 0; }
-        done
-        return 1
-    }
-
-    # Map an app display name to a Font Awesome Free Solid glyph (U+XXXX).
-    # Falls back to a generic window icon for unknown apps.
-    app_icon() {
-        case "$1" in
-            *[Ff]irefox*)                                          printf '' ;;  # globe
-            *[Tt]hunderbird*|*[Ee]mail*|*[Mm]ail*)                printf '' ;;  # envelope
-            *[Oo]bsidian*)                                         printf '' ;;  # gem
-            *[Cc]ursor*|*[Cc]ode*|*[Vv][Ss][Cc]ode*)             printf '' ;;  # code
-            *[Aa]lacritty*|*[Tt]erminal*|*[Kk]itty*|*[Cc]onsole*) printf '' ;; # terminal
-            *[Nn]autilus*|*[Dd]olphin*|*[Ff]iles*|*[Ff]ile*[Mm]anager*) printf '' ;; # folder
-            *[Cc]hrome*|*[Cc]hromium*|*[Bb]rowser*)               printf '' ;;  # globe
-            *[Ss]potify*|*[Mm]usic*|*[Rr]hythm*)                  printf '' ;;  # music note
-            *[Ss]team*|*[Gg]ame*)                                  printf '' ;;  # gamepad
-            *[Ss]lack*|*[Dd]iscord*|*[Tt]eams*|*[Zz]oom*|*[Tt]elegram*) printf '' ;; # comments
-            *[Ss]etting*|*[Pp]referen*|*[Cc]ontrol*[Cc]enter*)    printf '' ;;  # gear
-            *[Cc]alculat*)                                         printf '' ;;  # calculator
-            *[Cc]alendar*)                                         printf '' ;;  # calendar
-            *[Vv]ideo*|*[Mm][Pp][Vv]*|*[Vv][Ll][Cc]*|*[Mm]edia*[Pp]layer*) printf '' ;; # film
-            *[Ii]mage*|*[Pp]hoto*|*[Gg][Ii][Mm][Pp]*|*[Ii]nkscape*) printf '' ;; # image
-            *[Pp][Dd][Ff]*|*[Ee]vince*|*[Oo]kular*)               printf '' ;;  # file-pdf
-            *[Ww]riter*|*[Ll]ib[Oo]ffice*|*[Oo]ffice*|*[Cc]alc*) printf '' ;;  # file-alt
-            *[Bb]luetooth*)                                        printf '' ;;  # bluetooth
-            *[Pp]assword*|*[Kk]eepass*|*[Bb]itwarden*)            printf '' ;;  # key
-            *[Nn]ote*|*[Jj]oplin*|*[Nn]otion*)                    printf '' ;;  # sticky-note
-            *[Pp]rint*)                                            printf '' ;;  # print
-            *[Cc]lock*|*[Tt]imer*)                                 printf '' ;;  # clock
-            *[Mm]ap*|*[Nn]avigat*)                                 printf '' ;;  # map
-            *[Nn]ews*|*[Ff]eed*|*[Rr][Ss][Ss]*)                   printf '' ;;  # rss
-            *[Pp]odcast*|*[Mm]ic*)                                 printf '' ;;  # microphone
-            *)                                                     printf '' ;;  # window (generic)
-        esac
-    }
-
-    do_search() {
-        # $1 = shorthand, $2 = query (may be empty)
-        local url query
-        url=$(url_for "$1") || return 1
-        query="$2"
-        if [ -z "$query" ]; then
-            query=$(echo "" | rofi -dmenu -p "$1")
-            [ -z "$query" ] && exit 0
-        fi
-        # URL-encode spaces
-        query=''${query// /%20}
-        xdg-open "$url$query"
-        exit 0
-    }
-
-    # Parse every .desktop file in a single awk pass into "Name<TAB>Exec" lines.
-    # This is much faster than spawning sed/grep per file.
-    app_pairs() {
-        awk -F= '
-            FNR==1 { name=""; exec=""; nodisplay=0 }
-            /^\[Desktop Entry\]/ { inde=1; next }
-            /^\[/ && !/^\[Desktop Entry\]/ { inde=0 }
-            inde && $1=="Name" && name=="" { name=$2 }
-            inde && $1=="Exec" && exec=="" { $1=""; sub(/^=/,""); e=$0; sub(/^ /,"",e); exec=e }
-            inde && $1=="NoDisplay" && $2=="true" { nodisplay=1 }
-            ENDFILE {
-                if (name != "" && exec != "" && !nodisplay) {
-                    gsub(/%[fFuUdDnNickvm]/, "", exec)
-                    sub(/[ \t]+$/, "", exec)
-                    print name "\t" exec
-                }
-            }
-        ' /run/current-system/sw/share/applications/*.desktop \
-          "$HOME"/.nix-profile/share/applications/*.desktop 2>/dev/null | sort -u
-    }
-
-    APP_PAIRS=$(app_pairs)
-
-    # Build a display-string→exec map and an ordered display list.
-    # Process substitution keeps the while loop in the current shell so
-    # DISPLAY_EXEC is accessible after the loop (unlike a subshell / $(...)).
-    declare -A DISPLAY_EXEC
-    APP_DISPLAY=""
-    while IFS=$'\t' read -r appname appcmd; do
-        icon=$(app_icon "$appname")
-        display="$icon  $appname"
-        DISPLAY_EXEC["$display"]="$appcmd"
-        APP_DISPLAY+="$display"$'\n'
-    done < <(printf '%s\n' "$APP_PAIRS")
-
-    list_all() {
-        for entry in "''${SEARCH[@]}"; do
-            IFS='|' read -r s name _ <<< "$entry"
-            printf '%s  %s  (search)\n' "$s" "$name"
-        done
-        printf '%s' "$APP_DISPLAY"
-    }
-
-    SELECTION=$(list_all | rofi -dmenu -i -p "")
-    [ -z "$SELECTION" ] && exit 0
-
-    # 1) Inline query: "<shorthand> <query...>"
-    FIRST=''${SELECTION%% *}
-    REST=""
-    case "$SELECTION" in
-        *" "*) REST=''${SELECTION#* } ;;
-    esac
-    if url_for "$FIRST" >/dev/null 2>&1; then
-        do_search "$FIRST" "$REST"
-    fi
-
-    # 2) Selected a search hint line: "<shorthand>  <Name>  (search)"
-    case "$SELECTION" in
-        *"  (search)")
-            do_search "$FIRST" ""
-            ;;
-    esac
-
-    # 3) Look up exec via icon-prefixed display key, fall back to plain name match
-    EXEC_LINE="''${DISPLAY_EXEC[$SELECTION]}"
-    if [ -z "$EXEC_LINE" ]; then
-        EXEC_LINE=$(printf '%s\n' "$APP_PAIRS" | awk -F'\t' -v n="$SELECTION" '$1==n {print $2; exit}')
-    fi
-    [ -n "$EXEC_LINE" ] && exec $EXEC_LINE
-
-    # 4) Fallback: run whatever was typed as a command
-    exec $SELECTION
-  '';
 
   # Script to manage virtual output for phone streaming via Sunshine
   sunshine-stream = pkgs.writeShellScriptBin "sunshine-stream" ''
@@ -731,7 +622,7 @@ in
     ./kanshi.nix
     ./mako.nix
     ./swaylock.nix
-    ./rofi.nix
+    ./tofi.nix
     ./bluetooth.nix
   ];
 
@@ -750,7 +641,7 @@ in
     jq
     autotiling-rs
     polkit_gnome
-    rofi
+    tofi
     # Screenshot tools
     swappy
     grim
@@ -761,8 +652,9 @@ in
     # Helper scripts
     launch-or-focus
     yazi-launcher
+    helix-launcher
     power-menu
-    rofi-launcher
+
     sunshine-stream
     swap-workspace-output
     scrcpy-stream
@@ -789,7 +681,7 @@ in
       up = "k";
       right = "l";
       terminal = "alacritty";
-      menu = "rofi-launcher";
+      menu = "tofi-drun --drun-launch=true";
 
       bars = [ ];
 
@@ -958,7 +850,7 @@ in
         "Mod4+w" = "kill";
 
         "Mod4+p" = "floating enable, sticky enable";
-        "Mod4+space" = "exec rofi-launcher";
+        "Mod4+space" = "exec tofi-drun --drun-launch=true";
         "Mod4+Shift+c" = "reload";
         "Mod4+Shift+e" = "exec power-menu";
         "Mod4+Escape" = "exec swaylock -f";
@@ -979,10 +871,7 @@ in
         "Mod4+Shift+a" = "exec grim -g \"$(slurp)\" ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png";
 
         # Clipboard history
-        "Mod4+c" = "exec cliphist list | rofi -dmenu -p  | cliphist decode | wl-copy";
-
-        # Web search
-        "Mod4+s" = "exec rofi-launcher";
+        "Mod4+c" = "exec cliphist list | tofi --prompt-text='clip  ' | cliphist decode | wl-copy";
 
         # Focus movement
         "Mod4+h" = "focus left";
@@ -1047,8 +936,6 @@ in
         "Mod4+minus" = "scratchpad show";
 
         # App shortcuts (generated from workspaces registry — see workspaces.nix)
-
-        "Mod4+d" = "exec cursor";
 
         # Display mode switching (kanshi)
         "Mod4+Shift+d" = "exec display-mode-selector";
