@@ -69,8 +69,8 @@ in
         name = "DejaVu Serif";
       };
       emoji = {
-        package = pkgs.twitter-color-emoji;
-        name = "Twitter Color Emoji";
+        package = pkgs.noto-fonts-monochrome-emoji;
+        name = "Noto Emoji";
       };
       sizes = {
         applications = 11;
