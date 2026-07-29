@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <polygon
+    points="3,16 9,11 9,14 23,14 23,11 29,16 23,21 23,18 9,18 9,21"
+    fill="@BODY@"
+    stroke="@OUTLINE@"
+    stroke-width="1.5"
+    stroke-linejoin="round"
+    paint-order="stroke"/>
+  <circle cx="16" cy="16" r="2" fill="@ACCENT@"/>
+</svg>
