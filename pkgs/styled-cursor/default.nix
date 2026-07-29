@@ -48,11 +48,11 @@ stdenvNoCC.mkDerivation {
 
     render_static() {
       local name="$1" svg="$2" xhot="$3" yhot="$4"
-      local cfg="$R/${name}.cursor"
+      local cfg="$R/$name.cursor"
       rm -f "$cfg"
       for size in 24 32 48 64; do
-        rsvg-convert -w "$size" -h "$size" "$S/$svg" -o "$R/${name}-${size}.png"
-        echo "$size $xhot $yhot $R/${name}-${size}.png" >> "$cfg"
+        rsvg-convert -w "$size" -h "$size" "$S/$svg" -o "$R/$name-$size.png"
+        echo "$size $xhot $yhot $R/$name-$size.png" >> "$cfg"
       done
       xcursorgen "$cfg" "$CURSORS/$name"
     }
@@ -62,11 +62,11 @@ stdenvNoCC.mkDerivation {
       rm -f "$cfg"
       for frame in 0 1 2 3 4 5 6 7; do
         local rot=$((frame * 45))
-        sed "s|@ROT@|$rot|g" "$S/wait-frame.svg" > "$R/wait-frame-${frame}.svg"
+        sed "s|@ROT@|$rot|g" "$S/wait-frame.svg" > "$R/wait-frame-$frame.svg"
         for size in 24 32 48 64; do
-          rsvg-convert -w "$size" -h "$size" "$R/wait-frame-${frame}.svg" \
-            -o "$R/wait-${frame}-${size}.png"
-          echo "$size 16 16 $R/wait-${frame}-${size}.png 60" >> "$cfg"
+          rsvg-convert -w "$size" -h "$size" "$R/wait-frame-$frame.svg" \
+            -o "$R/wait-$frame-$size.png"
+          echo "$size 16 16 $R/wait-$frame-$size.png 60" >> "$cfg"
         done
       done
       xcursorgen "$cfg" "$CURSORS/wait"
