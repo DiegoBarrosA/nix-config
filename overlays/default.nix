@@ -8,17 +8,44 @@
   nixgl = inputs.nixgl.overlay;
 
   # Python 3.14 metadata compatibility shim.
-  # Several packages (python-tree-sitter-elixir, etc.) fail pythonMetadataCheckPhase
-  # under Python 3.14 — importlib.metadata can't locate their dist-info. This
-  # extension disables doInstallCheck for the affected packages across all Python
-  # versions so nixpkgs packages that depend on them (e.g. graphify) still build.
+  # All python-tree-sitter-* language packages (graphify deps) fail
+  # pythonMetadataCheckPhase under Python 3.14 — importlib.metadata cannot
+  # locate their dist-info. Disable doInstallCheck for all of them at once
+  # so graphify and any other dependents still build.
   pythonFixes = _final: prev: {
     pythonPackagesExtensions = (prev.pythonPackagesExtensions or [ ]) ++ [
-      (_self: super: {
-        python-tree-sitter-elixir = super.python-tree-sitter-elixir.overridePythonAttrs (_old: {
-          doInstallCheck = false;
-        });
-      })
+      (_self: super:
+        let
+          tsLangs = [
+            "python-tree-sitter-c"
+            "python-tree-sitter-c-sharp"
+            "python-tree-sitter-cpp"
+            "python-tree-sitter-elixir"
+            "python-tree-sitter-go"
+            "python-tree-sitter-java"
+            "python-tree-sitter-javascript"
+            "python-tree-sitter-julia"
+            "python-tree-sitter-kotlin"
+            "python-tree-sitter-lua"
+            "python-tree-sitter-objc"
+            "python-tree-sitter-php"
+            "python-tree-sitter-powershell"
+            "python-tree-sitter-python"
+            "python-tree-sitter-ruby"
+            "python-tree-sitter-rust"
+            "python-tree-sitter-scala"
+            "python-tree-sitter-swift"
+            "python-tree-sitter-typescript"
+            "python-tree-sitter-verilog"
+            "python-tree-sitter-zig"
+          ];
+          skipMeta = name:
+            if super ? ${name}
+            then { ${name} = super.${name}.overridePythonAttrs (_old: { doInstallCheck = false; }); }
+            else { };
+        in
+        builtins.foldl' (acc: name: acc // skipMeta name) { } tsLangs
+      )
     ];
   };
 
