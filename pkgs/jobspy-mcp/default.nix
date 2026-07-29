@@ -1,7 +1,9 @@
 { pkgs, ... }:
 
 let
-  python = pkgs.python3.withPackages (ps: [
+  # jobspy metadata check fails under Python 3.14 (importlib.metadata can't
+  # find the dist-info). Pin to 3.12 where it builds cleanly.
+  python = pkgs.python312.withPackages (ps: [
     (ps.jobspy.overridePythonAttrs (_: {
       pythonRelaxDeps = true;
     }))
