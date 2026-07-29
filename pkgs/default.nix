@@ -4,10 +4,9 @@
 
 let
   iso639-lang = pkgs.python3Packages.callPackage ./iso639-lang { };
-  bibata-cursors-stylix = pkgs.callPackage ./bibata-cursors-stylix { inherit colors; };
 in
 {
-  inherit iso639-lang bibata-cursors-stylix;
+  inherit iso639-lang;
   lyrics = pkgs.callPackage ./lyrics { };
   lazylibrarian = pkgs.callPackage ./lazylibrarian { inherit iso639-lang; };
   jobspy-mcp = pkgs.callPackage ./jobspy-mcp { };
@@ -15,4 +14,5 @@ in
   codex-acp = pkgs.callPackage ./codex-acp { };
   invidious-companion = pkgs.callPackage ./invidious-companion { };
   claude-desktop = pkgs.callPackage ./claude-desktop { };
+  jcode = pkgs.callPackage ./jcode { };
 } // privatePackages
