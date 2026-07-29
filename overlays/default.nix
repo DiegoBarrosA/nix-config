@@ -7,6 +7,21 @@
   # NixGL overlay for graphics support on non-NixOS systems
   nixgl = inputs.nixgl.overlay;
 
+  # Python 3.14 metadata compatibility shim.
+  # Several packages (python-tree-sitter-elixir, etc.) fail pythonMetadataCheckPhase
+  # under Python 3.14 — importlib.metadata can't locate their dist-info. This
+  # extension disables doInstallCheck for the affected packages across all Python
+  # versions so nixpkgs packages that depend on them (e.g. graphify) still build.
+  pythonFixes = _final: prev: {
+    pythonPackagesExtensions = (prev.pythonPackagesExtensions or [ ]) ++ [
+      (_self: super: {
+        python-tree-sitter-elixir = super.python-tree-sitter-elixir.overridePythonAttrs (_old: {
+          doInstallCheck = false;
+        });
+      })
+    ];
+  };
+
   # This one contains whatever you want to overlay
   # You can change versions, add patches, set compilation flags, anything really.
   # https://nixos.wiki/wiki/Overlays
