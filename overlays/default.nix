@@ -41,7 +41,7 @@
           ];
           skipMeta = name:
             if super ? ${name}
-            then { ${name} = super.${name}.overridePythonAttrs (_old: { doInstallCheck = false; }); }
+            then { ${name} = super.${name}.overridePythonAttrs (_old: { dontCheckPythonMetadata = true; }); }
             else { };
         in
         builtins.foldl' (acc: name: acc // skipMeta name) { } tsLangs

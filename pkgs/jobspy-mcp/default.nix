@@ -6,7 +6,7 @@ let
   python = pkgs.python312.withPackages (ps: [
     (ps.jobspy.overridePythonAttrs (_: {
       pythonRelaxDeps = true;
-      doInstallCheck = false;
+      dontCheckPythonMetadata = true;
     }))
   ]);
 in
