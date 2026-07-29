@@ -104,11 +104,13 @@
         inherit (inputs.ai-tooling.homeManagerModules)
           mcp-config
           opencode-config
+          jcode-config
           claude-code-config
           claude-desktop-config
           cursor-config
           antigravity-config
           ai-skills
+          ai-system-prompt
           ;
       };
       devShells = forAllSystems (system: {
