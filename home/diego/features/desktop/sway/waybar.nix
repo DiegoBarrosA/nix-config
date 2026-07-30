@@ -200,7 +200,7 @@ in
         padding: 0 8px;
         background-image: none;
         border: none;
-        border-radius: 8;
+        border-radius: 0;
         box-shadow: none;
         outline: none;
         text-shadow: none;
