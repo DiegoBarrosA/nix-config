@@ -7,12 +7,6 @@
 }:
 let
   inherit (config.colorscheme) colors;
-
-  styledCursor = pkgs.callPackage ../../../../../pkgs/styled-cursor {
-    body    = "#${colors.base07}";
-    outline = "#${colors.base00}";
-    accent  = "#${colors.base0D}";
-  };
 in
 {
   # Enable Stylix for unified theming
@@ -40,7 +34,7 @@ in
       base0F = colors.base0F;
     };
 
-    # Cursor theme - Bibata themed to Stylix scheme.
+    # Cursor theme - Bibata Modern Classic (dark).
     # Sway only: GNOME/KDE keep their native cursor (Adwaita/Breeze).
     cursor =
       lib.mkIf
@@ -49,8 +43,8 @@ in
           "cosmic"
         ])
         {
-          package = styledCursor;
-          name    = "styled-cursor";
+          package = pkgs.bibata-cursors;
+          name    = "Bibata-Modern-Classic";
           size    = 28;
         };
 
@@ -167,7 +161,7 @@ in
         }
       );
 
-  # Symlink icon + cursor themes for GTK/Snap/sandboxed apps. Sway only;
+  # Symlink icon themes for GTK/Snap/sandboxed apps. Sway only;
   # GNOME/KDE ship their own icon/cursor sets.
   xdg.dataFile =
     lib.mkIf
@@ -186,21 +180,8 @@ in
           "icons/Papirus".source = "${papirusWithFolders}/share/icons/Papirus";
           "icons/Papirus-Dark".source = "${papirusWithFolders}/share/icons/Papirus-Dark";
           "icons/Papirus-Light".source = "${papirusWithFolders}/share/icons/Papirus-Light";
-          # Cursor theme for Snap apps and other sandboxed applications
-          "icons/styled-cursor".source = "${styledCursor}/share/icons/styled-cursor";
         }
       );
-
-  # Also symlink to ~/.icons for older apps and Snap compatibility (Sway only)
-  home.file.".icons/styled-cursor" =
-    lib.mkIf
-      (builtins.elem desktop [
-        "sway"
-        "cosmic"
-      ])
-      {
-        source = "${styledCursor}/share/icons/styled-cursor";
-      };
 
   # Propagate GTK theme to apps via XSettings. Needed on Sway/Wayland (GNOME/KDE
   # run their own settings daemon, and this references the Sway-only iconTheme).
