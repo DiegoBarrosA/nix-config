@@ -33,14 +33,11 @@
     # USB/iOS/device mounting support
     ../common/optional/desktop/devices.nix
 
-    # Steam gaming (GameMode, gamescope, Proton-GE) tuned for the 680M APU
-    ../common/optional/desktop/steam.nix
-
     # OpenCode remote access (API + web UI)
     ../common/optional/ai/opencode-server.nix
 
-    # Local LLM inference (Vulkan on AMD 680M APU) — disabled for now
-    # ../common/optional/ai/ollama-vulkan.nix
+    # Local LLM inference via Ollama (Vulkan on AMD 680M APU)
+    ../common/optional/ai/ollama-vulkan.nix
 
     # libvirt/KVM + virt-manager (Windows 11 VM with virtio-gpu)
     ../common/optional/desktop/virtualization.nix
@@ -72,6 +69,11 @@
     "nowatchdog"
     "amdgpu.gpu_recovery=1"
   ];
+
+  # Replace color emoji with monochrome variant (smaller, fits the theme)
+  nixpkgs.overlays = [ (final: prev: {
+    noto-fonts-color-emoji = prev.noto-fonts-monochrome-emoji;
+  }) ];
 
   # Nix configuration
   nix = {
@@ -136,16 +138,20 @@
     };
   };
 
-  # services.ollama-vulkan = {
-  #   enable = false; # Disabled — re-enable when ready to retry local LLM
-  #   host = "127.0.0.1";
-  #   port = 11434;
-  #   loadModels = [
-  #     "qwen3:4b"          # Primary tool-calling model (fast, streaming-compatible)
-  #     "qwen2.5:14b"       # Larger model for complex reasoning (no streaming tool calls)
-  #     "qwen2.5-coder:14b" # Code generation (no tool calling, use for autocomplete)
-  #   ];
-  # };
+  # Local LLM inference via Ollama (Vulkan on AMD 680M APU)
+  services.ollama-vulkan = {
+    enable = true;
+    host = "127.0.0.1";
+    port = 11434;
+    loadModels = [
+      "qwen3:4b"              # Primary tool-calling model (fast, streaming-compatible)
+      "qwen2.5:14b"           # Larger model for complex reasoning (no streaming tool calls)
+      "qwen2.5-coder:7b"      # Fast code model
+      "qwen2.5-coder:14b"     # Strong code generation
+      "deepseek-coder-v2:16b" # Excellent code model
+      "deepseek-r1:8b"        # Reasoning/planning for architecture
+    ];
+  };
 
   # Security
   security.polkit.enable = true;

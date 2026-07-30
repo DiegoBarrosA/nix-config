@@ -67,8 +67,47 @@
 
     profiles =
       lib.optionalAttrs ((privateConfig.workProfile or null) != null) {
-        # opencode-work → work-provider inference only (work resources, from private-config)
-        work = privateConfig.workProfile; # scriptName "ocw" comes from private repo
+        # opencode-work → work-provider inference + local Ollama for offline/coding
+        work = lib.recursiveUpdate privateConfig.workProfile {
+          config.provider."local-llm" = {
+            npm = "@ai-sdk/openai-compatible";
+            name = "Local LLM (Ollama)";
+            options = {
+              baseURL = "http://localhost:11434/v1";
+              apiKey = "ollama";
+            };
+            models = {
+              "qwen2.5-coder:7b" = {
+                name = "Qwen2.5 Coder 7B (local, fast code)";
+                limit = {
+                  context = 32768;
+                  output = 8192;
+                };
+              };
+              "qwen2.5-coder:14b" = {
+                name = "Qwen2.5 Coder 14B (local, strong code)";
+                limit = {
+                  context = 32768;
+                  output = 8192;
+                };
+              };
+              "deepseek-coder-v2:16b" = {
+                name = "DeepSeek Coder V2 16B (local, excellent code)";
+                limit = {
+                  context = 16384;
+                  output = 8192;
+                };
+              };
+              "deepseek-r1:8b" = {
+                name = "DeepSeek R1 8B (local, reasoning)";
+                limit = {
+                  context = 16384;
+                  output = 8192;
+                };
+              };
+            };
+          };
+        };
       }
       // {
         # opencode-personal → Go/Zen (Big Pickle) + Groq (no work resources)
@@ -139,10 +178,31 @@
                     output = 8192;
                   };
                 };
-                "qwen2.5-coder:14b" = {
-                  name = "Qwen2.5 Coder 14B (local, code only)";
+                "qwen2.5-coder:7b" = {
+                  name = "Qwen2.5 Coder 7B (local, fast code)";
                   limit = {
                     context = 32768;
+                    output = 8192;
+                  };
+                };
+                "qwen2.5-coder:14b" = {
+                  name = "Qwen2.5 Coder 14B (local, strong code)";
+                  limit = {
+                    context = 32768;
+                    output = 8192;
+                  };
+                };
+                "deepseek-coder-v2:16b" = {
+                  name = "DeepSeek Coder V2 16B (local, excellent code)";
+                  limit = {
+                    context = 16384;
+                    output = 8192;
+                  };
+                };
+                "deepseek-r1:8b" = {
+                  name = "DeepSeek R1 8B (local, reasoning)";
+                  limit = {
+                    context = 16384;
                     output = 8192;
                   };
                 };
@@ -211,6 +271,45 @@
                 };
                 "gpt-oss-20b" = {
                   name = "GPT OSS 20B";
+                };
+              };
+            };
+            # Local Ollama models for offline/coding use (rubi)
+            provider."local-llm" = {
+              npm = "@ai-sdk/openai-compatible";
+              name = "Local LLM (Ollama)";
+              options = {
+                baseURL = "http://localhost:11434/v1";
+                apiKey = "ollama";
+              };
+              models = {
+                "qwen2.5-coder:7b" = {
+                  name = "Qwen2.5 Coder 7B (local, fast code)";
+                  limit = {
+                    context = 32768;
+                    output = 8192;
+                  };
+                };
+                "qwen2.5-coder:14b" = {
+                  name = "Qwen2.5 Coder 14B (local, strong code)";
+                  limit = {
+                    context = 32768;
+                    output = 8192;
+                  };
+                };
+                "deepseek-coder-v2:16b" = {
+                  name = "DeepSeek Coder V2 16B (local, excellent code)";
+                  limit = {
+                    context = 16384;
+                    output = 8192;
+                  };
+                };
+                "deepseek-r1:8b" = {
+                  name = "DeepSeek R1 8B (local, reasoning)";
+                  limit = {
+                    context = 16384;
+                    output = 8192;
+                  };
                 };
               };
             };
@@ -305,6 +404,130 @@
     references = (import ./features/ai/gsd-core-agents.nix).references;
   };
 
+  # Jcode configuration (managed by the nix-ai-tooling jcode-config module).
+  # Same MCP servers and model providers as opencode, but using jcode's
+  # TOML config format (~/.jcode/config.toml) and MCP JSON (~/.jcode/mcp.json).
+  programs.jcode-config = {
+    enable = true;
+
+    # Same provider toggles as opencode on rubi
+    opencodeGo.enable = false;
+    opencodeZen.enable = false;
+
+    profiles =
+      lib.optionalAttrs ((privateConfig.workProfile or null) != null) {
+        work = {
+          scriptName = "jcw";
+          mcpServers = null; # inherit all
+          config = privateConfig.jcodeWorkConfig or { };
+        };
+      }
+      // {
+        # jcode-personal → Go/Zen (Big Pickle) + Local LLM + Groq
+        personal = {
+          scriptName = "jcp";
+          mcpServers = [
+            "nixos"
+            "telegram"
+            "jobspy"
+            "github"
+            "playwright"
+            "thunderbird"
+          ];
+          config = {
+            provider = {
+              default_provider = "opencode";
+              default_model = "opencode/big-pickle";
+            };
+            providers = {
+              "opencode-go" = {
+                type = "openai-compatible";
+                base_url = "https://opencode.ai/zen/go/v1";
+                api_key_env = "OPENCODE_API_KEY";
+                models = [
+                  { id = "deepseek-v4-pro"; name = "DeepSeek V4 Pro"; }
+                  { id = "deepseek-v4-flash"; name = "DeepSeek V4 Flash"; }
+                  { id = "kimi-k2.6"; name = "Kimi K2.6"; }
+                ];
+              };
+              "opencode" = {
+                type = "openai-compatible";
+                base_url = "https://opencode.ai/zen/v1";
+                api_key_env = "OPENCODE_API_KEY";
+                models = [
+                  { id = "big-pickle"; name = "Big Pickle"; }
+                ];
+              };
+              "local-llm" = {
+                type = "openai-compatible";
+                base_url = "http://localhost:11434/v1";
+                api_key_env = "OLLAMA_API_KEY";
+                models = [
+                  { id = "qwen3:4b"; name = "Qwen3 4B (local, fast tool calling)"; context_window = 32768; }
+                  { id = "qwen2.5:14b"; name = "Qwen2.5 14B (local, tool calling)"; context_window = 32768; }
+                  { id = "qwen2.5-coder:7b"; name = "Qwen2.5 Coder 7B (local, fast code)"; context_window = 32768; }
+                  { id = "qwen2.5-coder:14b"; name = "Qwen2.5 Coder 14B (local, strong code)"; context_window = 32768; }
+                  { id = "deepseek-coder-v2:16b"; name = "DeepSeek Coder V2 16B (local, excellent code)"; context_window = 16384; }
+                  { id = "deepseek-r1:8b"; name = "DeepSeek R1 8B (local, reasoning)"; context_window = 16384; }
+                ];
+              };
+            };
+          };
+        };
+        # jcode-groq → Groq free tier
+        groq = {
+          scriptName = "jcg";
+          mcpServers = [
+            "nixos"
+          ];
+          config = {
+            provider = {
+              default_provider = "groq";
+              default_model = "groq/llama-3.3-70b-versatile";
+            };
+            providers = {
+              "groq" = {
+                type = "openai-compatible";
+                base_url = "https://api.groq.com/openai/v1";
+                api_key_env = "GROQ_API_KEY";
+                models = [
+                  { id = "llama-3.3-70b-versatile"; name = "Llama 3.3 70B Versatile"; }
+                  { id = "llama-3.1-8b-instant"; name = "Llama 3.1 8B Instant"; }
+                  { id = "qwen3-32b"; name = "Qwen3 32B"; }
+                  { id = "gpt-oss-20b"; name = "GPT OSS 20B"; }
+                ];
+              };
+            };
+          };
+        };
+      };
+
+    dispatcher.contexts = {
+      personal = {
+        scriptName = "jcp";
+        apiKeyEnvVar = "OPENCODE_API_KEY";
+      };
+      "opencode-go" = {
+        scriptName = "jcp";
+        apiKeyEnvVar = "OPENCODE_API_KEY";
+      };
+      groq = {
+        scriptName = "jcg";
+        apiKeyEnvVar = "GROQ_API_KEY";
+      };
+    }
+    // lib.optionalAttrs ((privateConfig.workProfile or null) != null) {
+      work = {
+        scriptName = "jcw";
+        apiKeyEnvVar = privateConfig.workInferenceEnvVar;
+      };
+    };
+
+    secretEnv = (privateConfig.workSecretEnv or { }) // {
+      GROQ_API_KEY = "/run/secrets/groq-api-key";
+    };
+  };
+
   programs.claude-code-config.commands = {
     "review" = {
       description = "Run CodeRabbit AI review on uncommitted changes or against base branch";
@@ -319,6 +542,12 @@
   programs.claude-desktop-config.secretEnv = privateConfig.workSecretEnv or { };
 
   programs.ai-skills.opencodeProfiles = [
+    "work"
+    "personal"
+    "groq"
+  ];
+
+  programs.ai-skills.jcodeProfiles = [
     "work"
     "personal"
     "groq"
