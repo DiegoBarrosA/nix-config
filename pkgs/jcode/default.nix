@@ -26,7 +26,9 @@ stdenv.mkDerivation {
   buildInputs = [
     openssl
     zlib
+    stdenv.cc.cc.lib
   ];
+  autoPatchelfIgnoreMissing = [ "libgcc_s.so.1" ];
 
   # The tarball contains a single binary named `jcode-linux-x86_64`.
   sourceRoot = ".";
@@ -34,6 +36,7 @@ stdenv.mkDerivation {
   installPhase = ''
     runHook preInstall
     install -Dm755 jcode-linux-x86_64 $out/bin/jcode
+    install -Dm755 jcode-linux-x86_64.bin $out/bin/jcode-linux-x86_64.bin
     runHook postInstall
   '';
 
