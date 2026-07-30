@@ -5,7 +5,7 @@
   ...
 }:
 let
-  nixfmt = pkgs.nixfmt-rfc-style;
+  nixfmt = pkgs.nixfmt;
   inherit (config.colorscheme) colors;
   # Use base01 instead of base00 for editor background
   bg = "#${colors.base01 or "000000"}";
@@ -262,7 +262,7 @@ in
           }
           {
             name = "elixir";
-            formatter.command = "${pkgs.elixir}/bin/mix format";
+            formatter.command = "${pkgs.beamPackages.elixir}/bin/mix format";
           }
           # { name = "elixir"; language-servers = [ "lexical" ]; }
           # { name = "heex"; language-servers = [ "lexical" ]; }
