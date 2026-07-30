@@ -37,7 +37,34 @@
     };
   };
 
-  home.packages = with pkgs; [
+  # Jcode configuration — same Go/Zen providers as opencode on cobalto.
+  programs.jcode-config = {
+    enable = true;
+    opencodeGo.enable = true;
+    opencodeZen.enable = true;
+
+    profiles = {
+      personal = {
+        scriptName = "jcp";
+        mcpServers = null; # inherit all
+        config = (import ./features/ai/opencode-personal.nix).config;
+      };
+    };
+
+    dispatcher.contexts = {
+      personal = {
+        scriptName = "jcp";
+        apiKeyEnvVar = "OPENCODE_API_KEY";
+      };
+    };
+
+    secretEnv = {
+      OPENCODE_API_KEY = "/run/secrets/opencode-api-key";
+      GITHUB_TOKEN = "/run/secrets/github-token";
+    };
+  };
+
+  home.packages = (with pkgs; [
     uv
     mcp-nixos
     nodejs_24
@@ -45,7 +72,7 @@
     resumed
     github-mcp-server
     playwright-mcp
-  ];
+  ]);
 
   colorscheme = {
     type = "material-darker";
