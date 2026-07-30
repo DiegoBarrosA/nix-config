@@ -119,16 +119,17 @@ let
   '';
 
   power-menu = pkgs.writeShellScriptBin "power-menu" ''
-    #!/usr/bin/env bash
-    CHOICE=$(printf 'Lock\nLogout\nSuspend\nReboot\nShutdown' \
-      | tofi --prompt-text="power  ")
-    case "$CHOICE" in
-      Lock)     swaylock -f ;;
-      Logout)   swaymsg exit ;;
-      Suspend)  swaylock -f && systemctl suspend ;;
-      Reboot)   systemctl reboot ;;
-      Shutdown) systemctl poweroff ;;
-    esac
+    alacritty --class launcher -e sh -c '
+      CHOICE=$(printf "Lock\nLogout\nSuspend\nReboot\nShutdown" | fsel --dmenu)
+      [ -z "$CHOICE" ] && exit
+      case "$CHOICE" in
+        Lock)     swaylock -f ;;
+        Logout)   swaymsg exit ;;
+        Suspend)  swaylock -f && systemctl suspend ;;
+        Reboot)   systemctl reboot ;;
+        Shutdown) systemctl poweroff ;;
+      esac
+    '
   '';
 
 
@@ -622,7 +623,7 @@ in
     ./kanshi.nix
     ./mako.nix
     ./swaylock.nix
-    ./tofi.nix
+    ./fsel.nix
     ./bluetooth.nix
   ];
 
@@ -641,7 +642,7 @@ in
     jq
     autotiling-rs
     polkit_gnome
-    tofi
+    fsel
     # Screenshot tools
     swappy
     grim
@@ -681,7 +682,7 @@ in
       up = "k";
       right = "l";
       terminal = "alacritty";
-      menu = "tofi-drun --drun-launch=true";
+      menu = "alacritty --class launcher -e fsel";
 
       bars = [ ];
 
@@ -754,6 +755,13 @@ in
             app_id = "swappy";
           };
           command = "floating enable";
+        }
+        # Launcher window (fsel in alacritty) - floating, centered, sized nicely
+        {
+          criteria = {
+            app_id = "launcher";
+          };
+          command = "floating enable, resize set width 800 height 600";
         }
         # Inhibit idle while Firefox is focused so swayidle doesn't fire the lock
         # timer during screen shares (the XDG Inhibit portal isn't supported by
@@ -850,7 +858,7 @@ in
         "Mod4+w" = "kill";
 
         "Mod4+p" = "floating enable, sticky enable";
-        "Mod4+space" = "exec tofi-drun --drun-launch=true";
+        "Mod4+space" = "exec alacritty --class launcher -e fsel";
         "Mod4+Shift+c" = "reload";
         "Mod4+Shift+e" = "exec power-menu";
         "Mod4+Escape" = "exec swaylock -f";
@@ -871,7 +879,7 @@ in
         "Mod4+Shift+a" = "exec grim -g \"$(slurp)\" ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png";
 
         # Clipboard history
-        "Mod4+c" = "exec cliphist list | tofi --prompt-text='clip  ' | cliphist decode | wl-copy";
+        "Mod4+c" = "exec alacritty --class launcher -e sh -c 'cliphist list | fsel --dmenu | cliphist decode | wl-copy'";
 
         # Focus movement
         "Mod4+h" = "focus left";
