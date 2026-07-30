@@ -83,11 +83,9 @@ in
         forceSSL = true;
         useACMEHost = "minerales.network";
         serverName = "_";
-        locations."/" = {
-          extraConfig = ''
-            return 302 https://home.minerales.network;
-          '';
-        };
+        extraConfig = ''
+          ssl_reject_handshake on;
+        '';
       };
 
       # Main server dashboard
