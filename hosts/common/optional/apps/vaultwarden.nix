@@ -9,8 +9,12 @@
     content = ''
       ADMIN_TOKEN=${config.sops.placeholder."vaultwarden-admin-token"}
       SMTP_HOST=smtp.resend.com
-      SMTP_PORT=587
+      # Cobalto's ISP blocks outbound 25/465/587, so use Resend's alternate
+      # STARTTLS port. A blocked SMTP port stalls new-device login for 30s,
+      # which is long enough that the Bitwarden apps time out and fail.
+      SMTP_PORT=2587
       SMTP_SECURITY=starttls
+      SMTP_TIMEOUT=5
       SMTP_USERNAME=resend
       SMTP_PASSWORD=${config.sops.placeholder."resend-api-key"}
       SMTP_FROM=vault@minerales.network
