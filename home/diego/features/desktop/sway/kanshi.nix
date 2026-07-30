@@ -27,22 +27,24 @@ let
 
   # UI for switching display modes
   displayModeUI = pkgs.writeShellScriptBin "display-mode-selector" ''
-    CHOICE=$(printf 'Single (Laptop)\nDocked (Samsung)\nTriple (All Monitors)' \
-      | tofi --prompt-text="display  ")
-    case "$CHOICE" in
-      "Single (Laptop)")
-        kanshi-switch single
-        notify-send "Display" "Single monitor mode"
-        ;;
-      "Docked (Samsung)")
-        kanshi-switch docked
-        notify-send "Display" "Docked mode (Samsung)"
-        ;;
-      "Triple (All Monitors)")
-        kanshi-switch triple
-        notify-send "Display" "Triple monitor mode"
-        ;;
-    esac
+    alacritty --class launcher -e sh -c '
+      CHOICE=$(printf "Single (Laptop)\nDocked (Samsung)\nTriple (All Monitors)" | fsel --dmenu)
+      [ -z "$CHOICE" ] && exit
+      case "$CHOICE" in
+        "Single (Laptop)")
+          kanshi-switch single
+          notify-send "Display" "Single monitor mode"
+          ;;
+        "Docked (Samsung)")
+          kanshi-switch docked
+          notify-send "Display" "Docked mode (Samsung)"
+          ;;
+        "Triple (All Monitors)")
+          kanshi-switch triple
+          notify-send "Display" "Triple monitor mode"
+          ;;
+      esac
+    '
   '';
 in
 lib.mkMerge [
