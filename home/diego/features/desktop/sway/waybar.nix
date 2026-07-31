@@ -11,7 +11,7 @@ let
   # Decode a \uXXXX escape to the actual Unicode character
   u = code: builtins.fromJSON ''"\u${code}"'';
 
-  workspaces = import ./workspaces.nix;
+  workspaces = import ./workspaces.nix { inherit lib; };
 in
 {
   programs.waybar = {
@@ -32,7 +32,6 @@ in
           "sway/workspaces"
         ];
         modules-center = [
-          "sway/window"
         ];
         modules-right = [
           "tray"
@@ -44,19 +43,7 @@ in
           "clock"
         ];
 
-        "sway/workspaces" = {
-          disable-scroll = false;
-          all-outputs = true;
-          format = "{icon}";
-          format-icons = (lib.mapAttrs (_: v: u v.icon) workspaces) // {
-            "default" = u "f22d";
-            "focused" = u "f192";
-            "high-priority-named" = lib.attrNames workspaces;
-          };
-          persistent-workspaces = lib.mapAttrs (_: _: [ ]) (
-            lib.filterAttrs (_: v: v.persistent or false) workspaces
-          );
-        };
+        "sway/workspaces" = workspaces.waybarWorkspaces;
 
         "sway/mode" = {
           format = "<span style=\"italic\">{}</span>";
@@ -177,7 +164,7 @@ in
 
       /* Reset GTK styling that might leak in */
       * {
-        font-family:  "Jost*","Font Awesome 7 Brands", "Font Awesome 7 Free Solid";
+        font-family:  "Fantasque Sans Mono","Font Awesome 7 Brands", "Font Awesome 7 Free Solid";
         font-size: 18px;
         border: none;
         border-radius: 0;
@@ -214,6 +201,10 @@ in
         text-shadow: none;
         font-family: "Font Awesome 7 Brands", "Font Awesome 7 Free Solid";
         font-weight: normal;
+      }
+
+      window#waybar #workspaces button label {
+        font-family: "Font Awesome 7 Brands", "Font Awesome 7 Free Solid", "Fantasque Sans Mono";
       }
 
       window#waybar #workspaces button.urgent:not(.focused),
@@ -350,6 +341,44 @@ in
 
       tooltip label {
         color: #${colors.base05};
+      }
+
+      /* Bottom status bar module states */
+      #custom-cb,
+      #custom-tailscale,
+      #custom-cobalto,
+      #custom-syncthing,
+      #custom-jocalsend-icon {
+        padding: 0 12px;
+        color: #${colors.base05};
+      }
+
+      #custom-cb.ok,
+      #custom-tailscale.ok,
+      #custom-cobalto.ok,
+      #custom-syncthing.ok {
+        color: #${colors.base05};
+      }
+
+      #custom-cb.error,
+      #custom-tailscale.error,
+      #custom-cobalto.error,
+      #custom-syncthing.error {
+        color: #${colors.base08};
+      }
+
+      #custom-tailscale.warning,
+      #custom-syncthing.warning {
+        color: #${colors.base09};
+      }
+
+      #custom-tailscale.off,
+      #custom-syncthing.off {
+        color: #${colors.base03};
+      }
+
+      #custom-syncthing.syncing {
+        color: #${colors.base0D};
       }
     '';
   };

@@ -42,6 +42,7 @@ let
       --uc-inverted-colour: #${c.base05};  /* primary text */
       --uc-muted-colour: #${c.base04};     /* muted text */
       --uc-accent-colour: var(--uc-identity-colour-blue);
+        --uc-identity-glow: 0;
     }
 
     /* --- Below: verbatim reassignments from upstream cascade-colours.css.
