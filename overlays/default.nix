@@ -54,8 +54,25 @@
   # https://nixos.wiki/wiki/Overlays
   modifications = final: prev: {
     dummy = prev.hello;
-    
-    
+
+    # xdg-desktop-portal-wlr 0.8.3 deadlocks screencasts after the first frame.
+    # The ext_image_copy_capture_v1 path negotiates a 2-buffer pool, the consumer
+    # holds both, pw_stream_dequeue_buffer() returns NULL and nothing re-arms the
+    # capture loop ("out of buffers" / "unable to export buffer"). Hits every
+    # browser because it sits below them, in the portal. Upstream issue #395,
+    # fixed by PR #397 and released in 0.8.4.
+    # Remove once nixos-unstable ships >= 0.8.4 (nixpkgs PR #546818, on master
+    # since 2026-07-30 but not yet through Hydra).
+    xdg-desktop-portal-wlr = prev.xdg-desktop-portal-wlr.overrideAttrs (_oldAttrs: {
+      version = "0.8.4";
+      src = final.fetchFromGitHub {
+        owner = "emersion";
+        repo = "xdg-desktop-portal-wlr";
+        rev = "v0.8.4";
+        sha256 = "sha256-8Ohgkz13FcG8ddjjgreXkvFD2Q+zUDZnAM4Oh+C9P/s=";
+      };
+    });
+
     ncmpcpp = prev.ncmpcpp.overrideAttrs (oldAttrs: rec {
       visualizerSupport = true;
       clockSupport = true;
