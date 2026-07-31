@@ -35,7 +35,7 @@ in
     };
 
     # Cursor theme - Bibata Modern Classic (dark).
-    # Sway only: GNOME/KDE keep their native cursor (Adwaita/Breeze).
+    # Sway/COSMIC only: a null desktop keeps no cursor override.
     cursor =
       lib.mkIf
         (builtins.elem desktop [
@@ -85,25 +85,11 @@ in
 
     # Target-specific settings
     targets = {
-      # GTK app theming: enabled on Sway; disabled on GNOME (native Adwaita)
-      # and on KDE (native Breeze — keep Stylix for TUI only, not KDE GUI apps).
-      gtk = {
-        enable =
-          !(builtins.elem desktop [
-            "gnome"
-            "kde"
-          ]);
-      };
-
-      # GNOME Shell integration: disabled on GNOME so the shell stays native.
-      # (Has effect only under a GNOME session anyway.)
-      gnome.enable = desktop != "gnome";
+      # GTK app theming: enabled on all supported DEs (Sway/COSMIC).
+      gtk.enable = true;
 
       # Qt theming via Kvantum (generated from base16 colors).
-      # Disabled on KDE: Plasma's own Breeze/Qt theming is used for GUI apps,
-      # so Stylix stays out of KDE GUI apps (TUI-only under KDE).
       qt = {
-        enable = desktop != "kde";
         # Use xdg-desktop-portal for native file dialogs
         standardDialogs = "xdgdesktopportal";
       };
@@ -138,7 +124,7 @@ in
 
   # Icon theme (Stylix doesn't handle icons)
   # Use Papirus with custom folder color matching our accent (base0D).
-  # Sway only: GNOME/KDE keep their native icons (Adwaita/Breeze).
+  # Sway/COSMIC only: a null desktop keeps no icon override.
   gtk.iconTheme =
     lib.mkIf
       (builtins.elem desktop [
@@ -161,8 +147,8 @@ in
         }
       );
 
-  # Symlink icon themes for GTK/Snap/sandboxed apps. Sway only;
-  # GNOME/KDE ship their own icon/cursor sets.
+  # Symlink icon themes for GTK/Snap/sandboxed apps. Sway/COSMIC only;
+  # a null desktop ships no desktop icons.
   xdg.dataFile =
     lib.mkIf
       (builtins.elem desktop [
@@ -183,8 +169,8 @@ in
         }
       );
 
-  # Propagate GTK theme to apps via XSettings. Needed on Sway/Wayland (GNOME/KDE
-  # run their own settings daemon, and this references the Sway-only iconTheme).
+  # Propagate GTK theme to apps via XSettings. Needed on Sway/Wayland
+  # (COSMIC has its own settings daemon; this references the Sway-only iconTheme).
   services.xsettingsd =
     lib.mkIf
       (builtins.elem desktop [

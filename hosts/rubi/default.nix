@@ -218,7 +218,6 @@
     users.diego = {
       imports = [
         inputs.stylix.homeModules.stylix
-        inputs.plasma-manager.homeModules.plasma-manager
         ../../modules/home-manager/colors.nix
         ../../modules/home-manager/fonts.nix
         ../../modules/home-manager/kanshi.nix
