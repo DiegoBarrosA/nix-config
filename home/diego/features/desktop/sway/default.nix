@@ -596,6 +596,56 @@ let
         swaymsg seat seat0 cursor set "$CURSOR_X" "$CURSOR_Y" >/dev/null
   '';
 
+  # Hold a logind idle inhibitor for as long as a screencast is running, so
+  # swayidle doesn't lock the session mid-presentation.
+  #
+  # sway only honours zwp_idle_inhibit_manager_v1 for surfaces belonging to a
+  # visible view, so headless helpers (wlinhibit et al) are silently ignored.
+  # swayidle does watch logind's BlockInhibited property and calls
+  # disable_timeouts() when it contains "idle", so systemd-inhibit is the
+  # mechanism that actually works here. Verified on sway 1.12.
+  #
+  # xdg-desktop-portal-wlr names each screencast stream "xdpw-stream-XXXXXX"
+  # with media.class=Video/Source. Keying on that prefix covers every client
+  # (Firefox, Chromium, Electron) and won't match the v4l2 webcam nodes, which
+  # are also Video/Source but named "v4l2_input.*".
+  screencast-idle-inhibit = pkgs.writeShellScriptBin "screencast-idle-inhibit" ''
+    #!/usr/bin/env bash
+    set -uo pipefail
+
+    INHIBIT_PID=""
+
+    casting() {
+      ${pkgs.pipewire}/bin/pw-dump 2>/dev/null | ${pkgs.jq}/bin/jq -e '
+        [ .[]
+          | select(.type == "PipeWire:Interface:Node")
+          | select((.info.props."node.name" // "") | startswith("xdpw-stream-"))
+        ] | length > 0' >/dev/null
+    }
+
+    release() {
+      if [ -n "$INHIBIT_PID" ]; then
+        kill "$INHIBIT_PID" 2>/dev/null || true
+        INHIBIT_PID=""
+      fi
+    }
+    trap 'release; exit 0' TERM INT
+
+    while true; do
+      if casting; then
+        if [ -z "$INHIBIT_PID" ] || ! kill -0 "$INHIBIT_PID" 2>/dev/null; then
+          systemd-inhibit --what=idle \
+            --who="screencast-idle-inhibit" \
+            --why="Screen sharing in progress" \
+            sleep infinity &
+          INHIBIT_PID=$!
+        fi
+      else
+        release
+      fi
+      sleep 5
+    done
+  '';
 in
 {
   imports = [
@@ -642,6 +692,7 @@ in
     scrcpy-stream
     volume-notify
     brightness-notify
+    screencast-idle-inhibit
     # Android mirroring & control
     scrcpy
   ];
@@ -737,17 +788,11 @@ in
           };
           command = "floating enable";
         }
-        # Inhibit idle while Firefox is focused so swayidle doesn't fire the lock
-        # timer during screen shares (the XDG Inhibit portal isn't supported by
-        # xdg-desktop-portal-wlr, so apps can't prevent lock via the portal).
-        {
-          criteria.app_id = "firefox-devedition";
-          command = "inhibit_idle focus";
-        }
-        {
-          criteria.app_id = "firefox";
-          command = "inhibit_idle focus";
-        }
+        # NOTE: idle inhibition during screen shares is handled by the
+        # screencast-idle-inhibit service, not by per-app inhibit_idle rules.
+        # "inhibit_idle focus" only held while the window was focused, so it
+        # dropped the moment you focused the app you were actually presenting,
+        # and it never covered Chromium/Electron clients at all.
       ];
 
       input = {
@@ -780,6 +825,11 @@ in
         # Idle daemon: lock after 5min, display off after 10min
         {
           command = "swayidle -w timeout 300 'swaylock -f' timeout 600 'swaymsg \"output * power off\"' resume 'swaymsg \"output * power on\"' before-sleep 'swaylock -f'";
+        }
+
+        # Suppress the idle timers above while a screencast is active
+        {
+          command = "${screencast-idle-inhibit}/bin/screencast-idle-inhibit";
         }
 
         # Cursor theme for XWayland apps
