@@ -9,42 +9,7 @@ let
   inherit (config) fontProfiles;
   cursorName = config.stylix.cursor.name;
   cursorSize = toString config.stylix.cursor.size;
-  workspaces = {
-    "5" = {
-      icon = "f0ac";
-      app = "firefox-devedition";
-      key = "f";
-      launch = "firefox-devedition";
-      persistent = true;
-    };
-    "6" = {
-      icon = "f674";
-      app = "thunderbird";
-      key = "g";
-      launch = "thunderbird";
-      persistent = true;
-    };
-    "7" = {
-      icon = "f802";
-      launcher = "yazi-launcher";
-      key = "e";
-      persistent = true;
-    };
-    "8" = {
-      icon = "f60f";
-      app = "obsidian";
-      key = "n";
-      launch = "obsidian";
-    };
-    "9" = {
-      icon = "f1c9";
-      launcher = "helix-launcher";
-      key = "d";
-    };
-    "10" = {
-      icon = "f086";
-    };
-  };
+  workspaces = (import ./workspaces.nix { inherit lib; }).registry;
 
   # Package helper scripts
   launch-or-focus = pkgs.writeShellScriptBin "launch-or-focus" ''
@@ -119,19 +84,17 @@ let
   '';
 
   power-menu = pkgs.writeShellScriptBin "power-menu" ''
-    alacritty --class launcher -e sh -c '
-      CHOICE=$(printf "Lock\nLogout\nSuspend\nReboot\nShutdown" | fsel --dmenu)
-      [ -z "$CHOICE" ] && exit
-      case "$CHOICE" in
-        Lock)     swaylock -f ;;
-        Logout)   swaymsg exit ;;
-        Suspend)  swaylock -f && systemctl suspend ;;
-        Reboot)   systemctl reboot ;;
-        Shutdown) systemctl poweroff ;;
-      esac
-    '
+    #!/usr/bin/env bash
+    CHOICE=$(printf "Lock\nLogout\nSuspend\nReboot\nShutdown" | fuzzel --dmenu --prompt "power ")
+    [ -z "$CHOICE" ] && exit
+    case "$CHOICE" in
+      Lock)     swaylock -f ;;
+      Logout)   swaymsg exit ;;
+      Suspend)  swaylock -f && systemctl suspend ;;
+      Reboot)   systemctl reboot ;;
+      Shutdown) systemctl poweroff ;;
+    esac
   '';
-
 
   # Script to manage virtual output for phone streaming via Sunshine
   sunshine-stream = pkgs.writeShellScriptBin "sunshine-stream" ''
@@ -562,6 +525,22 @@ let
       "Brightness" "$BRI%"
   '';
 
+  rename-workspace = pkgs.writeShellScriptBin "rename-workspace" ''
+    #!/usr/bin/env bash
+    WS=$(swaymsg -t get_workspaces | ${pkgs.jq}/bin/jq -r '.[] | select(.focused) | .name')
+    NUM=$(echo "$WS" | grep -oP '^\d+')
+    LABEL=$(echo | fuzzel --dmenu --prompt "rename: ")
+    if [ -z "$LABEL" ]; then
+      [ -n "$NUM" ] && swaymsg rename workspace to "$NUM"
+      exit 0
+    fi
+    if [ -n "$NUM" ]; then
+      swaymsg rename workspace to "$NUM:$LABEL"
+    else
+      swaymsg rename workspace to "$LABEL"
+    fi
+  '';
+
   swap-workspace-output = pkgs.writeShellScriptBin "swap-workspace-output" ''
         #!/usr/bin/env bash
         set -euo pipefail
@@ -616,14 +595,16 @@ let
         ' < <(swaymsg -t get_outputs))"
         swaymsg seat seat0 cursor set "$CURSOR_X" "$CURSOR_Y" >/dev/null
   '';
+
 in
 {
   imports = [
     ./waybar.nix
+    ./waybar-bottom.nix
     ./kanshi.nix
     ./mako.nix
     ./swaylock.nix
-    ./fsel.nix
+    ./fuzzel.nix
     ./bluetooth.nix
   ];
 
@@ -642,7 +623,6 @@ in
     jq
     autotiling-rs
     polkit_gnome
-    fsel
     # Screenshot tools
     swappy
     grim
@@ -655,6 +635,7 @@ in
     yazi-launcher
     helix-launcher
     power-menu
+    rename-workspace
 
     sunshine-stream
     swap-workspace-output
@@ -682,7 +663,7 @@ in
       up = "k";
       right = "l";
       terminal = "alacritty";
-      menu = "alacritty --class launcher -e fsel";
+      menu = "fuzzel";
 
       bars = [ ];
 
@@ -702,8 +683,8 @@ in
       };
 
       gaps = {
-        inner = 8;
-        outer = 4;
+        inner = 0;
+        outer = 0;
         smartGaps = "on";
         smartBorders = "on";
       };
@@ -755,13 +736,6 @@ in
             app_id = "swappy";
           };
           command = "floating enable";
-        }
-        # Launcher window (fsel in alacritty) - floating, centered, sized nicely
-        {
-          criteria = {
-            app_id = "launcher";
-          };
-          command = "floating enable, resize set width 800 height 600";
         }
         # Inhibit idle while Firefox is focused so swayidle doesn't fire the lock
         # timer during screen shares (the XDG Inhibit portal isn't supported by
@@ -858,7 +832,7 @@ in
         "Mod4+w" = "kill";
 
         "Mod4+p" = "floating enable, sticky enable";
-        "Mod4+space" = "exec alacritty --class launcher -e fsel";
+        "Mod4+space" = "exec fuzzel";
         "Mod4+Shift+c" = "reload";
         "Mod4+Shift+e" = "exec power-menu";
         "Mod4+Escape" = "exec swaylock -f";
@@ -879,7 +853,8 @@ in
         "Mod4+Shift+a" = "exec grim -g \"$(slurp)\" ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png";
 
         # Clipboard history
-        "Mod4+c" = "exec alacritty --class launcher -e sh -c 'cliphist list | fsel --dmenu | cliphist decode | wl-copy'";
+        "Mod4+c" =
+          "exec sh -c 'cliphist list | fuzzel --dmenu --prompt \"clip \" | cliphist decode | wl-copy'";
 
         # Focus movement
         "Mod4+h" = "focus left";
@@ -945,6 +920,9 @@ in
 
         # App shortcuts (generated from workspaces registry — see workspaces.nix)
 
+        # Rename current workspace
+        "Mod4+Shift+r" = "exec rename-workspace";
+
         # Display mode switching (kanshi)
         "Mod4+Shift+d" = "exec display-mode-selector";
         "Mod4+Ctrl+1" = "exec kanshi-switch single";
@@ -971,6 +949,12 @@ in
         "Mod4+Ctrl+Shift+minus" = "gaps outer current minus 4";
         "Mod4+Ctrl+0" = "gaps inner current set 0, gaps outer current set 0";
         "Mod4+Ctrl+9" = "gaps inner current set 8, gaps outer current set 4";
+
+        # Waybar visibility toggles (SIGUSR1 hides/shows the bar)
+        "Mod4+F1" = "exec systemctl --user kill --kill-whom=main -s SIGUSR1 waybar.service";
+        "Mod4+F2" = "exec systemctl --user kill --kill-whom=main -s SIGUSR1 waybar-bottom.service";
+        "Mod4+F3" =
+          "exec systemctl --user kill --kill-whom=main -s SIGUSR1 waybar.service && systemctl --user kill --kill-whom=main -s SIGUSR1 waybar-bottom.service";
 
         # Resize mode
         "Mod4+r" = "mode resize";
