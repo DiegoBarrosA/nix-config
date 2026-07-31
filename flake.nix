@@ -30,13 +30,6 @@
       flake = false;
     };
 
-    # Declarative KDE Plasma configuration (KWin, effects, shortcuts, etc.)
-    plasma-manager = {
-      url = "github:nix-community/plasma-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.home-manager.follows = "home-manager";
-    };
-
     # NixVirt for declarative libvirt VM definitions
     nixvirt = {
       url = "github:AshleyYakeley/NixVirt";

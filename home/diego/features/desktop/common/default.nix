@@ -8,17 +8,14 @@
 }:
 {
   imports = [
-    ./chromium
     ./firefox
     ./thunderbird
     ./font.nix
-    ./stylix.nix              # Unified theming (GTK, GNOME, cursor, fonts, apps)
-    ./qt.nix
+    ./stylix.nix # Unified theming (GTK, Qt, cursor, fonts, apps)
     ./playerctl.nix
     ./mime.nix
     ./syncthing.nix
     ./pavucontrol.nix
-    ./localsend.nix
     ./alacritty.nix
     ./obs-studio.nix
     ./mpv.nix
@@ -41,8 +38,8 @@
     );
     # cursor-size is set by Stylix's GTK module
   }
-  # Sway only: apply the Stylix (Bibata) cursor. GNOME/KDE keep their native
-  # cursor, so don't reference config.stylix.cursor (which is unset there).
+  # Sway only: apply the Stylix (Bibata) cursor. COSMIC keeps its native cursor,
+  # so don't reference config.stylix.cursor (which is unset there).
   // lib.optionalAttrs (desktop == "sway") {
     cursor-theme = config.stylix.cursor.name;
   };
