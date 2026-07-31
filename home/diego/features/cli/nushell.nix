@@ -27,6 +27,7 @@
       l = "ls";
       lk = "ls";
       ll = "ls";
+      cat = "bat";
 
       # Migrated from fish shellAliases
       getip = "curl ifconfig.me";

@@ -41,11 +41,6 @@
     customPkgs.claude-desktop
   ];
 
-  # VSCode with official AI agent extensions (Claude Code + opencode),
-  # Stylix-themed. Replaces the previous ad-hoc pkgs.vscode-fhs install with an
-  # HM-managed, declarative setup (see features/cli/vscode.nix).
-  programs.vscode-custom.enable = true;
-
   # GTK bookmarks for file manager (using config.home.homeDirectory to avoid hardcoding)
   gtk.gtk3.bookmarks = [
     "file://${config.home.homeDirectory}/Documents"

@@ -10,13 +10,11 @@ in
   imports = [
     ./zoxide.nix
     ./helix.nix
-    ./vscode.nix
     ./pfetch.nix
     ./git.nix
     ./starship.nix
     ./fzf.nix
     ./bat.nix
-    # ./fish.nix # Fish shell with home-manager module (disabled - migrated to nushell)
     ./zellij.nix # Zellij multiplexer (manual material-darker theme)
     ./nushell.nix # Nushell with vi mode, Ctrl+T for Zellij
     ./yazi.nix
@@ -28,7 +26,6 @@ in
     with pkgs;
     # Core CLI tools (all platforms)
     [
-      ghostty
       timr-tui
       basalt
       comma # Install and run programs by sticking a , before them
@@ -41,7 +38,7 @@ in
       ripgrep # Better grep
       wget
       zip
-      code-cursor-fhs
+      cursor-cli
     ]
     # Linux/macOS desktop tools (not Android)
     ++ lib.optionals (isDesktop || isDarwin) [
@@ -54,7 +51,6 @@ in
       teleport
       scope-tui
       antigravity-cli
-      antigravity-fhs
 
       # AI coding tools
       aider-chat # AI pair programming (works with Ollama)
