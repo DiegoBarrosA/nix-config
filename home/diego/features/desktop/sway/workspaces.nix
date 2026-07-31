@@ -3,6 +3,11 @@
 #
 # Schema:
 #   icon       = Font Awesome hex codepoint (string), e.g. "f0ac"
+#   nameless   = true → no default name. The sway target is "<n>:" rather than
+#                "<n>", so strip-workspace-numbers leaves an empty label and
+#                waybar shows the state icon alone until you rename the
+#                workspace. Without the trailing colon there is nothing to
+#                strip and the bare number shows instead.
 #   persistent = true → show in waybar even when empty
 #   app        = sway app_id → used in `assigns` and as the launch-or-focus target
 #   key        = letter for Mod4+<key> keybinding
@@ -19,15 +24,19 @@ let
   registry = {
     "1" = {
       icon = "f61f";
+      nameless = true;
     };
     "2" = {
       icon = "f7d9";
+      nameless = true;
     };
     "3" = {
       icon = "f7b1";
+      nameless = true;
     };
     "4" = {
       icon = "f78d";
+      nameless = true;
     };
     "5" = {
       icon = "f0ac";
@@ -72,13 +81,18 @@ in
   # Ready-made waybar "sway/workspaces" module — waybar.nix just splices this in.
   #
   # Format trick: {icon} expands to a pango span that either:
-  #   - absorbs {name} at 0.1pt (invisible) for workspaces 5-10 with dedicated FA icons
-  #   - opens a Jost span for {name} for workspaces 1-4 (label-only workspaces)
+  #   - absorbs {name} at 0.1pt (invisible) for workspaces with dedicated FA icons
+  #   - opens a Jost span for {name} on the `nameless` workspaces, which carry a
+  #     rename label instead of an icon of their own
   # The format ends with </span> to close whichever span the icon opened.
   waybarWorkspaces =
     let
       absorb = "<span font_size='0.1pt'> "; # makes {name} invisible
-      label = "<span font_family='Fantasque Sans Mono'> "; # shows {name} in Jost
+      # Shows {name} in Jost. No separator space here: rename-workspace writes
+      # "<n>: <label>" and strip-workspace-numbers keeps the leading space, so
+      # the gap arrives with the label and a nameless "<n>:" stays icon-only.
+      label = "<span font_family='Fantasque Sans Mono'>";
+      iconWorkspaces = lib.filterAttrs (_: v: !(v.nameless or false)) registry;
     in
     {
       disable-scroll = false;
@@ -86,31 +100,15 @@ in
       strip-workspace-numbers = true;
       format = "{icon}{name}</span>";
       format-icons =
-        # 5-10: FA icon at 14pt + open absorb span so {name} (the bare number) disappears
-        (lib.mapAttrs (_: v: "<span font_size='14pt'>${u v.icon}</span>${absorb}") (
-          lib.filterAttrs (
-            n: _:
-            !(lib.elem n [
-              "1"
-              "2"
-              "3"
-              "4"
-            ])
-          ) registry
-        ))
+        # Icon workspaces: FA icon at 14pt + open absorb span so {name} disappears
+        (lib.mapAttrs (_: v: "<span font_size='14pt'>${u v.icon}</span>${absorb}") iconWorkspaces)
         // {
-          # 1-4 fall through to these; open Jost span so renamed labels show
+          # `nameless` workspaces fall through to these; open Jost span so a
+          # rename label shows, and an empty one collapses to just the icon
           "default" = "<span font_size='14pt'>${u "f22d"}</span>${label}";
           "focused" = "<span font_size='14pt'>${u "f192"}</span>${label}";
-          "high-priority-named" = lib.filter (
-            n:
-            !(lib.elem n [
-              "1"
-              "2"
-              "3"
-              "4"
-            ])
-          ) (lib.attrNames registry);
+          # Let the per-name icons above win over "focused"
+          "high-priority-named" = lib.attrNames iconWorkspaces;
         };
       persistent-workspaces = lib.mapAttrs (_: _: [ ]) (
         lib.filterAttrs (_: v: v.persistent or false) registry

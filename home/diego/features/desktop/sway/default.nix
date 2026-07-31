@@ -11,6 +11,13 @@ let
   cursorSize = toString config.stylix.cursor.size;
   workspaces = (import ./workspaces.nix { inherit lib; }).registry;
 
+  # Workspace target for sway commands. `nameless` workspaces get a trailing
+  # colon so waybar's strip-workspace-numbers has something to strip and leaves
+  # an empty label; the rest stay bare numbers. `workspace number <n>:` still
+  # matches on the number alone, so a renamed workspace is reused rather than a
+  # second one being created.
+  wsTarget = n: if workspaces.${n}.nameless or false then "${n}:" else n;
+
   # Package helper scripts
   launch-or-focus = pkgs.writeShellScriptBin "launch-or-focus" ''
     #!/usr/bin/env bash
@@ -529,13 +536,27 @@ let
     #!/usr/bin/env bash
     WS=$(swaymsg -t get_workspaces | ${pkgs.jq}/bin/jq -r '.[] | select(.focused) | .name')
     NUM=$(echo "$WS" | grep -oP '^\d+')
+    # Registry default for a workspace number, so clearing a rename restores the
+    # nameless "<n>:" form rather than leaving a bare number on display.
+    default_name() {
+      case "$1" in
+${lib.concatStrings (
+      lib.mapAttrsToList (
+        n: v: lib.optionalString (v.nameless or false) "        ${n}) echo \"${n}:\" ;;\n"
+      ) workspaces
+    )}        *) echo "$1" ;;
+      esac
+    }
+
     LABEL=$(echo | fuzzel --dmenu --prompt "rename: ")
     if [ -z "$LABEL" ]; then
-      [ -n "$NUM" ] && swaymsg rename workspace to "$NUM"
+      [ -n "$NUM" ] && swaymsg rename workspace to "$(default_name "$NUM")"
       exit 0
     fi
     if [ -n "$NUM" ]; then
-      swaymsg rename workspace to "$NUM:$LABEL"
+      # The space after the colon survives waybar's strip-workspace-numbers and
+      # is what separates the icon from the label.
+      swaymsg rename workspace to "$NUM: $LABEL"
     else
       swaymsg rename workspace to "$LABEL"
     fi
@@ -926,33 +947,12 @@ in
         "Mod4+Shift+Up" = "move up";
         "Mod4+Shift+Right" = "move right";
 
-        # Workspace switching
-        "Mod4+1" = "workspace number 1";
-        "Mod4+2" = "workspace number 2";
-        "Mod4+3" = "workspace number 3";
-        "Mod4+4" = "workspace number 4";
-        "Mod4+5" = "workspace number 5";
-        "Mod4+6" = "workspace number 6";
-        "Mod4+7" = "workspace number 7";
-        "Mod4+8" = "workspace number 8";
-        "Mod4+9" = "workspace number 9";
-        "Mod4+0" = "workspace number 10";
+        # Workspace switching and container moves are generated below from the
+        # registry, so the `nameless` targets live in workspaces.nix only.
 
         # Horizontal workspace switching
         "Mod4+Tab" = "workspace next";
         "Mod4+Shift+Tab" = "workspace prev";
-
-        # Move container to workspace
-        "Mod4+Shift+1" = "move container to workspace number 1";
-        "Mod4+Shift+2" = "move container to workspace number 2";
-        "Mod4+Shift+3" = "move container to workspace number 3";
-        "Mod4+Shift+4" = "move container to workspace number 4";
-        "Mod4+Shift+5" = "move container to workspace number 5";
-        "Mod4+Shift+6" = "move container to workspace number 6";
-        "Mod4+Shift+7" = "move container to workspace number 7";
-        "Mod4+Shift+8" = "move container to workspace number 8";
-        "Mod4+Shift+9" = "move container to workspace number 9";
-        "Mod4+Shift+0" = "move container to workspace number 10";
 
         # Layout
         "Mod4+b" = "splith";
@@ -1009,6 +1009,21 @@ in
         # Resize mode
         "Mod4+r" = "mode resize";
       }
+      # Mod4+<n> switches, Mod4+Shift+<n> moves the container. Workspace 10 sits
+      # on the 0 key.
+      // lib.listToAttrs (
+        lib.concatMap (
+          n:
+          let
+            key = if n == "10" then "0" else n;
+            target = wsTarget n;
+          in
+          [
+            (lib.nameValuePair "Mod4+${key}" "workspace number ${target}")
+            (lib.nameValuePair "Mod4+Shift+${key}" "move container to workspace number ${target}")
+          ]
+        ) (map toString (lib.range 1 10))
+      )
       // lib.mapAttrs' (
         n: v: lib.nameValuePair "Mod4+${v.key}" "exec launch-or-focus ${v.app} ${n} ${v.launch}"
       ) (lib.filterAttrs (_: v: (v ? app) && (v ? key)) workspaces)
