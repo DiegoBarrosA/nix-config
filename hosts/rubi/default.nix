@@ -239,6 +239,15 @@
     };
   };
 
+  # Always re-apply home-manager user state on every switch.
+  # home-manager's NixOS integration only restarts its activation unit when the
+  # generation path changes; this makes `nixos-rebuild switch` enforce
+  # user-level declarative config (e.g. ~/.claude.json) even when nothing in the
+  # home-manager generation changed, matching `home-manager switch` behavior.
+  system.activationScripts.home-manager-reapply = lib.mkAfter ''
+    systemctl restart home-manager-diego.service
+  '';
+
   system.stateVersion = "25.11";
 
   # Boot optimizations
