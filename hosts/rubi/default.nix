@@ -245,7 +245,7 @@
   # user-level declarative config (e.g. ~/.claude.json) even when nothing in the
   # home-manager generation changed, matching `home-manager switch` behavior.
   system.activationScripts.home-manager-reapply = lib.mkAfter ''
-    systemctl restart home-manager-diego.service
+    ${config.systemd.package}/bin/systemctl restart home-manager-diego.service
   '';
 
   system.stateVersion = "25.11";
