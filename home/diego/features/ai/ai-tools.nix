@@ -19,6 +19,19 @@
       API_KEY = "\${JIRA_DC_API_KEY}";
     };
   };
+  # obsidian MCP mirrors the claude-desktop-config entry below so both tools
+  # get it from the declared set (otherwise the prune removes it from
+  # ~/.claude.json). Credentials come from secretEnv; Claude Code expands
+  # ${VAR} itself.
+  programs.claude-code-config.extraMcpServers.obsidian = {
+    command = "uvx";
+    args = [ "mcp-obsidian" ];
+    env = {
+      OBSIDIAN_API_KEY = "\${OBSIDIAN_API_KEY}";
+      OBSIDIAN_HOST = "127.0.0.1";
+      OBSIDIAN_PORT = "27123";
+    };
+  };
 
   programs.claude-desktop-config = {
     enable = true;
