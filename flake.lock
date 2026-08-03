@@ -529,11 +529,11 @@
         "nixpkgs": "nixpkgs_6"
       },
       "locked": {
-        "lastModified": 1785781221,
-        "narHash": "sha256-pRv2m8ZEVxgM8cIx0QiVIqBC7QLFElNpuBSJtsHKOwQ=",
+        "lastModified": 1785785305,
+        "narHash": "sha256-wJA8a4xf8UNpS/nX0eflytdOmxqFLapJQrFjucR86XE=",
         "ref": "refs/heads/master",
-        "rev": "e87b8a643527a9ab494589af8080c2b7b41a96cd",
-        "revCount": 31,
+        "rev": "c9b8c80e107b65d5fb4c8404133a907fcdb3e120",
+        "revCount": 32,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/netsuite-mcp.git"
       },
@@ -919,11 +919,11 @@
         "trello-cloud-mcp": "trello-cloud-mcp"
       },
       "locked": {
-        "lastModified": 1785781261,
-        "narHash": "sha256-ugUxtbqZeYELHtFt+cp7N9jOZadRExf2EeIuD2t88r8=",
+        "lastModified": 1785785349,
+        "narHash": "sha256-YTkPZqrJxpyw/J0KI+O1X7S7aigOc+4cT0D4jGXgO2g=",
         "ref": "employer-cleanup",
-        "rev": "f22a6cd4fd44b555a54a12ebb0ea589a27b60b5e",
-        "revCount": 96,
+        "rev": "08924500beab57f590848bd54870a2809dc3c364",
+        "revCount": 97,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/nix-private-config.git"
       },
