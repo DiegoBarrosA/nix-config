@@ -157,11 +157,11 @@
         "utils": "utils"
       },
       "locked": {
-        "lastModified": 1785658623,
-        "narHash": "sha256-v13SE4G6HI/pbG8icVXFgR3nOoKGOTvHdM9eP6iUIeM=",
+        "lastModified": 1785761939,
+        "narHash": "sha256-zWbYnJ96EakD5F8OQqLh4RZJQK7PvxN0IWiIFdm3ppI=",
         "owner": "reekta92",
         "repo": "clin-rs",
-        "rev": "9e834ac3610d53259ce540acf43c0ad10ecc362a",
+        "rev": "a0d4e8c5e39fbe7bf3ccc01289135e9a3629e4a4",
         "type": "github"
       },
       "original": {
@@ -510,11 +510,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1785669081,
-        "narHash": "sha256-yPFTUSVcP5j2fr3i9z8BUuOX/vLX18x1bGVrbdibHUM=",
+        "lastModified": 1785788106,
+        "narHash": "sha256-ERQZP0IYxlbUhTVs4EjxfYoFiWceFI1PrDLl9LVndXo=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "90ab5cd4a6219ccbab83b4ede91b3fa63de3c6ee",
+        "rev": "9a10b577d105feb4df557043b46f29ca45eaf426",
         "type": "github"
       },
       "original": {
@@ -701,11 +701,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1785571196,
-        "narHash": "sha256-KoTsyMQqnXQZq8deCEnu4QkyldkwH/bpMMhUcfMdGIw=",
+        "lastModified": 1785692966,
+        "narHash": "sha256-vUfIeBEfpbAfZ5zjgIkYk7eHBeVfCYVjLbWnMkseYnk=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "148bab9c1c3c53136ecb44a6ea356a0ed5b39b06",
+        "rev": "643809054d65fdd466a63e3155b8c498cb483c04",
         "type": "github"
       },
       "original": {
@@ -746,11 +746,11 @@
     },
     "nixpkgs_5": {
       "locked": {
-        "lastModified": 1785571196,
-        "narHash": "sha256-KoTsyMQqnXQZq8deCEnu4QkyldkwH/bpMMhUcfMdGIw=",
+        "lastModified": 1785692966,
+        "narHash": "sha256-vUfIeBEfpbAfZ5zjgIkYk7eHBeVfCYVjLbWnMkseYnk=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "148bab9c1c3c53136ecb44a6ea356a0ed5b39b06",
+        "rev": "643809054d65fdd466a63e3155b8c498cb483c04",
         "type": "github"
       },
       "original": {
@@ -919,11 +919,11 @@
         "trello-cloud-mcp": "trello-cloud-mcp"
       },
       "locked": {
-        "lastModified": 1785787385,
-        "narHash": "sha256-bsBppSYwt3JT3BnW6eSnJqBvjKz42HmwFDpnPz2SmbE=",
+        "lastModified": 1785962785,
+        "narHash": "sha256-XBPRqV7+7LT7J1+WSANWnCT1QFM+W8YYSbZksdmDaO4=",
         "ref": "employer-cleanup",
-        "rev": "1346f10c6823862b56b8c4569aec516453eec872",
-        "revCount": 98,
+        "rev": "913fe26af31ac8c08060e822b099dd6ceeb27162",
+        "revCount": 102,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/nix-private-config.git"
       },
