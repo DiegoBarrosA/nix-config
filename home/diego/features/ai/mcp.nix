@@ -8,12 +8,22 @@
   programs.mcp-config = {
     enable = true;
     mcpNixos.enable = true;
-    mcpTelegram.enable = true;
     jobspy = {
       enable = true;
       autostart = false; # lazily disabled — rarely used; enable on demand
     };
-    github.enable = true;
+    github = {
+      enable = true;
+      # The mcp-config module invokes the binary with no subcommand, which just
+      # prints usage and exits. opencode then spends ~1s per start waiting on a
+      # server that was never going to speak MCP before giving up ("server
+      # unavailable key=github"), which is most of its cold-start time. Wrap the
+      # package so `stdio` is always passed. Drop this once nix-ai-tooling grows
+      # an args option for the github server.
+      package = pkgs.writeShellScriptBin "github-mcp-server" ''
+        exec ${pkgs.github-mcp-server}/bin/github-mcp-server stdio "$@"
+      '';
+    };
     playwright = {
       enable = true;
       browserPath = "${pkgs.firefox-devedition}/bin/firefox";
@@ -27,6 +37,10 @@
       # vaultPath defaults to ~/Notes
       # Uses npx -y @modelcontextprotocol/server-filesystem; override command
       # to use a nix-packaged binary if preferred.
+    };
+    supermercados = {
+      enable = true;
+      autostart = false; # defined but off by default; enable per-session from the MCP menu
     };
   };
 
@@ -59,6 +73,11 @@
       $env.WORK_JIRA_C_BASE_URL = (open /run/secrets/work-jira-c-base-url | str trim)
       $env.WORK_JIRA_C_EMAIL    = (open /run/secrets/work-jira-c-email    | str trim)
       $env.WORK_JIRA_C_API_KEY  = (open /run/secrets/work-jira-c-api-key  | str trim)
+    }
+    if ("/run/secrets/work-jira-d-base-url" | path exists) {
+      $env.WORK_JIRA_D_BASE_URL = (open /run/secrets/work-jira-d-base-url | str trim)
+      $env.WORK_JIRA_D_EMAIL    = (open /run/secrets/work-jira-d-email    | str trim)
+      $env.WORK_JIRA_D_API_KEY  = (open /run/secrets/work-jira-d-api-key  | str trim)
     }
 
     # Confluence Cloud MCP — named instances (assembled into CONFLUENCE_INSTANCES by the wrapper)
@@ -99,10 +118,6 @@
 
          # Optional: Telegram bot token (from @BotFather)
          # $env.OPENCLAW_TELEGRAM_TOKEN = "your-telegram-bot-token"
-
-     # simple-telegram-mcp (MTProto - from https://my.telegram.org/apps)
-          # $env.TELEGRAM_API_ID = "your-api-id"
-          # $env.TELEGRAM_API_HASH = "your-api-hash"
 
           # Tempo Worklog MCP — sourced from SOPS secrets at /run/secrets/
           if ("/run/secrets/tempo-jira-base-url" | path exists) {
