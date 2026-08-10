@@ -32,11 +32,9 @@
       enable = true;
       autostart = false; # lazily disabled — rarely used; enable on demand
     };
-    notes = {
+    zennotes = {
       enable = true;
-      # vaultPath defaults to ~/Notes
-      # Uses npx -y @modelcontextprotocol/server-filesystem; override command
-      # to use a nix-packaged binary if preferred.
+      # cliPath defaults to ~/.config/ZenNotes/cli/zen
     };
     supermercados = {
       enable = true;
@@ -101,9 +99,6 @@
       $env.JIRA_DC_EMAIL    = (open /run/secrets/jira-dc-email    | str trim)
       $env.JIRA_DC_API_KEY  = (open /run/secrets/jira-dc-api-key  | str trim)
     }
-
-    # Obsidian REST API
-    # $env.OBSIDIAN_API_KEY = "your-obsidian-api-key"
 
     # ===== OpenClaw Configuration =====
     # Gateway authentication token (generate a random string)

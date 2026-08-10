@@ -133,16 +133,14 @@ in
       ])
       (
         let
-          # Map our accent color to closest Papirus folder color
-          # base0D = #82aaff (blue) -> "blue" or "indigo"
-          # You can change this to: blue, indigo, cyan, teal, violet, etc.
-          folderColor = "indigo";
+          # Papirus folder colour, paired with the scheme in colors.nix.
+          folderColor = config.colorscheme.iconFolderColor;
           papirusWithFolders = pkgs.papirus-icon-theme.override {
             color = folderColor;
           };
         in
         {
-          name = "Papirus-Dark";
+          name = if config.colorscheme.mode == "light" then "Papirus-Light" else "Papirus-Dark";
           package = papirusWithFolders;
         }
       );
@@ -157,7 +155,7 @@ in
       ])
       (
         let
-          folderColor = "indigo";
+          folderColor = config.colorscheme.iconFolderColor;
           papirusWithFolders = pkgs.papirus-icon-theme.override {
             color = folderColor;
           };

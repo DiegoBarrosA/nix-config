@@ -340,6 +340,11 @@ in
         locations."/" = standardProxy 3000;
       };
 
+      # ZenNotes - keyboard-first Markdown notes web UI
+      "notes.minerales.network" = withSSL "notes" {
+        locations."/" = standardProxy 7879;
+      };
+
       # Yattee Server - self-hosted video API (yt-dlp based stream proxy)
       "yattee.minerales.network" = withSSL "yattee" {
         locations."/" = standardProxy 8085;

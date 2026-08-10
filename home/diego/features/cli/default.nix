@@ -17,6 +17,7 @@ in
     ./bat.nix
     ./zellij.nix # Zellij multiplexer (manual material-darker theme)
     ./nushell.nix # Nushell with vi mode, Ctrl+T for Zellij
+    ./ssh.nix # Multiple SSH keys with per-host selection, agent registration
     ./yazi.nix
     ./zathura.nix
     ./bottom.nix
@@ -36,6 +37,7 @@ in
       ouch # TUI/CLI archive compress+decompress (tar/zip/7z/…); pairs with yazi
       pv
       ripgrep # Better grep
+      sqlite # sqlite3 CLI — used by the netsuite-mcp Firefox cookie extraction
       wget
       zip
       cursor-cli

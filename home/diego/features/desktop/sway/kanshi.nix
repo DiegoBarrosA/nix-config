@@ -28,7 +28,7 @@ let
   # UI for switching display modes
   displayModeUI = pkgs.writeShellScriptBin "display-mode-selector" ''
     #!/usr/bin/env bash
-    CHOICE=$(printf "Single (Laptop)\nDocked (Samsung)\nTriple (All Monitors)" | fuzzel --dmenu --prompt "display ")
+    CHOICE=$(printf "Single (Laptop)\nDocked (Samsung)\nTriple (All Monitors)" | ${config.launcher.dmenu} --prompt-text "display")
     [ -z "$CHOICE" ] && exit
     case "$CHOICE" in
       "Single (Laptop)")

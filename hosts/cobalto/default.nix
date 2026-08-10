@@ -87,6 +87,9 @@
     # Invidious - YouTube frontend
     ../common/optional/media/invidious.nix
 
+    # ZenNotes - keyboard-first Markdown notes web UI
+    ../common/optional/apps/zennotes.nix
+
     # Boot configuration
     ../common/optional/system/systemdboot.nix
   ];
@@ -239,6 +242,12 @@
   boot.extraModprobeConfig = "options vfio-pci ids=10ec:818b";
 
   # ACME/Let's Encrypt is configured in minerales-network.nix for wildcard certs
+
+  # ZenNotes web UI — vault at /mnt/media/Obsidian/obsidiana
+  services.zennotes = {
+    enable = true;
+    vaultPath = "/mnt/media/Obsidian/obsidiana";
+  };
 
   # OpenCode server for remote access (Android app + web UI)
   # Proxied through nginx on opencode.minerales.network

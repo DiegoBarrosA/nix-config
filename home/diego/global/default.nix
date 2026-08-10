@@ -48,24 +48,25 @@ in
     stateVersion = lib.mkDefault "26.05";
     sessionPath = [ "$HOME/.local/bin" ];
     sessionVariables = {
-      NH_FLAKE = "$HOME/Documents/NixConfig";
+      NH_FLAKE = "$HOME/Projects/Personal/nix/nix-config";
       # Disable libadwaita animations (may help with some styling)
       ADW_DISABLE_PORTAL = "1";
     };
 
   };
 
-  # Specialisations for light/dark
-  specialisation = {
-    dark.configuration = {
-      colorscheme.type = lib.mkOverride 1498 "gruvbox-dark-medium";
-      colorscheme.mode = lib.mkOverride 1498 "dark";
+  # Specialisations for light/dark, driven by colorscheme.specialisations so
+  # each host can point "dark"/"light" at its own palette (see colors.nix).
+  # mkForce, not mkOverride 1498: a specialisation re-imports every module,
+  # including host files like rubi.nix that set colorscheme.type as a plain
+  # (priority 100) assignment, which would otherwise beat a weak override and
+  # leave the specialisation switching `mode` without `type` ever following.
+  specialisation = lib.mapAttrs (_name: sc: {
+    configuration = {
+      colorscheme.type = lib.mkForce sc.type;
+      colorscheme.mode = lib.mkForce sc.mode;
     };
-    light.configuration = {
-      colorscheme.type = lib.mkOverride 1498 "gruvbox-light-medium";
-      colorscheme.mode = lib.mkOverride 1498 "light";
-    };
-  };
+  }) config.colorscheme.specialisations;
 
   # Write current colorscheme to a file
   home.file = {
@@ -110,6 +111,12 @@ in
           "$base/specialisation/$1/activate"
         fi
       '';
+      # Auto-detects the opposite of the current mode, then hands off to
+      # `specialisation` above for the actual switch. Deliberately does NOT
+      # call `home-manager switch`: that always re-evaluates and rebuilds the
+      # flake before it gets anywhere near activating a specialisation, which
+      # defeats the point of pre-building both variants. `specialisation`
+      # just execs the already-built activation script, so this is instant.
       toggle-theme = pkgs.writeShellScriptBin "toggle-theme" ''
         theme="$1"
         if [ -z "$theme" ]; then
@@ -120,9 +127,7 @@ in
             theme="light"
           fi
         fi
-        # Determine hostname from various sources
-        hostname="''${HOSTNAME:-$(hostname -s 2>/dev/null || cat /etc/hostname 2>/dev/null || echo unknown)}"
-        ${lib.getExe pkgs.home-manager} --flake "$HOME/Documents/Repositories/nix-config#${config.home.username}@$hostname" --specialisation "$theme" switch
+        exec ${lib.getExe specialisation} "$theme"
       '';
     in
     [

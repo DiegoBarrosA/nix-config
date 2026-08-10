@@ -78,6 +78,11 @@
       url = "git+ssh://git@github.com/DiegoBarrosA/nix-private-config.git?ref=employer-cleanup";
       flake = true;
     };
+
+    zennotes = {
+      url = "github:ZenNotes/zennotes";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -136,6 +141,7 @@
         // {
           clin = inputs.clin.packages.${system}.default;
           coderabbit-cli = inputs.llm-agents.packages.${system}.coderabbit-cli;
+          zennotes-server = inputs.zennotes.packages.${system}.zennotes-server;
         }
       );
       myLib = import ./lib {

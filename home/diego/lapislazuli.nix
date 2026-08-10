@@ -22,6 +22,10 @@
   programs.mcp-config = {
     enable = true;
     mcpNixos.enable = true;
+    supermercados = {
+      enable = true;
+      autostart = false; # defined but off by default; enable per-session from the MCP menu
+    };
   };
 
   programs.opencode-config = {
@@ -92,6 +96,7 @@
 
   home.packages = with pkgs; [
     # opencode - now managed by programs.opencode-config
+    nodejs_24 # provides npx, needed by the supermercados MCP server
     cursor-cli
     mermaid-cli
     cava
