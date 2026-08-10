@@ -184,9 +184,17 @@
     powerOnBoot = true;
   };
 
+  # Auto-switch the system timezone to match where I am (WiFi positioning via
+  # geoclue2 + beaconDB). localtimed sets time.timeZone = null, so the
+  # mkDefault "America/Santiago" from locale.nix is only the initial value and
+  # the daemon overrides it at runtime through systemd-timedated. Without a
+  # WiFi fix (offline, VPN exit node) it keeps the last known timezone.
+  services.geoclue2.enable = true;
+  services.localtimed.enable = true;
+
   # Power management for desktop/laptop
   services.logind.settings.Login = {
-    HandleLidSwitch = "ignore";
+    HandleLidSwitch = "suspend";
     HandleLidSwitchDocked = "ignore";
   };
   services.power-profiles-daemon.enable = true;
@@ -196,7 +204,23 @@
   hardware.brillo.enable = true;
 
   # Printing support
-  services.printing.enable = true;
+  services.printing = {
+    enable = true;
+    drivers = [ pkgs.brlaser ];
+  };
+
+  hardware.printers = {
+    ensurePrinters = [
+      {
+        name = "Brother_HL-1202";
+        location = "Home";
+        deviceUri = "usb://Brother/HL-1200%20series";
+        model = "drv:///brlaser.drv/br1200.ppd";
+        ppdOptions.PageSize = "A4";
+      }
+    ];
+    ensureDefaultPrinter = "Brother_HL-1202";
+  };
 
   # Prisma Access Agent VPN + Prisma Browser enables, boot-autostart strip, and
   # VPN state persistence are contributed by the customer module

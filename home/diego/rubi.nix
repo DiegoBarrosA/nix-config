@@ -10,7 +10,22 @@
   ...
 }:
 {
-  colorscheme.type = "material-darker";
+  colorscheme.type = "monochrome-dark";
+  # Papirus' only neutral folder set; anything else is the one splash of colour
+  # left on a monochrome desktop.
+  colorscheme.iconFolderColor = "grey";
+  # `toggle-theme` (home/diego/global/default.nix) switches between these two
+  # instead of the default gruvbox pair, so light/dark stay monochrome.
+  colorscheme.specialisations = {
+    dark = {
+      type = "monochrome-dark";
+      mode = "dark";
+    };
+    light = {
+      type = "monochrome-light";
+      mode = "light";
+    };
+  };
 
   imports = [
     # Rubi-local toggles for desktop setup.
@@ -36,9 +51,13 @@
   ++ lib.optional (desktop != null) ./features/desktop/${desktop};
 
   home.packages = [
-    customPkgs.clin
+    # customPkgs.clin
     customPkgs.coderabbit-cli
     customPkgs.claude-desktop
+    customPkgs.personal-assistant
+    pkgs.zennotes-desktop
+    pkgs.transmission_4-gtk
+    pkgs.nodejs_24 # provides npx, needed by the notes and supermercados MCP servers
   ];
 
   # GTK bookmarks for file manager (using config.home.homeDirectory to avoid hardcoding)
@@ -113,7 +132,6 @@
           # tool definitions out of personal-context sessions entirely.
           mcpServers = [
             "nixos"
-            "telegram"
             "jobspy"
             "github"
             "playwright"
@@ -228,8 +246,8 @@
               };
             };
             # Disable the chatty MCP servers globally; they are re-enabled
-            # per-agent above. The lean default keeps nixos/telegram/
-            # jobspy hot (small tool counts) while gating the big ones.
+            # per-agent above. The lean default keeps nixos/jobspy hot
+            # (small tool counts) while gating the big ones.
             tools = {
               "github_*" = false;
               "playwright_*" = false;
@@ -423,7 +441,6 @@
           scriptName = "jcp";
           mcpServers = [
             "nixos"
-            "telegram"
             "jobspy"
             "github"
             "playwright"
@@ -440,9 +457,18 @@
                 base_url = "https://opencode.ai/zen/go/v1";
                 api_key_env = "OPENCODE_API_KEY";
                 models = [
-                  { id = "deepseek-v4-pro"; name = "DeepSeek V4 Pro"; }
-                  { id = "deepseek-v4-flash"; name = "DeepSeek V4 Flash"; }
-                  { id = "kimi-k2.6"; name = "Kimi K2.6"; }
+                  {
+                    id = "deepseek-v4-pro";
+                    name = "DeepSeek V4 Pro";
+                  }
+                  {
+                    id = "deepseek-v4-flash";
+                    name = "DeepSeek V4 Flash";
+                  }
+                  {
+                    id = "kimi-k2.6";
+                    name = "Kimi K2.6";
+                  }
                 ];
               };
               "opencode" = {
@@ -450,7 +476,10 @@
                 base_url = "https://opencode.ai/zen/v1";
                 api_key_env = "OPENCODE_API_KEY";
                 models = [
-                  { id = "big-pickle"; name = "Big Pickle"; }
+                  {
+                    id = "big-pickle";
+                    name = "Big Pickle";
+                  }
                 ];
               };
               "local-llm" = {
@@ -458,12 +487,36 @@
                 base_url = "http://localhost:11434/v1";
                 api_key_env = "OLLAMA_API_KEY";
                 models = [
-                  { id = "qwen3:4b"; name = "Qwen3 4B (local, fast tool calling)"; context_window = 32768; }
-                  { id = "qwen2.5:14b"; name = "Qwen2.5 14B (local, tool calling)"; context_window = 32768; }
-                  { id = "qwen2.5-coder:7b"; name = "Qwen2.5 Coder 7B (local, fast code)"; context_window = 32768; }
-                  { id = "qwen2.5-coder:14b"; name = "Qwen2.5 Coder 14B (local, strong code)"; context_window = 32768; }
-                  { id = "deepseek-coder-v2:16b"; name = "DeepSeek Coder V2 16B (local, excellent code)"; context_window = 16384; }
-                  { id = "deepseek-r1:8b"; name = "DeepSeek R1 8B (local, reasoning)"; context_window = 16384; }
+                  {
+                    id = "qwen3:4b";
+                    name = "Qwen3 4B (local, fast tool calling)";
+                    context_window = 32768;
+                  }
+                  {
+                    id = "qwen2.5:14b";
+                    name = "Qwen2.5 14B (local, tool calling)";
+                    context_window = 32768;
+                  }
+                  {
+                    id = "qwen2.5-coder:7b";
+                    name = "Qwen2.5 Coder 7B (local, fast code)";
+                    context_window = 32768;
+                  }
+                  {
+                    id = "qwen2.5-coder:14b";
+                    name = "Qwen2.5 Coder 14B (local, strong code)";
+                    context_window = 32768;
+                  }
+                  {
+                    id = "deepseek-coder-v2:16b";
+                    name = "DeepSeek Coder V2 16B (local, excellent code)";
+                    context_window = 16384;
+                  }
+                  {
+                    id = "deepseek-r1:8b";
+                    name = "DeepSeek R1 8B (local, reasoning)";
+                    context_window = 16384;
+                  }
                 ];
               };
             };
@@ -486,10 +539,22 @@
                 base_url = "https://api.groq.com/openai/v1";
                 api_key_env = "GROQ_API_KEY";
                 models = [
-                  { id = "llama-3.3-70b-versatile"; name = "Llama 3.3 70B Versatile"; }
-                  { id = "llama-3.1-8b-instant"; name = "Llama 3.1 8B Instant"; }
-                  { id = "qwen3-32b"; name = "Qwen3 32B"; }
-                  { id = "gpt-oss-20b"; name = "GPT OSS 20B"; }
+                  {
+                    id = "llama-3.3-70b-versatile";
+                    name = "Llama 3.3 70B Versatile";
+                  }
+                  {
+                    id = "llama-3.1-8b-instant";
+                    name = "Llama 3.1 8B Instant";
+                  }
+                  {
+                    id = "qwen3-32b";
+                    name = "Qwen3 32B";
+                  }
+                  {
+                    id = "gpt-oss-20b";
+                    name = "GPT OSS 20B";
+                  }
                 ];
               };
             };

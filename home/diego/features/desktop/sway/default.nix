@@ -90,9 +90,81 @@ let
     fi
   '';
 
+  # Launcher for opencode (ocp) on workspace 10
+  # Switches to workspace 10; opens ocp if empty, or focuses existing.
+  # `--daily` seeds the session with the morning focus prompt (login only).
+  #
+  # Runs in ~/Notes rather than $HOME: opencode's file picker refuses to index
+  # a home directory, and the vault is what the focus prompt reads anyway.
+  opencode-launcher = pkgs.writeShellScriptBin "opencode-launcher" ''
+    #!/usr/bin/env bash
+    WORKSPACE="10"
+
+    DAILY_PROMPT="Read today's daily note, the active projects, and anything due \
+    or overdue in the vault, then answer one question: what should I focus on today? \
+    Reply with a single markdown list, highest priority first, at most 7 items. \
+    One line per item: the task, then a short why in parentheses. No preamble, \
+    no closing summary."
+
+    ARGS=()
+    if [ "''${1:-}" = "--daily" ]; then
+      ARGS=(--prompt "$DAILY_PROMPT")
+    fi
+
+    HAS_WINDOWS=$(swaymsg -t get_tree | jq -r "
+      [.. | objects |
+        select(.type == \"workspace\" and .name == \"$WORKSPACE\") |
+        .. | objects |
+        select(.type == \"con\" and .app_id != null)
+      ] | length
+    " 2>/dev/null)
+
+    if [ "$HAS_WINDOWS" -gt 0 ]; then
+      swaymsg "workspace number $WORKSPACE"
+      exit 0
+    fi
+
+    # Quote the whole command for sway's exec, which re-parses the string.
+    CMD="alacritty --working-directory $HOME/Notes -e ocp"
+    for a in ''${ARGS+"''${ARGS[@]}"}; do
+      CMD+=" $(printf '%q' "$a")"
+    done
+
+    swaymsg "workspace number $WORKSPACE; exec $CMD"
+  '';
+
+  # Login session apps, generated from the workspaces registry (`autostart`).
+  #
+  # Staggered rather than fired all at once: five cold starts competing for CPU
+  # and disk makes every one of them slow to appear, and opencode — the slowest
+  # — is the one that most needs an uncontended start. Each entry reuses the
+  # normal launcher, so re-running this is a no-op for apps already open.
+  session-apps =
+    let
+      autostartWorkspaces = lib.filterAttrs (_: v: v ? autostart) workspaces;
+      ordered = lib.sort (a: b: a.value.autostart < b.value.autostart) (
+        lib.attrsToList autostartWorkspaces
+      );
+      launcherFor =
+        n: v:
+        if v ? launcher then
+          "${v.launcher}${lib.optionalString (v ? autostartArgs) " ${v.autostartArgs}"}"
+        else
+          "launch-or-focus ${v.app} ${n} ${v.launch}";
+      firstTarget = wsTarget (lib.head ordered).name;
+    in
+    pkgs.writeShellScriptBin "session-apps" ''
+      #!/usr/bin/env bash
+      ${lib.concatMapStringsSep "\nsleep 1.5\n" (e: launcherFor e.name e.value) ordered}
+
+      # Land on the first autostart workspace once everything is up.
+      sleep 1.5
+      swaymsg "workspace number ${firstTarget}"
+    '';
+
   power-menu = pkgs.writeShellScriptBin "power-menu" ''
     #!/usr/bin/env bash
-    CHOICE=$(printf "Lock\nLogout\nSuspend\nReboot\nShutdown" | fuzzel --dmenu --prompt "power ")
+    CHOICE=$(printf "Lock\nLogout\nSuspend\nReboot\nShutdown" | ${config.launcher.dmenu} --prompt-text "power")
     [ -z "$CHOICE" ] && exit
     case "$CHOICE" in
       Lock)     swaylock -f ;;
@@ -533,33 +605,37 @@ let
   '';
 
   rename-workspace = pkgs.writeShellScriptBin "rename-workspace" ''
-    #!/usr/bin/env bash
-    WS=$(swaymsg -t get_workspaces | ${pkgs.jq}/bin/jq -r '.[] | select(.focused) | .name')
-    NUM=$(echo "$WS" | grep -oP '^\d+')
-    # Registry default for a workspace number, so clearing a rename restores the
-    # nameless "<n>:" form rather than leaving a bare number on display.
-    default_name() {
-      case "$1" in
-${lib.concatStrings (
-      lib.mapAttrsToList (
-        n: v: lib.optionalString (v.nameless or false) "        ${n}) echo \"${n}:\" ;;\n"
-      ) workspaces
-    )}        *) echo "$1" ;;
-      esac
-    }
+        #!/usr/bin/env bash
+        WS=$(swaymsg -t get_workspaces | ${pkgs.jq}/bin/jq -r '.[] | select(.focused) | .name')
+        NUM=$(echo "$WS" | grep -oP '^\d+')
+        # Registry default for a workspace number, so clearing a rename restores the
+        # nameless "<n>:" form rather than leaving a bare number on display.
+        default_name() {
+          case "$1" in
+    ${
+      lib.concatStrings (
+        lib.mapAttrsToList (
+          n: v: lib.optionalString (v.nameless or false) "        ${n}) echo \"${n}:\" ;;\n"
+        ) workspaces
+      )
+    }        *) echo "$1" ;;
+          esac
+        }
 
-    LABEL=$(echo | fuzzel --dmenu --prompt "rename: ")
-    if [ -z "$LABEL" ]; then
-      [ -n "$NUM" ] && swaymsg rename workspace to "$(default_name "$NUM")"
-      exit 0
-    fi
-    if [ -n "$NUM" ]; then
-      # The space after the colon survives waybar's strip-workspace-numbers and
-      # is what separates the icon from the label.
-      swaymsg rename workspace to "$NUM: $LABEL"
-    else
-      swaymsg rename workspace to "$LABEL"
-    fi
+        # A free-text prompt: `--require-match false` returns whatever is typed.
+        # The `echo` matters, since tofi exits without drawing on empty stdin.
+        LABEL=$(echo | ${config.launcher.dmenu} --require-match false --prompt-text "New name:")
+        if [ -z "$LABEL" ]; then
+          [ -n "$NUM" ] && swaymsg rename workspace to "$(default_name "$NUM")"
+          exit 0
+        fi
+        if [ -n "$NUM" ]; then
+          # The space after the colon survives waybar's strip-workspace-numbers and
+          # is what separates the icon from the label.
+          swaymsg rename workspace to "$NUM: $LABEL"
+        else
+          swaymsg rename workspace to "$LABEL"
+        fi
   '';
 
   swap-workspace-output = pkgs.writeShellScriptBin "swap-workspace-output" ''
@@ -671,11 +747,10 @@ in
 {
   imports = [
     ./waybar.nix
-    ./waybar-bottom.nix
     ./kanshi.nix
     ./mako.nix
     ./swaylock.nix
-    ./fuzzel.nix
+    ./tofi.nix
     ./bluetooth.nix
   ];
 
@@ -687,6 +762,7 @@ in
 
   # Sway packages and helper scripts
   home.packages = with pkgs; [
+    slack
     wdisplays
     j
     nice-dcv-client
@@ -705,6 +781,8 @@ in
     launch-or-focus
     yazi-launcher
     helix-launcher
+    opencode-launcher
+    session-apps
     power-menu
     rename-workspace
 
@@ -735,7 +813,7 @@ in
       up = "k";
       right = "l";
       terminal = "alacritty";
-      menu = "fuzzel";
+      menu = config.launcher.drun;
 
       bars = [ ];
 
@@ -755,8 +833,8 @@ in
       };
 
       gaps = {
-        inner = 0;
-        outer = 0;
+        inner = 15;
+        outer = 15;
         smartGaps = "on";
         smartBorders = "on";
       };
@@ -895,6 +973,10 @@ in
           command = "gsettings set org.gnome.desktop.interface cursor-size ${cursorSize}";
           always = true;
         }
+
+        # Default session apps on their registry workspaces (see workspaces.nix).
+        # No `always` — a config reload should not reshuffle a working session.
+        { command = "${session-apps}/bin/session-apps"; }
       ];
 
       keybindings = {
@@ -903,7 +985,7 @@ in
         "Mod4+w" = "kill";
 
         "Mod4+p" = "floating enable, sticky enable";
-        "Mod4+space" = "exec fuzzel";
+        "Mod4+space" = "exec ${config.launcher.drun}";
         "Mod4+Shift+c" = "reload";
         "Mod4+Shift+e" = "exec power-menu";
         "Mod4+Escape" = "exec swaylock -f";
@@ -924,8 +1006,8 @@ in
         "Mod4+Shift+a" = "exec grim -g \"$(slurp)\" ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png";
 
         # Clipboard history
-        "Mod4+c" =
-          "exec sh -c 'cliphist list | fuzzel --dmenu --prompt \"clip \" | cliphist decode | wl-copy'";
+        "Mod4+v" =
+          "exec sh -c 'cliphist list | ${config.launcher.dmenu} --prompt-text \"clip\" | cliphist decode | wl-copy'";
 
         # Focus movement
         "Mod4+h" = "focus left";
@@ -955,8 +1037,8 @@ in
         "Mod4+Shift+Tab" = "workspace prev";
 
         # Layout
-        "Mod4+b" = "splith";
-        "Mod4+v" = "splitv";
+        "Mod4+Shift+b" = "splith";
+        "Mod4+Shift+v" = "splitv";
         "Mod4+u" = "layout stacking";
         "Mod4+i" = "layout tabbed";
         "Mod4+o" = "layout toggle split";
@@ -1000,11 +1082,8 @@ in
         "Mod4+Ctrl+0" = "gaps inner current set 0, gaps outer current set 0";
         "Mod4+Ctrl+9" = "gaps inner current set 8, gaps outer current set 4";
 
-        # Waybar visibility toggles (SIGUSR1 hides/shows the bar)
+        # Waybar visibility toggle (SIGUSR1 hides/shows the bar)
         "Mod4+F1" = "exec systemctl --user kill --kill-whom=main -s SIGUSR1 waybar.service";
-        "Mod4+F2" = "exec systemctl --user kill --kill-whom=main -s SIGUSR1 waybar-bottom.service";
-        "Mod4+F3" =
-          "exec systemctl --user kill --kill-whom=main -s SIGUSR1 waybar.service && systemctl --user kill --kill-whom=main -s SIGUSR1 waybar-bottom.service";
 
         # Resize mode
         "Mod4+r" = "mode resize";
@@ -1053,7 +1132,7 @@ in
       titlebar_border_thickness 0
       titlebar_padding 8 4
 
-      output * bg #${colors.base00} solid_color
+      output * bg  #${colors.base00} solid_color
       bindgesture swipe:4:left workspace prev
       bindgesture swipe:4:right workspace next
 

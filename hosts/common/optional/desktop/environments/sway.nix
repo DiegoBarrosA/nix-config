@@ -54,7 +54,8 @@
       enable = true;
       settings.screencast = {
         chooser_type = "dmenu";
-        chooser_cmd = "${pkgs.fuzzel}/bin/fuzzel --dmenu";
+        # NixOS module, so it cannot reach home-manager's `launcher.dmenu`.
+        chooser_cmd = "${pkgs.tofi}/bin/tofi --prompt-text 'share'";
         max_fps = 30;
       };
     };

@@ -13,6 +13,11 @@
 #   key        = letter for Mod4+<key> keybinding
 #   launch     = exec command for launch-or-focus (required when `app` and `key` are set)
 #   launcher   = custom launcher script (alternative to app+launch, e.g. for yazi)
+#   autostart  = int → open this app at login, lowest number first. Launches are
+#                staggered, so the order decides which app gets an uncontended
+#                start; the session ends focused on the lowest-numbered entry.
+#   autostartArgs = extra args appended to `launcher` at login only (not on the
+#                keybinding), e.g. the daily-focus prompt for opencode
 #
 # Adding a new app: add one entry here. Waybar icon, workspace assignment,
 # and keybinding all derive from this file automatically.
@@ -44,6 +49,7 @@ let
       key = "f";
       launch = "firefox-devedition";
       persistent = true;
+      autostart = 2;
     };
     "6" = {
       icon = "f674";
@@ -51,12 +57,14 @@ let
       key = "g";
       launch = "thunderbird";
       persistent = true;
+      autostart = 4;
     };
     "7" = {
       icon = "f802";
       launcher = "yazi-launcher";
       key = "e";
       persistent = true;
+      autostart = 5;
     };
     "8" = {
       icon = "f60f";
@@ -64,6 +72,7 @@ let
       key = "n";
       launch = "obsidian";
       persistent = true;
+      autostart = 3;
     };
     "9" = {
       icon = "f1c9";
@@ -71,7 +80,12 @@ let
       key = "d";
     };
     "10" = {
-      icon = "f086";
+      icon = "f198";
+      app = "Slack";
+      launch = "slack";
+      key = "c";
+      persistent = true;
+      autostart = 1;
     };
   };
 in
