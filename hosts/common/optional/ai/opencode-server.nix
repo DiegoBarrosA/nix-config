@@ -119,7 +119,6 @@ in
         Restart = "on-failure";
         RestartSec = 10;
         WorkingDirectory = "/home/${cfg.user}";
-        NoNewPrivileges = true;
         PrivateTmp = true;
       };
     };

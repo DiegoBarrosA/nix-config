@@ -29,6 +29,10 @@
     ../common/optional/system/automated-storage.nix
     ./impermanence.nix # cobalto-specific impermanence (systemd stage 1)
 
+    # Employer AI secrets (private-config workSecrets module): NVIDIA inference
+    # key, Anthropic key, Atlassian MCP secrets — no Carbon Black / Prisma / VPN.
+    inputs.private-config.nixosModules.workSecrets
+
     # Server configurations
     ../common/optional/desktop/amd-gpu-acceleration.nix # For AI/compute workloads
     # ../common/optional/nginx-tailscale.nix      # Disabled: replaced by minerales-network.nix
