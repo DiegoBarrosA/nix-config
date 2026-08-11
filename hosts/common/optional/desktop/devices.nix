@@ -13,11 +13,7 @@
     mtpfs
     android-tools
   ];
-
-  # ADB (Android Debug Bridge) users group for USB device access
-  users.groups.adbusers = {};
-
-  # Udev rules for Android devices (ADB access via adbusers group)
+  users.groups.adbusers = { };
   services.udev.extraRules = ''
     # Android Developer USB devices (ADB protocol)
     # Grants the adbusers group rw access to any USB device with Android ADB interface

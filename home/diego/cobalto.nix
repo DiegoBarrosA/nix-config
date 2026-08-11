@@ -5,6 +5,43 @@
   privateConfig ? { },
   ...
 }:
+let
+  # workSecretEnv carries the work inference key + all Atlassian MCP env vars;
+  # merge with the personal keys so every AI tool on this host sees both sets.
+  aiSecretEnv = (privateConfig.workSecretEnv or { }) // {
+    OPENCODE_API_KEY = "/run/secrets/opencode-api-key";
+    GITHUB_TOKEN = "/run/secrets/github-token";
+  };
+
+  # Env for phone-spawned sessions. Claude Code and Codex both authenticate
+  # from their own on-disk credentials (~/.claude/.credentials.json and
+  # ~/.codex/auth.json), so the inference keys are deliberately dropped here:
+  # exporting ANTHROPIC_API_KEY would make claude bill the employer key
+  # instead of the subscription, which is not what the default profile does
+  # in an interactive shell. What is left is what the MCP servers need.
+  happySecretEnv = lib.removeAttrs aiSecretEnv [
+    "ANTHROPIC_API_KEY"
+    "NVIDIA_API_KEY"
+    "OPENCODE_API_KEY"
+  ];
+
+  # systemd user services inherit no shell profile, so the secrets the MCP
+  # servers reference as ${VAR} have to be read from /run/secrets here.
+  # Missing files are skipped, which keeps this safe if a secret is absent.
+  happyDaemonStart = pkgs.writeShellScript "happy-daemon-start" ''
+    ${lib.concatStringsSep "\n" (
+      lib.mapAttrsToList (name: path: ''
+        if [ -r "${path}" ]; then
+          export ${name}="$(${pkgs.coreutils}/bin/cat "${path}")"
+        fi
+      '') happySecretEnv
+    )}
+
+    # start-sync runs the daemon in the foreground (systemd manages it);
+    # `happy daemon start` detaches a child instead.
+    exec ${pkgs.happy-coder}/bin/happy daemon start-sync
+  '';
+in
 {
   imports = [
     ./global
@@ -18,10 +55,6 @@
     opencodeZen.enable = true;
     provider.enable = false;
     extraConfig = (import ./features/ai/opencode-personal.nix).config;
-    agents = (import ./features/ai/gsd-core-agents.nix).agents;
-    commands = (import ./features/ai/gsd-core-agents.nix).commands;
-    references = (import ./features/ai/gsd-core-agents.nix).references;
-    plugins = (import ./features/ai/session-character-visualizer.nix) { inherit pkgs; };
 
     # Personal + work: the work profile (ocw) uses employer NVIDIA inference
     # + the employer Atlassian MCPs, sourced from private-config (only added
@@ -47,12 +80,8 @@
       };
     };
 
-    # workSecretEnv carries the work inference key + all Atlassian MCP env
-    # vars; merge with the personal keys so both `oc`/`ocp` and `ocw` work.
-    secretEnv = (privateConfig.workSecretEnv or { }) // {
-      OPENCODE_API_KEY = "/run/secrets/opencode-api-key";
-      GITHUB_TOKEN = "/run/secrets/github-token";
-    };
+    # Both `oc`/`ocp` and `ocw` need the work + personal keys.
+    secretEnv = aiSecretEnv;
   };
 
   # Jcode configuration — same Go/Zen providers as opencode on cobalto.
@@ -90,10 +119,7 @@
       };
     };
 
-    secretEnv = (privateConfig.workSecretEnv or { }) // {
-      OPENCODE_API_KEY = "/run/secrets/opencode-api-key";
-      GITHUB_TOKEN = "/run/secrets/github-token";
-    };
+    secretEnv = aiSecretEnv;
   };
 
   # Claude Code is enabled globally via features/ai (Atlassian MCPs injected
@@ -103,6 +129,11 @@
 
   # Happy Coder daemon — keeps a background service that lets Claude/Codex
   # sessions be spawned/controlled from the phone (via happy's cloud relay).
+  #
+  # The daemon spawns `claude` or `codex` from PATH, picked per session from
+  # the phone, so both run on their default profiles (~/.claude, ~/.codex).
+  # It never invokes the ocp/ocw/jcp/jcw wrappers, so the env those wrappers
+  # would have set has to come from the unit instead (see happyDaemonStart).
   systemd.user.services.happy-daemon = {
     Unit = {
       Description = "Happy Coder daemon (mobile Claude/Codex control)";
@@ -110,9 +141,7 @@
       Wants = [ "network-online.target" ];
     };
     Service = {
-      # start-sync runs the daemon in the foreground (systemd manages it);
-      # `happy daemon start` detaches a child instead.
-      ExecStart = "${pkgs.happy-coder}/bin/happy daemon start-sync";
+      ExecStart = "${happyDaemonStart}";
       Restart = "on-failure";
       RestartSec = 5;
     };

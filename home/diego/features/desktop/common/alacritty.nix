@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 let
   inherit (config.colorscheme) colors;
-  inherit (config) fontProfiles;
+  inherit (config.stylix) fonts;
 in
 {
   home.sessionVariables = {
@@ -30,7 +30,10 @@ in
 
       window = {
         # decorations = "None";  # No window decorations (Sway handles this)
-        opacity = 1.0;
+        # Background-only opacity; text stays fully opaque. `blur` exists too
+        # but only does anything on macOS/KDE Wayland, not sway, so it's
+        # omitted here.
+        opacity = 1;
         padding = {
           x = 15;
           y = 15;
@@ -45,22 +48,22 @@ in
 
       font = {
         normal = {
-          family = fontProfiles.monospace.family;
+          family = fonts.monospace.name;
           style = "Regular";
         };
         bold = {
-          family = fontProfiles.monospace.family;
+          family = fonts.monospace.name;
           style = "Bold";
         };
         italic = {
-          family = fontProfiles.monospace.family;
+          family = fonts.monospace.name;
           style = "Italic";
         };
         bold_italic = {
-          family = fontProfiles.monospace.family;
+          family = fonts.monospace.name;
           style = "Bold Italic";
         };
-        size = 20;
+        size = 14;
       };
 
       cursor = {
@@ -77,8 +80,13 @@ in
 
       # Complete colorscheme configuration
       colors = {
+        # Apply window.opacity to every cell background (selection, dim rows,
+        # etc.), not just the default background, so nothing looks like an
+        # opaque patch against the transparent rest of the window.
+        transparent_background_colors = true;
+
         primary = {
-          background = "#${colors.base01}";
+          background = "#${colors.base00}";
           foreground = "#${colors.base05}";
         };
         cursor = {

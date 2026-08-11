@@ -9,10 +9,8 @@ in
   inherit iso639-lang;
   lyrics = pkgs.callPackage ./lyrics { };
   lazylibrarian = pkgs.callPackage ./lazylibrarian { inherit iso639-lang; };
-  jobspy-mcp = pkgs.callPackage ./jobspy-mcp { };
   thunderbird-mcp = pkgs.callPackage ./thunderbird-mcp { };
   codex-acp = pkgs.callPackage ./codex-acp { };
-  invidious-companion = pkgs.callPackage ./invidious-companion { };
   claude-desktop = pkgs.callPackage ./claude-desktop { };
   jcode = pkgs.callPackage ./jcode { };
 } // privatePackages

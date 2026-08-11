@@ -88,13 +88,6 @@
               description = "Native BitTorrent client";
             };
           }
-          {
-            "Invidious" = {
-              icon = "invidious.png";
-              href = "http://invidious.minerales.network";
-              description = "YouTube frontend";
-            };
-          }
         ];
       }
       {

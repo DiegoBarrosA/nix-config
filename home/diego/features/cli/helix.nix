@@ -8,7 +8,7 @@ let
   nixfmt = pkgs.nixfmt;
   inherit (config.colorscheme) colors;
   # Use base01 instead of base00 for editor background
-  bg = "#${colors.base01 or "000000"}";
+  bg = "#${colors.base00 or "000000"}";
 in
 {
   xdg.configFile."moxide/settings.toml".text = ''

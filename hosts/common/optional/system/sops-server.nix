@@ -19,11 +19,6 @@
       group = "root";
       mode = "0400";
     };
-    "cloudflare-tunnel-credentials" = {
-      owner = "root";
-      group = "root";
-      mode = "0400";
-    };
 
     # Matrix/TURN server
     "turn-shared-secret" = {

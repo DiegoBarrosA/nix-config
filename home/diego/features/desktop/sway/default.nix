@@ -6,17 +6,15 @@
 }:
 let
   inherit (config.colorscheme) colors;
-  inherit (config) fontProfiles;
+  inherit (config.stylix) fonts;
   cursorName = config.stylix.cursor.name;
   cursorSize = toString config.stylix.cursor.size;
   workspaces = (import ./workspaces.nix { inherit lib; }).registry;
 
-  # Workspace target for sway commands. `nameless` workspaces get a trailing
-  # colon so waybar's strip-workspace-numbers has something to strip and leaves
-  # an empty label; the rest stay bare numbers. `workspace number <n>:` still
-  # matches on the number alone, so a renamed workspace is reused rather than a
-  # second one being created.
-  wsTarget = n: if workspaces.${n}.nameless or false then "${n}:" else n;
+  # Workspace target for sway commands: the registry's `name` when set (so
+  # named workspaces are addressed by their plain label, no leading number),
+  # otherwise the registry key itself.
+  wsTarget = n: v: v.name or n;
 
   # Package helper scripts
   launch-or-focus = pkgs.writeShellScriptBin "launch-or-focus" ''
@@ -39,18 +37,18 @@ let
         swaymsg "[con_id=\"$WINDOW_EXISTS\"] focus"
     else
         # Window doesn't exist - switch to workspace and launch
-        swaymsg "workspace number $WORKSPACE"
+        swaymsg "workspace \"$WORKSPACE\""
         $LAUNCH_CMD &
     fi
   '';
 
-  # Launcher for yazi on workspace 7 (file manager)
-  # Switches to workspace 7; opens yazi if empty, or focuses existing
+  # Launcher for yazi on the "files" workspace (file manager)
+  # Switches to it; opens yazi if empty, or focuses existing
   yazi-launcher = pkgs.writeShellScriptBin "yazi-launcher" ''
     #!/usr/bin/env bash
-    WORKSPACE="7"
+    WORKSPACE="${wsTarget "7" workspaces."7"}"
 
-    # Count leaf windows (app_id != null) on workspace 7
+    # Count leaf windows (app_id != null) on this workspace
     HAS_WINDOWS=$(swaymsg -t get_tree | jq -r "
       [.. | objects |
         select(.type == \"workspace\" and .name == \"$WORKSPACE\") |
@@ -60,20 +58,20 @@ let
     " 2>/dev/null)
 
     if [ "$HAS_WINDOWS" -gt 0 ]; then
-      swaymsg "workspace number $WORKSPACE"
+      swaymsg "workspace \"$WORKSPACE\""
     else
-      # Switch to workspace 7, then tell Sway to exec alacritty -e yazi.
+      # Switch to the workspace, then tell Sway to exec alacritty -e yazi.
       # Using a single swaymsg command with ; ensures the workspace switch
-      # completes before the app launches, so the window lands on workspace 7.
-      swaymsg "workspace number $WORKSPACE; exec alacritty -e yazi"
+      # completes before the app launches, so the window lands there.
+      swaymsg "workspace \"$WORKSPACE\"; exec alacritty -e yazi"
     fi
   '';
 
-  # Launcher for helix on workspace 9 (editor)
-  # Switches to workspace 9; opens helix if empty, or focuses existing
+  # Launcher for helix on the "code" workspace (editor)
+  # Switches to it; opens helix if empty, or focuses existing
   helix-launcher = pkgs.writeShellScriptBin "helix-launcher" ''
     #!/usr/bin/env bash
-    WORKSPACE="9"
+    WORKSPACE="${wsTarget "9" workspaces."9"}"
 
     HAS_WINDOWS=$(swaymsg -t get_tree | jq -r "
       [.. | objects |
@@ -84,21 +82,21 @@ let
     " 2>/dev/null)
 
     if [ "$HAS_WINDOWS" -gt 0 ]; then
-      swaymsg "workspace number $WORKSPACE"
+      swaymsg "workspace \"$WORKSPACE\""
     else
-      swaymsg "workspace number $WORKSPACE; exec alacritty -e hx"
+      swaymsg "workspace \"$WORKSPACE\"; exec alacritty -e hx"
     fi
   '';
 
-  # Launcher for opencode (ocp) on workspace 10
-  # Switches to workspace 10; opens ocp if empty, or focuses existing.
+  # Launcher for opencode (ocp) on the "chat" workspace
+  # Switches to it; opens ocp if empty, or focuses existing.
   # `--daily` seeds the session with the morning focus prompt (login only).
   #
   # Runs in ~/Notes rather than $HOME: opencode's file picker refuses to index
   # a home directory, and the vault is what the focus prompt reads anyway.
   opencode-launcher = pkgs.writeShellScriptBin "opencode-launcher" ''
     #!/usr/bin/env bash
-    WORKSPACE="10"
+    WORKSPACE="${wsTarget "10" workspaces."10"}"
 
     DAILY_PROMPT="Read today's daily note, the active projects, and anything due \
     or overdue in the vault, then answer one question: what should I focus on today? \
@@ -120,7 +118,7 @@ let
     " 2>/dev/null)
 
     if [ "$HAS_WINDOWS" -gt 0 ]; then
-      swaymsg "workspace number $WORKSPACE"
+      swaymsg "workspace \"$WORKSPACE\""
       exit 0
     fi
 
@@ -130,7 +128,7 @@ let
       CMD+=" $(printf '%q' "$a")"
     done
 
-    swaymsg "workspace number $WORKSPACE; exec $CMD"
+    swaymsg "workspace \"$WORKSPACE\"; exec $CMD"
   '';
 
   # Login session apps, generated from the workspaces registry (`autostart`).
@@ -150,16 +148,25 @@ let
         if v ? launcher then
           "${v.launcher}${lib.optionalString (v ? autostartArgs) " ${v.autostartArgs}"}"
         else
-          "launch-or-focus ${v.app} ${n} ${v.launch}";
-      firstTarget = wsTarget (lib.head ordered).name;
+          "launch-or-focus ${v.app} ${wsTarget n v} ${v.launch}";
+      firstTarget = wsTarget (lib.head ordered).name (lib.head ordered).value;
+
+      # `persistent` workspaces are created (by name) up front, so they show
+      # up in the bar even if their app never autostarts (e.g. "code"). The
+      # autostart launchers below address the same names, so they reuse
+      # these rather than creating a second, duplicate workspace.
+      persistentWorkspaces = lib.filterAttrs (_: v: v.persistent or false) workspaces;
+      warmup = lib.mapAttrsToList (n: v: ''swaymsg 'workspace "${wsTarget n v}"' '') persistentWorkspaces;
     in
     pkgs.writeShellScriptBin "session-apps" ''
       #!/usr/bin/env bash
+      ${lib.concatStringsSep "\n" warmup}
+
       ${lib.concatMapStringsSep "\nsleep 1.5\n" (e: launcherFor e.name e.value) ordered}
 
       # Land on the first autostart workspace once everything is up.
       sleep 1.5
-      swaymsg "workspace number ${firstTarget}"
+      swaymsg "workspace \"${firstTarget}\""
     '';
 
   power-menu = pkgs.writeShellScriptBin "power-menu" ''
@@ -231,10 +238,10 @@ let
       # Set custom resolution (HEADLESS outputs have no built-in modes)
       swaymsg output HEADLESS-1 resolution "$RES"
 
-      # Move workspace 9 to virtual output and switch to it
-      swaymsg 'workspace number 9; move workspace to output HEADLESS-1'
+      # Move the "code" workspace to virtual output and switch to it
+      swaymsg 'workspace "${wsTarget "9" workspaces."9"}"; move workspace to output HEADLESS-1'
 
-      notify-send "Sunshine" "Phone stream ready on workspace 9 ($RES)"
+      notify-send "Sunshine" "Phone stream ready on workspace ${wsTarget "9" workspaces."9"} ($RES)"
     }
 
     case "$ACTION" in
@@ -246,8 +253,8 @@ let
           notify-send "Sunshine" "Phone stream not active"
           exit 0
         fi
-        # Move workspace 9 back to primary
-        swaymsg 'workspace number 9; move workspace to output eDP-1' || true
+        # Move the "code" workspace back to primary
+        swaymsg 'workspace "${wsTarget "9" workspaces."9"}"; move workspace to output eDP-1' || true
         # Switch back to single mode
         kanshictl switch single || true
         # Destroy virtual output
@@ -364,8 +371,8 @@ let
         exit 1
       fi
 
-      # Switch to workspace 10 before launching
-      swaymsg 'workspace number 10'
+      # Switch to the "chat" workspace before launching
+      swaymsg 'workspace "${wsTarget "10" workspaces."10"}"'
 
       # Launch scrcpy with optimal defaults:
       #   --turn-screen-off : conserve phone battery
@@ -380,11 +387,11 @@ let
         --no-audio \
         --window-title "Android (scrcpy)" &
 
-      # Wait for window to appear then ensure it's on workspace 10
+      # Wait for window to appear then ensure it's on the "chat" workspace
       sleep 1
-      swaymsg "[title=\"Android (scrcpy)\"] move workspace number 10" 2>/dev/null || true
+      swaymsg "[title=\"Android (scrcpy)\"] move workspace \"${wsTarget "10" workspaces."10"}\"" 2>/dev/null || true
 
-      notify-send "scrcpy" "Android mirror started on workspace 10"
+      notify-send "scrcpy" "Android mirror started on workspace ${wsTarget "10" workspaces."10"}"
     }
 
     stop_mirror() {
@@ -604,40 +611,6 @@ let
       "Brightness" "$BRI%"
   '';
 
-  rename-workspace = pkgs.writeShellScriptBin "rename-workspace" ''
-        #!/usr/bin/env bash
-        WS=$(swaymsg -t get_workspaces | ${pkgs.jq}/bin/jq -r '.[] | select(.focused) | .name')
-        NUM=$(echo "$WS" | grep -oP '^\d+')
-        # Registry default for a workspace number, so clearing a rename restores the
-        # nameless "<n>:" form rather than leaving a bare number on display.
-        default_name() {
-          case "$1" in
-    ${
-      lib.concatStrings (
-        lib.mapAttrsToList (
-          n: v: lib.optionalString (v.nameless or false) "        ${n}) echo \"${n}:\" ;;\n"
-        ) workspaces
-      )
-    }        *) echo "$1" ;;
-          esac
-        }
-
-        # A free-text prompt: `--require-match false` returns whatever is typed.
-        # The `echo` matters, since tofi exits without drawing on empty stdin.
-        LABEL=$(echo | ${config.launcher.dmenu} --require-match false --prompt-text "New name:")
-        if [ -z "$LABEL" ]; then
-          [ -n "$NUM" ] && swaymsg rename workspace to "$(default_name "$NUM")"
-          exit 0
-        fi
-        if [ -n "$NUM" ]; then
-          # The space after the colon survives waybar's strip-workspace-numbers and
-          # is what separates the icon from the label.
-          swaymsg rename workspace to "$NUM: $LABEL"
-        else
-          swaymsg rename workspace to "$LABEL"
-        fi
-  '';
-
   swap-workspace-output = pkgs.writeShellScriptBin "swap-workspace-output" ''
         #!/usr/bin/env bash
         set -euo pipefail
@@ -746,7 +719,7 @@ let
 in
 {
   imports = [
-    ./waybar.nix
+    ./i3status-rust.nix
     ./kanshi.nix
     ./mako.nix
     ./swaylock.nix
@@ -762,7 +735,6 @@ in
 
   # Sway packages and helper scripts
   home.packages = with pkgs; [
-    slack
     wdisplays
     j
     nice-dcv-client
@@ -784,8 +756,6 @@ in
     opencode-launcher
     session-apps
     power-menu
-    rename-workspace
-
     sunshine-stream
     swap-workspace-output
     scrcpy-stream
@@ -815,11 +785,50 @@ in
       terminal = "alacritty";
       menu = config.launcher.drun;
 
-      bars = [ ];
+      bars = [
+        {
+          position = "bottom";
+          statusCommand = "${lib.getExe config.programs.i3status-rust.package} ${config.xdg.configHome}/i3status-rust/config-main.toml";
+          fonts = {
+            names = [ fonts.monospace.name ];
+            size = 1.0 * fonts.sizes.desktop;
+          };
+          colors = {
+            background = "#${colors.base00}";
+            statusline = "#${colors.base05}";
+            separator = "#${colors.base02}";
+            focusedWorkspace = {
+              border = "#${colors.base0D}";
+              background = "#${colors.base0D}";
+              text = "#${colors.base00}";
+            };
+            activeWorkspace = {
+              border = "#${colors.base02}";
+              background = "#${colors.base02}";
+              text = "#${colors.base05}";
+            };
+            inactiveWorkspace = {
+              border = "#${colors.base00}";
+              background = "#${colors.base00}";
+              text = "#${colors.base04}";
+            };
+            urgentWorkspace = {
+              border = "#${colors.base08}";
+              background = "#${colors.base01}";
+              text = "#${colors.base08}";
+            };
+            bindingMode = {
+              border = "#${colors.base0E}";
+              background = "#${colors.base0E}";
+              text = "#${colors.base00}";
+            };
+          };
+        }
+      ];
 
       fonts = {
-        names = [ "Fantasque Sans Mono" ];
-        size = lib.mkForce 17.0;
+        names = [ fonts.monospace.name ];
+        size = lib.mkForce (1.0 * fonts.sizes.desktop);
       };
 
       window = {
@@ -833,8 +842,8 @@ in
       };
 
       gaps = {
-        inner = 15;
-        outer = 15;
+        inner = 5;
+        outer = 5;
         smartGaps = "on";
         smartBorders = "on";
       };
@@ -855,30 +864,32 @@ in
           childBorder = "#${colors.base01}";
         };
         unfocused = {
-          border = "#${colors.base01}";
-          background = "#${colors.base01}";
+          border = "#${colors.base00}";
+          background = "#${colors.base00}";
           text = "#${colors.base06}";
-          indicator = "#${colors.base01}";
-          childBorder = "#${colors.base01}";
+          indicator = "#${colors.base00}";
+          childBorder = "#${colors.base00}";
         };
         urgent = {
           border = "#${colors.base08}";
-          background = "#${colors.base01}";
+          background = "#${colors.base00}";
           text = "#${colors.base08}";
           indicator = "#${colors.base08}";
           childBorder = "#${colors.base08}";
         };
         placeholder = {
-          border = "#${colors.base01}";
-          background = "#${colors.base01}";
+          border = "#${colors.base00}";
+          background = "#${colors.base00}";
           text = "#${colors.base03}";
-          indicator = "#${colors.base01}";
-          childBorder = "#${colors.base01}";
+          indicator = "#${colors.base00}";
+          childBorder = "#${colors.base00}";
         };
-        background = "#${colors.base01}";
+        background = "#${colors.base00}";
       };
 
-      assigns = lib.mapAttrs (_: v: [ { app_id = v.app; } ]) (lib.filterAttrs (_: v: v ? app) workspaces);
+      assigns = lib.mapAttrs' (n: v: lib.nameValuePair (wsTarget n v) [ { app_id = v.app; } ]) (
+        lib.filterAttrs (_: v: v ? app) workspaces
+      );
 
       window.commands = [
         {
@@ -1030,7 +1041,7 @@ in
         "Mod4+Shift+Right" = "move right";
 
         # Workspace switching and container moves are generated below from the
-        # registry, so the `nameless` targets live in workspaces.nix only.
+        # registry (see workspaces.nix).
 
         # Horizontal workspace switching
         "Mod4+Tab" = "workspace next";
@@ -1051,9 +1062,6 @@ in
         "Mod4+minus" = "scratchpad show";
 
         # App shortcuts (generated from workspaces registry — see workspaces.nix)
-
-        # Rename current workspace
-        "Mod4+Shift+r" = "exec rename-workspace";
 
         # Display mode switching (kanshi)
         "Mod4+Shift+d" = "exec display-mode-selector";
@@ -1082,29 +1090,33 @@ in
         "Mod4+Ctrl+0" = "gaps inner current set 0, gaps outer current set 0";
         "Mod4+Ctrl+9" = "gaps inner current set 8, gaps outer current set 4";
 
-        # Waybar visibility toggle (SIGUSR1 hides/shows the bar)
-        "Mod4+F1" = "exec systemctl --user kill --kill-whom=main -s SIGUSR1 waybar.service";
+        # Bar visibility toggle
+        "Mod4+F1" = "bar mode toggle";
+
+        # Bluetooth pairing/management (TUI)
+        "Mod4+Shift+u" = "exec alacritty -e bluetuith";
 
         # Resize mode
         "Mod4+r" = "mode resize";
       }
       # Mod4+<n> switches, Mod4+Shift+<n> moves the container. Workspace 10 sits
-      # on the 0 key.
+      # on the 0 key. Named workspaces are addressed by their plain name, not
+      # the number, so `${n}` here is only ever the switch key.
       // lib.listToAttrs (
         lib.concatMap (
           n:
           let
             key = if n == "10" then "0" else n;
-            target = wsTarget n;
+            target = wsTarget n (workspaces.${n} or { });
           in
           [
-            (lib.nameValuePair "Mod4+${key}" "workspace number ${target}")
-            (lib.nameValuePair "Mod4+Shift+${key}" "move container to workspace number ${target}")
+            (lib.nameValuePair "Mod4+${key}" "workspace \"${target}\"")
+            (lib.nameValuePair "Mod4+Shift+${key}" "move container to workspace \"${target}\"")
           ]
         ) (map toString (lib.range 1 10))
       )
       // lib.mapAttrs' (
-        n: v: lib.nameValuePair "Mod4+${v.key}" "exec launch-or-focus ${v.app} ${n} ${v.launch}"
+        n: v: lib.nameValuePair "Mod4+${v.key}" "exec launch-or-focus ${v.app} ${wsTarget n v} ${v.launch}"
       ) (lib.filterAttrs (_: v: (v ? app) && (v ? key)) workspaces)
       // lib.mapAttrs' (_: v: lib.nameValuePair "Mod4+${v.key}" "exec ${v.launcher}") (
         lib.filterAttrs (_: v: (v ? launcher) && (v ? key)) workspaces
@@ -1132,7 +1144,7 @@ in
       titlebar_border_thickness 0
       titlebar_padding 8 4
 
-      output * bg  #${colors.base00} solid_color
+      output * bg /home/diego/Pictures/Wallpapers/General/jan-huber-oiLeSc7PwA4-unsplash.jpg fill
       bindgesture swipe:4:left workspace prev
       bindgesture swipe:4:right workspace next
 

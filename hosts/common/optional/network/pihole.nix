@@ -81,8 +81,14 @@ in
             "no-hosts"
             "interface=tailscale0"
             "interface=enp7s0"
-            "bind-interfaces"
-            "address=/minerales.network/${config.networking.warpExit.cobaltoTailscaleIp}"
+            # bind-dynamic, not bind-interfaces: deploy-rs activation restarts
+            # tailscaled, which tears down tailscale0 under a running FTL.
+            # bind-interfaces binds once at startup and never rebinds, so the
+            # listener on the tailnet IP is silently lost until a manual
+            # restart (connection refused for all *.minerales.network).
+            # bind-dynamic copes with interfaces coming and going.
+            "bind-dynamic"
+            "address=/minerales.network/100.69.115.53" # cobalto's tailnet IP
           ];
         };
         dns = {

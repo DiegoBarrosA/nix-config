@@ -12,7 +12,7 @@
         format = "[$user ]($style)";
       };
       character = {
-        success_symbol = "[>](bold grey)";
+        success_symbol = "[~](bold grey)";
         error_symbol = "[x](bold red)";
         vicmd_symbol = "[Vi](bold green)";
       };

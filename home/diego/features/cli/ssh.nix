@@ -52,7 +52,7 @@ in
         HostName = "100.69.115.53";
         IdentityFile = keys.diego;
       };
-      "rubi granate lonsdaleita *.mineral.network" = {
+      "rubi lonsdaleita *.mineral.network" = {
         IdentityFile = keys.diego;
       };
 

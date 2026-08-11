@@ -103,12 +103,8 @@
         ".local"
         ".cache"
 
-        # COSMIC desktop config
-        ".config/cosmic"
-
         # Browser data
         ".mozilla"
-        ".config/chromium"
 
         # Development
         ".cargo"
