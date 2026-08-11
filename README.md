@@ -1,10 +1,6 @@
 # Personal Nix Config
 
-This repository contains my personal NixOS, nix-darwin, and nix-on-droid configurations, managed with Nix Flakes.
-
-## Documentation
-
-For a complete overview of the project, please see the [documentation](https://diegobarrosa.github.io/nix-config/).
+This repository contains my personal NixOS configurations, managed with Nix Flakes.
 
 ## Quick Start
 
@@ -20,5 +16,5 @@ nix deploy .#hostname -- --impure
 sudo nixos-rebuild switch --flake .#hostname
 ```
 
-Replace `hostname` with one of the available hosts. For more details, see the [installation guide](./docs/installation.md).
+Replace `hostname` with one of the available hosts.
 

@@ -8,10 +8,6 @@
   programs.mcp-config = {
     enable = true;
     mcpNixos.enable = true;
-    jobspy = {
-      enable = true;
-      autostart = false; # lazily disabled — rarely used; enable on demand
-    };
     github = {
       enable = true;
       # The mcp-config module invokes the binary with no subcommand, which just

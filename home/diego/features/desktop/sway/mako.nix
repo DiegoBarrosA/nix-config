@@ -1,13 +1,13 @@
 { config, ... }:
 let
   inherit (config.colorscheme) colors;
-  inherit (config) fontProfiles;
+  inherit (config.stylix) fonts;
 in
 {
   services.mako = {
     enable = true;
     settings = {
-      font = "${fontProfiles.regular.family} 14";
+      font = "${fonts.sansSerif.name} 14";
       max-visible = 5;
       sort = "-time";
       layer = "overlay";

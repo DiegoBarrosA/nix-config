@@ -19,7 +19,6 @@
 
     # Core services
     ../common/optional/network/tailscale.nix
-    ../common/optional/network/warp-exit.nix # "pirita" WARP exit-node container
     ../common/optional/desktop/devices.nix
     ../common/optional/network/hosts.nix
     ../common/optional/system/environment.nix
@@ -37,7 +36,6 @@
     ../common/optional/desktop/amd-gpu-acceleration.nix # For AI/compute workloads
     # ../common/optional/nginx-tailscale.nix      # Disabled: replaced by minerales-network.nix
     ../common/optional/network/minerales-network.nix # Private minerales.network subdomains
-    ../common/optional/network/cloudflare-tunnel.nix # Cloudflare Tunnel for Alexa Smart Home
 
     # Native services (replacing containers)
     # ../common/optional/media-stack-native.nix  # Replaced by native servarr-suite.nix
@@ -87,9 +85,6 @@
 
     # OpenCode remote access (API + web UI)
     ../common/optional/ai/opencode-server.nix
-
-    # Invidious - YouTube frontend
-    ../common/optional/media/invidious.nix
 
     # ZenNotes - keyboard-first Markdown notes web UI
     ../common/optional/apps/zennotes.nix
@@ -168,10 +163,6 @@
   # Combined with the WAN CAKE shaper below, cobalto becomes an SQM gateway that
   # kills PLDT uplink bufferbloat for every device using it as an exit node.
   services.tailscale.useRoutingFeatures = "server";
-
-  # Cobalto's tailnet IP — used by pirita's DNS forwarder and Pi-hole to resolve
-  # minerales.network for exit-node clients (see warp-exit.nix, pihole.nix).
-  networking.warpExit.cobaltoTailscaleIp = "100.69.115.53";
 
   # WAN egress SQM: shape internet-bound traffic with CAKE to ~90% of the PLDT
   # upload rate so the queue forms here (and drains smartly) instead of piling up

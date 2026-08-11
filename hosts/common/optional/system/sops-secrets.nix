@@ -45,12 +45,6 @@ with lib;
       mode = "0400";
     };
 
-    secrets."cloudflare-tunnel-credentials" = {
-      owner = "root";
-      group = "root";
-      mode = "0400";
-    };
-
     secrets."luks-passphrase" = {
       owner = "root";
       group = "root";
@@ -146,13 +140,6 @@ with lib;
     #   group = "users";
     #   mode = "0400";
     # };
-
-    # Proton VPN WireGuard private key for exit node
-    secrets."protonvpn-key" = {
-      owner = "root";
-      group = "root";
-      mode = "0400";
-    };
 
     # OpenCode server password for remote Android/web access
     # Used by services.opencode-server for Basic Auth

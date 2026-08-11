@@ -335,11 +335,6 @@ in
         locations."/" = standardProxy 4096;
       };
 
-      # Invidious - YouTube frontend
-      "invidious.minerales.network" = withSSL "invidious" {
-        locations."/" = standardProxy 3000;
-      };
-
       # ZenNotes - keyboard-first Markdown notes web UI
       "notes.minerales.network" = withSSL "notes" {
         locations."/" = standardProxy 7879;

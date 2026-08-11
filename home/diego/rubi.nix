@@ -10,22 +10,10 @@
   ...
 }:
 {
-  colorscheme.type = "monochrome-dark";
-  # Papirus' only neutral folder set; anything else is the one splash of colour
-  # left on a monochrome desktop.
-  colorscheme.iconFolderColor = "grey";
-  # `toggle-theme` (home/diego/global/default.nix) switches between these two
-  # instead of the default gruvbox pair, so light/dark stay monochrome.
-  colorscheme.specialisations = {
-    dark = {
-      type = "monochrome-dark";
-      mode = "dark";
-    };
-    light = {
-      type = "monochrome-light";
-      mode = "light";
-    };
-  };
+  colorscheme.type = "macintosh";
+  colorscheme.iconFolderColor = "black";
+  # No light/dark toggle for this host — one scheme, no specialisations.
+  colorscheme.specialisations = { };
 
   imports = [
     # Rubi-local toggles for desktop setup.
@@ -45,8 +33,8 @@
     ./features/cli
     ./features/desktop/common # Firefox, Qt, Stylix
     ./features/ai
-    ./features/ai/pixel-office.nix # Pixel Office dashboard + plugin (replaces Caffa blob-office)
-    ./features/desktop/obsidian.nix
+    # ./features/ai/pixel-office.nix # Pixel Office dashboard + plugin (replaces Caffa blob-office)
+    # ./features/desktop/obsidian.nix
   ]
   ++ lib.optional (desktop != null) ./features/desktop/${desktop};
 
@@ -384,10 +372,7 @@
 
     # Skills are sourced from the vault via programs.ai-skills (all prompts migrated there).
     skills = { };
-    agents =
-      (import ./features/ai/gsd-core-agents.nix).agents // (import ./features/ai/coderabbit-agent.nix);
-    # Pixel Office plugin (pixel-office.js) is provided by ./features/ai/pixel-office.nix
-    commands = (import ./features/ai/gsd-core-agents.nix).commands // {
+    commands = {
       "review" = ''
         ---
         description: Run CodeRabbit AI review on uncommitted changes or against base branch
@@ -410,11 +395,10 @@
            - Otherwise: `cr review --agent --type uncommitted`
         2. Run the command and capture JSON output
         3. Present findings in three tiers: **Critical**, **Warning**, **Info**
-        4. If user asks to fix issues, suggest `/gsd-code-review --fix`
+        4. If user asks to fix issues, apply them directly
         </process>
       '';
     };
-    references = (import ./features/ai/gsd-core-agents.nix).references;
   };
 
   # Jcode configuration (managed by the nix-ai-tooling jcode-config module).

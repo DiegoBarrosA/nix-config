@@ -1,14 +1,7 @@
-# Workspace registry — single source of truth for icons, app assignments, and keybindings.
-# Consumed by waybar.nix (waybarWorkspaces) and default.nix (registry → assigns, keybindings).
+# Workspace registry — single source of truth for app assignments and keybindings.
+# Consumed by default.nix (registry → assigns, keybindings, session-apps autostart).
 #
 # Schema:
-#   icon       = Font Awesome hex codepoint (string), e.g. "f0ac"
-#   nameless   = true → no default name. The sway target is "<n>:" rather than
-#                "<n>", so strip-workspace-numbers leaves an empty label and
-#                waybar shows the state icon alone until you rename the
-#                workspace. Without the trailing colon there is nothing to
-#                strip and the bare number shows instead.
-#   persistent = true → show in waybar even when empty
 #   app        = sway app_id → used in `assigns` and as the launch-or-focus target
 #   key        = letter for Mod4+<key> keybinding
 #   launch     = exec command for launch-or-focus (required when `app` and `key` are set)
@@ -18,114 +11,67 @@
 #                start; the session ends focused on the lowest-numbered entry.
 #   autostartArgs = extra args appended to `launcher` at login only (not on the
 #                keybinding), e.g. the daily-focus prompt for opencode
+#   name       = fixed label. The workspace is created as "<n>: <name>" instead
+#                of a bare number; `workspace number <n>` still matches it, so
+#                nothing else needs to know about the label.
+#   persistent = true → pre-create this (named) workspace at login even if its
+#                app never autostarts, so it always shows in the bar instead of
+#                only appearing once you switch to it. See default.nix's
+#                session-apps warmup step.
 #
-# Adding a new app: add one entry here. Waybar icon, workspace assignment,
-# and keybinding all derive from this file automatically.
-{ lib, ... }:
+# Workspaces not listed here (1-4) are general-purpose: no app, no autostart.
+#
+# Adding a new app: add one entry here. Workspace assignment and keybinding
+# both derive from this file automatically.
+{ ... }:
 let
-  # Decode a \uXXXX escape to the actual Unicode character
-  u = code: builtins.fromJSON ''"\u${code}"'';
-
   registry = {
-    "1" = {
-      icon = "f61f";
-      nameless = true;
-    };
-    "2" = {
-      icon = "f7d9";
-      nameless = true;
-    };
-    "3" = {
-      icon = "f7b1";
-      nameless = true;
-    };
-    "4" = {
-      icon = "f78d";
-      nameless = true;
-    };
     "5" = {
-      icon = "f0ac";
       app = "firefox-devedition";
       key = "f";
       launch = "firefox-devedition";
-      persistent = true;
       autostart = 2;
+      name = "Web";
+      persistent = true;
     };
     "6" = {
-      icon = "f674";
       app = "thunderbird";
       key = "g";
       launch = "thunderbird";
-      persistent = true;
       autostart = 4;
+      name = "Mail";
+      persistent = true;
     };
     "7" = {
-      icon = "f802";
       launcher = "yazi-launcher";
       key = "e";
-      persistent = true;
       autostart = 5;
+      name = "Files";
+      persistent = true;
     };
     "8" = {
-      icon = "f60f";
       app = "obsidian";
       key = "n";
       launch = "obsidian";
-      persistent = true;
       autostart = 3;
+      name = "Notes";
+      persistent = true;
     };
     "9" = {
-      icon = "f1c9";
       launcher = "helix-launcher";
       key = "d";
+      name = "Code";
+      persistent = true;
     };
     "10" = {
-      icon = "f198";
       app = "Slack";
       launch = "slack";
-      key = "c";
-      persistent = true;
       autostart = 1;
+      name = "Chat";
+      persistent = true;
     };
   };
 in
 {
   inherit registry;
-
-  # Ready-made waybar "sway/workspaces" module — waybar.nix just splices this in.
-  #
-  # Format trick: {icon} expands to a pango span that either:
-  #   - absorbs {name} at 0.1pt (invisible) for workspaces with dedicated FA icons
-  #   - opens a Jost span for {name} on the `nameless` workspaces, which carry a
-  #     rename label instead of an icon of their own
-  # The format ends with </span> to close whichever span the icon opened.
-  waybarWorkspaces =
-    let
-      absorb = "<span font_size='0.1pt'> "; # makes {name} invisible
-      # Shows {name} in Jost. No separator space here: rename-workspace writes
-      # "<n>: <label>" and strip-workspace-numbers keeps the leading space, so
-      # the gap arrives with the label and a nameless "<n>:" stays icon-only.
-      label = "<span font_family='Fantasque Sans Mono'>";
-      iconWorkspaces = lib.filterAttrs (_: v: !(v.nameless or false)) registry;
-    in
-    {
-      disable-scroll = false;
-      all-outputs = true;
-      strip-workspace-numbers = true;
-      format = "{icon}{name}</span>";
-      format-icons =
-        # Icon workspaces: FA icon at 14pt + open absorb span so {name} disappears
-        (lib.mapAttrs (_: v: "<span font_size='14pt'>${u v.icon}</span>${absorb}") iconWorkspaces)
-        // {
-          # `nameless` workspaces fall through to these; open Jost span so a
-          # rename label shows, and an empty one collapses to just the icon
-          "default" = "<span font_size='14pt'>${u "f22d"}</span>${label}";
-          "focused" = "<span font_size='14pt'>${u "f192"}</span>${label}";
-          # Let the per-name icons above win over "focused"
-          "high-priority-named" = lib.attrNames iconWorkspaces;
-        };
-      persistent-workspaces = lib.mapAttrs (_: _: [ ]) (
-        lib.filterAttrs (_: v: v.persistent or false) registry
-      );
-    };
 }

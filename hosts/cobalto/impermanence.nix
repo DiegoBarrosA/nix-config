@@ -82,6 +82,23 @@
         "Repositories"
         "Projects"
 
+        # AI agent state. Claude Code and Codex keep their credentials here
+        # (.claude/.credentials.json, .codex/auth.json) and happy keeps the
+        # daemon's machine identity + phone pairing in .happy, so without
+        # these three every reboot means logging in and re-pairing again.
+        {
+          directory = ".claude";
+          mode = "0700";
+        }
+        {
+          directory = ".codex";
+          mode = "0700";
+        }
+        {
+          directory = ".happy";
+          mode = "0700";
+        }
+
         # Container data access
         {
           directory = "media";
@@ -89,6 +106,11 @@
         }
       ];
 
+      # NB: do not persist ".claude.json" here. impermanence would create it
+      # empty, and claude-code-config's activation branches on the file
+      # existing and then runs jq over it, so an empty file fails the switch.
+      # Losing it per boot only costs Claude Code's onboarding state; the
+      # credentials live in .claude/ above.
       files = [ ];
     };
   };

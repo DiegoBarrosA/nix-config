@@ -4,11 +4,6 @@
 
     hardware.url = "github:nixos/nixos-hardware";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    nix-on-droid = {
-      url = "github:nix-community/nix-on-droid/master";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.home-manager.follows = "home-manager";
-    };
     impermanence.url = "github:nix-community/impermanence";
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -156,7 +151,6 @@
       };
       nixosConfigurations = {
         cobalto = myLib.mkHost "x86_64-linux" "cobalto" { };
-        granate = myLib.mkHost "x86_64-linux" "granate" { };
         rubi = myLib.mkHost "x86_64-linux" "rubi" { desktop = "sway"; };
       };
 
@@ -173,20 +167,6 @@
               system = {
                 sshUser = "root";
                 path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos nixosConfigurations.cobalto;
-                user = "root";
-              };
-            };
-          };
-          granate = {
-            hostname = "204.168.253.49";
-            fastConnection = true;
-            remoteBuild = true;
-            magicRollback = false; # network restarts mid-activation sever the confirm SSH
-            autoRollback = false;
-            profiles = {
-              system = {
-                sshUser = "root";
-                path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos nixosConfigurations.granate;
                 user = "root";
               };
             };
@@ -227,29 +207,6 @@
           inputs.private-config.homeManagerModules.workExtras
           inputs.private-config.homeManagerModules.workClaudeDesktopMcpConfig
         ] { desktop = "sway"; };
-        "diego@lapislazuli" = myLib.mkHome "aarch64-darwin" ./home/diego/lapislazuli.nix [ ] { };
-      };
-
-      # Nix-on-Droid configurations (Android)
-      nixOnDroidConfigurations = {
-        lonsdaleita = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
-          pkgs = import inputs.nixpkgs {
-            system = "aarch64-linux";
-            overlays = builtins.attrValues overlays ++ [
-              inputs.nix-on-droid.overlays.default
-            ];
-            config = {
-              allowUnfree = true;
-            };
-          };
-          extraSpecialArgs = {
-            inherit inputs;
-            inherit (inputs) nix-colors;
-            customPkgs = packages."aarch64-linux";
-          };
-          home-manager-path = inputs.home-manager.outPath;
-          modules = [ ./hosts/lonsdaleita ];
-        };
       };
 
       # MODIFICATION 3: Added the missing 'in' block to return the outputs
@@ -268,8 +225,5 @@
       # Non-standard outputs (will show warnings but work correctly)
       # deploy-rs expects this exact structure
       inherit deploy;
-
-      # nix-on-droid expects this exact name
-      inherit nixOnDroidConfigurations;
     };
 }

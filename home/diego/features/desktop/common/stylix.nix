@@ -44,33 +44,33 @@ in
         ])
         {
           package = pkgs.bibata-cursors;
-          name    = "Bibata-Modern-Classic";
-          size    = 28;
+          name = "Bibata-Modern-Classic";
+          size = 28;
         };
 
     # Fonts configuration
     fonts = {
       monospace = {
-        package = pkgs.fantasque-sans-mono;
-        name = "Fantasque Sans Mono";
+        package = pkgs.nerd-fonts.fantasque-sans-mono;
+        name = "FantasqueSansM Nerd Font";
       };
       sansSerif = {
-        package = pkgs.jost;
-        name = "Jost";
+        package = pkgs.ibm-plex;
+        name = "IBM Plex Sans";
       };
       serif = {
-        package = pkgs.dejavu_fonts;
-        name = "DejaVu Serif";
+        package = pkgs.ibm-plex;
+        name = "IBM Plex Serif";
       };
       emoji = {
         package = pkgs.noto-fonts-monochrome-emoji;
         name = "Noto Emoji";
       };
       sizes = {
-        applications = 11;
-        desktop = 11;
-        popups = 11;
-        terminal = 12;
+        applications = 15;
+        desktop = 15;
+        popups = 15;
+        terminal = 15;
       };
     };
 
@@ -96,7 +96,6 @@ in
 
       # Don't let Stylix manage these since we handle them separately
       alacritty.enable = false;
-      waybar.enable = false;
       mako.enable = false;
       swaylock.enable = false;
       bat.enable = true;

@@ -243,7 +243,6 @@
       imports = [
         inputs.stylix.homeModules.stylix
         ../../modules/home-manager/colors.nix
-        ../../modules/home-manager/fonts.nix
         ../../modules/home-manager/kanshi.nix
         ../../modules/home-manager/monitors.nix
         inputs.ai-tooling.homeManagerModules.opencode-config

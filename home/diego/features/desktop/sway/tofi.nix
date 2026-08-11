@@ -6,6 +6,7 @@
 }:
 let
   inherit (config.colorscheme) colors;
+  inherit (config.stylix) fonts;
 
   # tofi-drun prints the command line of the selected entry rather than running
   # it (see drun-launch below), so something has to spawn it. Handing it to sway
@@ -45,8 +46,8 @@ in
         # Percentages resolve against the output tofi opens on, so one config is
         # fullscreen on the laptop panel and on every external monitor without
         # the per-monitor character maths fuzzel needed.
-        width = "50%";
-        height = "50%";
+        width = "40%";
+        height = "40%";
         padding-top = 30;
         padding-bottom = 30;
         padding-left = 30;
@@ -54,20 +55,21 @@ in
 
         # Capped rather than 0 ("fill the window"), because a list that runs to
         # the bottom edge cannot be centred.
-        num-results = 15;
+        num-results = 25;
 
         # Scale by the output's scaling factor rather than its physical DPI, so
         # tofi looks identical wherever it is launched.
         scale = true;
 
-        font-size = lib.mkForce 24;
+        font = lib.mkForce fonts.monospace.name;
+        font-size = lib.mkForce 16;
 
         hide-cursor = false;
         # tofi strips whitespace from config-file values, so a trailing space in
         # prompt-text is lost and the prompt would sit flush against the input.
         # prompt-padding gives the gap instead, which also keeps every
         # --prompt-text call site free of trailing-space trickery.
-        prompt-text = ">";
+        prompt-text = "~";
         # prompt-padding = 25;
         # tofi draws from the window's top-left outwards and has no alignment
         # option, so centring means padding in from the edges. These are
