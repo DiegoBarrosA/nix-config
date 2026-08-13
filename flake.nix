@@ -78,6 +78,14 @@
       url = "github:ZenNotes/zennotes";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Nix-on-Droid: declarative phone env (Infinix). Uses its own module
+    # system, wired as a nixOnDroidConfigurations output (not a NixOS host).
+    # release-24.05 matches the installed app version (0.3.7, mid-2025).
+    nix-on-droid = {
+      url = "github:nix-community/nix-on-droid/release-24.05";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -209,6 +217,11 @@
         ] { desktop = "sway"; };
       };
 
+      # Nix-on-Droid (phone): applies on-device via `nix-on-droid switch`.
+      nixOnDroidConfigurations = {
+        infinix = myLib.mkNixOnDroid "infinix";
+      };
+
       # MODIFICATION 3: Added the missing 'in' block to return the outputs
     in
     {
@@ -219,6 +232,7 @@
         packages
         nixosConfigurations
         homeConfigurations
+        nixOnDroidConfigurations
         apps
         ;
 
