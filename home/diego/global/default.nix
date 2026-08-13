@@ -3,11 +3,15 @@
   lib,
   pkgs,
   config,
+  isNixOnDroid ? false,
   ...
 }:
 let
-  # Detect if we're on a systemd-based system (Linux, but not Android/nix-on-droid)
-  hasSystemd = pkgs.stdenv.isLinux && !pkgs.stdenv.hostPlatform.isAndroid;
+  # Detect if we're on a systemd-based system. nix-on-droid (phone) passes
+  # `isNixOnDroid = true` via home-manager.extraSpecialArgs; the pkgs set there
+  # is aarch64-linux (not aarch64-android), so `hostPlatform.isAndroid` alone
+  # can't detect it.
+  hasSystemd = pkgs.stdenv.isLinux && !(isNixOnDroid || pkgs.stdenv.hostPlatform.isAndroid or false);
 in
 {
   imports = [
