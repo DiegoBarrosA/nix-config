@@ -1,9 +1,16 @@
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  isNixOnDroid ? false,
+  ...
+}:
 let
-  # Platform detection
+  # Platform detection. nix-on-droid (phone) passes `isNixOnDroid = true` via
+  # home-manager.extraSpecialArgs; its pkgs are aarch64-linux, so
+  # `hostPlatform.isAndroid` can't detect the phone by itself.
   isLinux = pkgs.stdenv.isLinux;
   isDarwin = pkgs.stdenv.isDarwin;
-  isAndroid = pkgs.stdenv.hostPlatform.isAndroid or false;
+  isAndroid = isNixOnDroid || pkgs.stdenv.hostPlatform.isAndroid or false;
   isDesktop = isLinux && !isAndroid;
 in
 {

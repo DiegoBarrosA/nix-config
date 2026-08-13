@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  isNixOnDroid ? false,
   ...
 }:
 let
@@ -17,7 +18,7 @@ let
     work = "~/.ssh/keys/work_ed25519";
   };
 
-  hasSystemd = pkgs.stdenv.isLinux && !pkgs.stdenv.hostPlatform.isAndroid;
+  hasSystemd = pkgs.stdenv.isLinux && !(isNixOnDroid || pkgs.stdenv.hostPlatform.isAndroid or false);
 
   # ssh-add every key. Passphrase-protected keys fail silently here (no tty at
   # login); AddKeysToAgent picks them up interactively on first use.
@@ -53,6 +54,21 @@ in
         IdentityFile = keys.diego;
       };
       "rubi lonsdaleita *.mineral.network" = {
+        IdentityFile = keys.diego;
+      };
+
+      # nix-on-droid on the Infinix phone. `infinix` uses the phone's LAN
+      # address; `infinix-usb` requires `adb reverse tcp:8022 tcp:8022` first.
+      infinix = {
+        HostName = "192.168.1.36";
+        Port = 8022;
+        User = "nix-on-droid";
+        IdentityFile = keys.diego;
+      };
+      infinix-usb = {
+        HostName = "127.0.0.1";
+        Port = 8022;
+        User = "nix-on-droid";
         IdentityFile = keys.diego;
       };
 

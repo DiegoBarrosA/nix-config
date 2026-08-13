@@ -44,10 +44,18 @@ rec {
   # Nix-on-Droid is its own module system (not NixOS), so this is a
   # parallel output to mkHost/mkHome. The phone builds the profile on-device
   # with `nix-on-droid switch --flake .#infinix` (aarch64-linux only).
+  # `home-manager-path` must point at the repo's (unstable) home-manager input:
+  # nix-on-droid's pinned 24.05 home-manager references `pkgs.pinentry`, which
+  # was removed from current nixpkgs and breaks evaluation.
   mkNixOnDroid =
     hostname:
     inputs.nix-on-droid.lib.nixOnDroidConfiguration {
       pkgs = legacyPackages.aarch64-linux;
       modules = [ "${self}/hosts/${hostname}/nix-on-droid.nix" ];
+      home-manager-path = inputs.home-manager.outPath;
+      extraSpecialArgs = {
+        inherit inputs;
+        inherit (inputs) nix-colors;
+      };
     };
 }
