@@ -22,7 +22,11 @@
     };
     playwright = {
       enable = true;
-      browserPath = "${pkgs.firefox-devedition}/bin/firefox";
+      browserPath = "${pkgs.firefox-devedition}/bin/firefox-devedition";
+      # ponytail: a clone of dev-edition-default, not the live profile —
+      # Firefox profiles are single-writer and the real one is open all day.
+      # Re-sync with: rsync -a --delete --exclude={lock,.parentlock,*.sqlite-wal,*.sqlite-shm,cache2,startupCache,shader-cache,crashes} ~/.config/mozilla/firefox/dev-edition-default/ ~/.config/playwright-firefox-profile/
+      userDataDir = "${config.home.homeDirectory}/.config/playwright-firefox-profile";
     };
     thunderbird = {
       enable = true;
