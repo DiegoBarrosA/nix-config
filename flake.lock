@@ -5,11 +5,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1786370073,
-        "narHash": "sha256-rB60sL342fH4RegJIETs9rCI4TDmlrQCmboF8z5z69g=",
+        "lastModified": 1786716141,
+        "narHash": "sha256-USs746l8VzYgwh5Szhl+OW/Uh39ZJb0Y2K6qsEfXO4g=",
         "owner": "DiegoBarrosA",
         "repo": "nix-ai-tooling",
-        "rev": "0db7705a69da1da71dceeba61b7aa25ee759f134",
+        "rev": "a51601067292b3b69b6692dd3d925e4d7880e60d",
         "type": "github"
       },
       "original": {
