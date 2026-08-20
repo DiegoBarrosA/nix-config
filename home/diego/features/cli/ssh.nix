@@ -77,6 +77,10 @@ in
         IdentityFile = keys.github;
       };
 
+      "bitbucket.org" = {
+        IdentityFile = keys.work;
+      };
+
       # Work / Omnistation teleport clusters use the work key
       "*.teleport.sh" = {
         IdentityFile = keys.work;
