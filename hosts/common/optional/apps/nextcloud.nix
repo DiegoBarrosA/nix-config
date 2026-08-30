@@ -19,7 +19,6 @@ in
     hostName = "cloud.minerales.network";
     home = "/nix/storage/nextcloud";
 
-    # Use HTTPS with the wildcard ACME cert from minerales-network.nix
     https = true;
 
     config = {
@@ -51,7 +50,6 @@ in
     };
   };
 
-  # Configure the Nextcloud nginx vhost to use the wildcard ACME cert
   services.nginx.virtualHosts."cloud.minerales.network" = {
     forceSSL = true;
     useACMEHost = "minerales.network";

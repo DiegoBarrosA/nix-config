@@ -5,11 +5,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1786716990,
-        "narHash": "sha256-CeBN1T8uQDxUVcKn+bYtOjhLb+78b4auEEknYBloyM4=",
+        "lastModified": 1787674480,
+        "narHash": "sha256-+A7GD7BtFIE1JWbvX2nW9/Wp/2cvOPxxZfFlYtyrFwM=",
         "owner": "DiegoBarrosA",
         "repo": "nix-ai-tooling",
-        "rev": "3f2cf21d6499312fbb5cdb83a56cfa5e8bff325e",
+        "rev": "2cafdc6d3fae2bc6e91155a5aba0433ac7e966d1",
         "type": "github"
       },
       "original": {
@@ -224,6 +224,22 @@
       "original": {
         "owner": "nix-community",
         "repo": "disko",
+        "type": "github"
+      }
+    },
+    "ekphos": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1787558982,
+        "narHash": "sha256-zoagUiL/H/DcfZn0q2RgUYI3NS+eJ/0g1TFLZWqsfuQ=",
+        "owner": "hanebox",
+        "repo": "ekphos",
+        "rev": "b14df3a2c2b0c41ffb8f7cb29fa152d4b0bd5c4f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hanebox",
+        "repo": "ekphos",
         "type": "github"
       }
     },
@@ -543,6 +559,26 @@
         "type": "github"
       }
     },
+    "musnix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1777848538,
+        "narHash": "sha256-Dj51C0NWsglqRrCpdmMr2nFiYacFOid1Tor4H9yG2HY=",
+        "owner": "musnix",
+        "repo": "musnix",
+        "rev": "8548782f0d1d0928daa3fffde8a008f72219a3f3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "musnix",
+        "repo": "musnix",
+        "type": "github"
+      }
+    },
     "netsuite-mcp": {
       "inputs": {
         "flake-utils": "flake-utils_2",
@@ -761,11 +797,11 @@
     },
     "nixpkgs_5": {
       "locked": {
-        "lastModified": 1786384358,
-        "narHash": "sha256-RzPPiWeUtuvymnpuEWsdtzli5w4kjZs49FqEs3/1u+I=",
+        "lastModified": 1787360063,
+        "narHash": "sha256-dt4WdcvsA8/RCe+VZZwqU0X+XMM3wBbGCWA0/sFWzGo=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "2fcb964de67fcf60b43471c55d5d99e61a9ccb5a",
+        "rev": "2c423e03bbafcff28bfadc6781a4a8257f205cb5",
         "type": "github"
       },
       "original": {
@@ -950,11 +986,11 @@
         "trello-cloud-mcp": "trello-cloud-mcp"
       },
       "locked": {
-        "lastModified": 1786381957,
-        "narHash": "sha256-76/Xb3GbbNi35b/61wRvcvGykrpJkIx+mbmF3nToAdE=",
+        "lastModified": 1787950697,
+        "narHash": "sha256-23nrfHfi/+xPZaX7OTCgVghd5fsnhCGwIjpPqw8k3ak=",
         "ref": "employer-cleanup",
-        "rev": "286757d6ba4d55610df2c22c76437a32d194542b",
-        "revCount": 112,
+        "rev": "e6f12d3911739747e9a3e04bc91ee4a9568f4767",
+        "revCount": 115,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/nix-private-config.git"
       },
@@ -971,10 +1007,12 @@
         "clin": "clin",
         "deploy-rs": "deploy-rs",
         "disko": "disko",
+        "ekphos": "ekphos",
         "hardware": "hardware",
         "home-manager": "home-manager",
         "impermanence": "impermanence",
         "llm-agents": "llm-agents",
+        "musnix": "musnix",
         "nix-colors": "nix-colors",
         "nix-on-droid": "nix-on-droid",
         "nixgl": "nixgl",
@@ -984,6 +1022,7 @@
         "private-config": "private-config",
         "sops-nix": "sops-nix",
         "stylix": "stylix",
+        "vital-presets": "vital-presets",
         "zennotes": "zennotes"
       }
     },
@@ -1262,6 +1301,22 @@
       "original": {
         "owner": "numtide",
         "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "vital-presets": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1747861068,
+        "narHash": "sha256-fC7F6Y4B6FKrSW37a6CiMA9pEABtBecec3cIyxo00uY=",
+        "owner": "Miserlou",
+        "repo": "VitalPresets",
+        "rev": "5f2e36fb0dc6c8287a8bc78f3734f9d0b43a3207",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Miserlou",
+        "repo": "VitalPresets",
         "type": "github"
       }
     },

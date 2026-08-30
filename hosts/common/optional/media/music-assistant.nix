@@ -12,6 +12,10 @@ let
     asyncUpnpClient
     pychromecast
   ];
+
+  maWithProviders = config.services.music-assistant.package.override {
+    inherit (config.services.music-assistant) providers;
+  };
 in
 {
   services.music-assistant = {
@@ -40,13 +44,19 @@ in
     serviceConfig = {
       ReadWritePaths = [ "/mnt/media/Music" ];
       MemoryDenyWriteExecute = lib.mkForce false;
+
+      StateDirectory = lib.mkForce [
+        "music-assistant"
+        "music-assistant/widevine_cdm"
+      ];
     };
 
-    environment.PYTHONPATH = lib.mkForce "${config.services.music-assistant.package.pythonPath}:${extraPythonPath}";
+    environment.PYTHONPATH = lib.mkForce "${maWithProviders.pythonPath}:${extraPythonPath}";
   };
 
   networking.firewall.allowedTCPPorts = [
     7000
+    8095
     8097
   ];
   networking.firewall.allowedUDPPortRanges = [

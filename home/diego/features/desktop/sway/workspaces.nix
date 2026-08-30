@@ -1,77 +1,95 @@
-# Workspace registry — single source of truth for app assignments and keybindings.
-# Consumed by default.nix (registry → assigns, keybindings, session-apps autostart).
-#
-# Schema:
-#   app        = sway app_id → used in `assigns` and as the launch-or-focus target
-#   key        = letter for Mod4+<key> keybinding
-#   launch     = exec command for launch-or-focus (required when `app` and `key` are set)
-#   launcher   = custom launcher script (alternative to app+launch, e.g. for yazi)
-#   autostart  = int → open this app at login, lowest number first. Launches are
-#                staggered, so the order decides which app gets an uncontended
-#                start; the session ends focused on the lowest-numbered entry.
-#   autostartArgs = extra args appended to `launcher` at login only (not on the
-#                keybinding), e.g. the daily-focus prompt for opencode
-#   name       = fixed label. The workspace is created as "<n>: <name>" instead
-#                of a bare number; `workspace number <n>` still matches it, so
-#                nothing else needs to know about the label.
-#   persistent = true → pre-create this (named) workspace at login even if its
-#                app never autostarts, so it always shows in the bar instead of
-#                only appearing once you switch to it. See default.nix's
-#                session-apps warmup step.
-#
-# Workspaces not listed here (1-4) are general-purpose: no app, no autostart.
-#
-# Adding a new app: add one entry here. Workspace assignment and keybinding
-# both derive from this file automatically.
-{ ... }:
+{
+  lib,
+
+  labelFont ? "sans-serif",
+  ...
+}:
 let
+
+  u = code: builtins.fromJSON ''"\u${code}"'';
+
   registry = {
+    "1" = {
+      icon = "f111";
+      persistent = true;
+    };
+    "2" = {
+      icon = "f0c8";
+      persistent = true;
+    };
+    "3" = {
+      icon = "f219";
+      persistent = true;
+    };
+    "4" = {
+      icon = "f005";
+      persistent = true;
+    };
     "5" = {
+      icon = "f0ac";
       app = "firefox-devedition";
       key = "f";
       launch = "firefox-devedition";
-      autostart = 2;
-      name = "Web";
       persistent = true;
+      autostart = 2;
     };
     "6" = {
+      icon = "f674";
       app = "thunderbird";
       key = "g";
       launch = "thunderbird";
-      autostart = 4;
-      name = "Mail";
       persistent = true;
+      autostart = 4;
     };
     "7" = {
+      icon = "f802";
       launcher = "yazi-launcher";
       key = "e";
-      autostart = 5;
-      name = "Files";
       persistent = true;
+      autostart = 5;
     };
     "8" = {
+      icon = "f60f";
       app = "obsidian";
       key = "n";
       launch = "obsidian";
-      autostart = 3;
-      name = "Notes";
       persistent = true;
+      autostart = 3;
     };
     "9" = {
+      icon = "f1c9";
       launcher = "helix-launcher";
       key = "d";
-      name = "Code";
-      persistent = true;
-    };
-    "10" = {
-      app = "Slack";
-      launch = "slack";
-      autostart = 1;
-      name = "Chat";
-      persistent = true;
     };
   };
 in
 {
   inherit registry;
+
+  waybarWorkspaces =
+    let
+      absorb = "<span font_size='0.1pt'> ";
+
+      label = "<span font_family='${labelFont}'>";
+      iconWorkspaces = lib.filterAttrs (_: v: !(v.nameless or false)) registry;
+    in
+    {
+      disable-scroll = false;
+      all-outputs = true;
+      strip-workspace-numbers = true;
+      format = "{icon}{name}</span>";
+      format-icons =
+
+        (lib.mapAttrs (_: v: "${u v.icon}${absorb}") iconWorkspaces)
+        // {
+
+          "default" = "${u "f22d"}${label}";
+          "focused" = "${u "f192"}${label}";
+
+          "high-priority-named" = lib.attrNames iconWorkspaces;
+        };
+      persistent-workspaces = lib.mapAttrs (_: _: [ ]) (
+        lib.filterAttrs (_: v: v.persistent or false) registry
+      );
+    };
 }

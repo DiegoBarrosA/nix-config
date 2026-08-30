@@ -49,7 +49,6 @@ in
         default-timeout = 0;
       };
 
-      # Volume/brightness OSD: compact, fast, replaces itself via synchronous hint
       "category=volume" = {
         default-timeout = 1500;
         height = 60;

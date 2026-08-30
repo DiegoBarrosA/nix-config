@@ -68,12 +68,9 @@
   };
 
   services.udev.extraRules = ''
-    # AMD GPU devices
     KERNEL=="renderD*", GROUP="render", MODE="0666"
     KERNEL=="card*", GROUP="video", MODE="0666"
-    # ROCm devices
     KERNEL=="kfd", GROUP="render", MODE="0666"
-    # DRM devices
     KERNEL=="controlD*", GROUP="video", MODE="0666"
   '';
   users.groups = {

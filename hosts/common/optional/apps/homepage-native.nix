@@ -6,14 +6,11 @@
 }:
 
 {
-  # Native Homepage Dashboard with full system integration
-  # Shows all services, disks, system stats, and provides unified dashboard
 
   environment.systemPackages = with pkgs; [
     glances
   ];
 
-  # Glances service for system monitoring
   services.glances = {
     enable = true;
     port = 61208;
@@ -22,7 +19,7 @@
 
   networking.firewall = {
     allowedTCPPorts = [
-      61208 # Glances system monitoring
+      61208
     ];
   };
 
@@ -34,31 +31,45 @@
 
     settings = {
       title = "Cobalto Media Server";
-      theme = "dark";
       headerStyle = "boxed";
-      layout = "columns";
-      customTheme = {
-        scheme = "Material Darker";
-        author = "Nate Peterson";
-        base00 = "212121";
-        base01 = "303030";
-        base02 = "353535";
-        base03 = "4A4A4A";
-        base04 = "B2CCD6";
-        base05 = "EEFFFF";
-        base06 = "EEFFFF";
-        base07 = "FFFFFF";
-        base08 = "F07178";
-        base09 = "F78C6C";
-        base0A = "FFCB6B";
-        base0B = "C3E88D";
-        base0C = "89DDFF";
-        base0D = "82AAFF";
-        base0E = "C792EA";
-        base0F = "FF5370";
-      };
 
-      background = "#212121";
+      color = "neutral";
+      favicon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cstyle%3E@media (prefers-color-scheme: dark){path{fill:%23d4d4d8}}%3C/style%3E%3Cpath fill='%23171717' d='M575.8 255.5c0 18-15 32.1-32 32.1h-32l.7 160.2c0 2.7-.2 5.4-.5 8.1V472c0 22.1-17.9 40-40 40H456c-1.1 0-2.2 0-3.3-.1c-1.4 .1-2.8 .1-4.2 .1H416 392c-22.1 0-40-17.9-40-40V448 384c0-17.7-14.3-32-32-32H256c-17.7 0-32 14.3-32 32v64 24c0 22.1-17.9 40-40 40H160 128.1c-1.5 0-3-.1-4.5-.2c-1.2 .1-2.4 .2-3.6 .2H104c-22.1 0-40-17.9-40-40V360c0-.9 0-1.9 .1-2.8V287.6H32c-18 0-32-14-32-32.1c0-9 3-17 10-24L266.4 8c7-7 15-8 22-8s15 2 21 7L564.8 231.5c8 7 12 15 11 24z'/%3E%3C/svg%3E";
+      iconStyle = "theme";
+
+      layout = {
+        "Media Services" = {
+          style = "row";
+          columns = 2;
+          icon = "mdi-movie";
+        };
+        "AI & LLM" = {
+          style = "row";
+          columns = 2;
+          icon = "mdi-robot";
+        };
+        "Notes" = {
+          style = "row";
+          columns = 2;
+          icon = "mdi-note-text";
+        };
+        "System Tools" = {
+          style = "row";
+          columns = 2;
+          icon = "mdi-cog";
+        };
+        "Home Automation" = {
+          style = "row";
+          columns = 2;
+          icon = "mdi-home-automation";
+        };
+        "Downloads & Automation" = {
+          style = "row";
+          columns = 4;
+          icon = "mdi-download-circle";
+          initiallyCollapsed = true;
+        };
+      };
 
       customCSS = ''
         .service-group { margin-bottom: 2rem; }
@@ -71,7 +82,7 @@
         "Media Services" = [
           {
             "Jellyfin" = {
-              icon = "jellyfin.png";
+              icon = "mdi-play-circle";
               href = "http://jellyfin.minerales.network";
               description = "Media streaming server";
               widget = {
@@ -81,20 +92,20 @@
               };
             };
           }
+        ];
+      }
+      {
+        "Downloads & Automation" = [
           {
             "Transmission" = {
-              icon = "transmission.png";
+              icon = "mdi-arrow-down-circle";
               href = "http://transmission.minerales.network";
               description = "Native BitTorrent client";
             };
           }
-        ];
-      }
-      {
-        "Servarr Suite" = [
           {
             "Prowlarr" = {
-              icon = "prowlarr.png";
+              icon = "mdi-magnify";
               href = "http://prowlarr.minerales.network";
               description = "Indexer manager";
               widget = {
@@ -106,7 +117,7 @@
           }
           {
             "Sonarr" = {
-              icon = "sonarr.png";
+              icon = "mdi-television";
               href = "http://sonarr.minerales.network";
               description = "TV show manager";
               widget = {
@@ -118,7 +129,7 @@
           }
           {
             "Radarr" = {
-              icon = "radarr.png";
+              icon = "mdi-movie";
               href = "http://radarr.minerales.network";
               description = "Movie manager";
               widget = {
@@ -130,7 +141,7 @@
           }
           {
             "Lidarr" = {
-              icon = "lidarr.png";
+              icon = "mdi-music-note";
               href = "http://lidarr.minerales.network";
               description = "Music manager";
               widget = {
@@ -142,21 +153,21 @@
           }
           {
             "LazyLibrarian" = {
-              icon = "lazylibrarian.png";
+              icon = "mdi-book-open";
               href = "http://lazylibrarian.minerales.network";
               description = "Book automation";
             };
           }
           {
             "Calibre-Web" = {
-              icon = "calibre.png";
+              icon = "mdi-book-multiple";
               href = "http://calibre.minerales.network";
               description = "Ebook library & reader";
             };
           }
           {
             "Bazarr" = {
-              icon = "bazarr.png";
+              icon = "mdi-subtitles";
               href = "http://bazarr.minerales.network";
               description = "Subtitle manager";
               widget = {
@@ -172,16 +183,27 @@
         "AI & LLM" = [
           {
             "llama.cpp" = {
-              icon = "llama-cpp.png";
+              icon = "mdi-brain";
               href = "http://localhost:11435";
               description = "Vulkan-accelerated LLM server";
             };
           }
           {
             "Open-WebUI" = {
-              icon = "open-webui.png";
+              icon = "mdi-chat-processing";
               href = "https://llm.minerales.network";
               description = "LLM chat interface";
+            };
+          }
+        ];
+      }
+      {
+        "Notes" = [
+          {
+            "ZenNotes" = {
+              icon = "/zennotes-icon.svg";
+              href = "https://notes.minerales.network";
+              description = "Markdown notes web UI";
             };
           }
         ];
@@ -190,7 +212,7 @@
         "System Tools" = [
           {
             "Syncthing" = {
-              icon = "syncthing.png";
+              icon = "mdi-folder-sync";
               href = "http://syncthing.minerales.network";
               description = "File synchronization";
               widget = {
@@ -206,7 +228,7 @@
         "Home Automation" = [
           {
             "Snapcast" = {
-              icon = "snapcast.png";
+              icon = "mdi-speaker-multiple";
               href = "http://snapcast.minerales.network";
               description = "Multi-room audio server";
             };
@@ -246,7 +268,7 @@
               {
                 href = "https://github.com/DiegoBarrosA/nix-config";
                 description = "NixOS configuration repository";
-                icon = "github.png";
+                icon = "si-github";
               }
             ];
           }
@@ -259,7 +281,7 @@
               {
                 href = "https://youtube.com";
                 description = "Video streaming";
-                icon = "youtube.png";
+                icon = "si-youtube";
               }
             ];
           }
@@ -268,7 +290,7 @@
               {
                 href = "https://spotify.com";
                 description = "Music streaming";
-                icon = "spotify.png";
+                icon = "si-spotify";
               }
             ];
           }
@@ -298,13 +320,18 @@
             echo "$env_name="
           fi
         done
-        # Extract Syncthing API key from config.xml (SOPS secret doesn't match runtime key)
         SYNCTHING_CONFIG="/home/diego/.config/syncthing/config.xml"
         if [ -f "$SYNCTHING_CONFIG" ] && [ -s "$SYNCTHING_CONFIG" ]; then
           API_KEY=$(grep '<apikey>' "$SYNCTHING_CONFIG" | sed 's/.*<apikey>\(.*\)<\/apikey>.*/\1/')
           echo "HOMEPAGE_VAR_SYNCTHING_API_KEY=$API_KEY"
         else
           echo "HOMEPAGE_VAR_SYNCTHING_API_KEY="
+        fi
+        nextauth_file="/run/secrets/nextauth-secret"
+        if [ -f "$nextauth_file" ] && [ -s "$nextauth_file" ]; then
+          echo "NEXTAUTH_SECRET=$(cat "$nextauth_file" | tr -d '\n')"
+        else
+          echo "NEXTAUTH_SECRET="
         fi
       } > /etc/homepage-dashboard/secrets.env
       chmod 600 /etc/homepage-dashboard/secrets.env
@@ -315,146 +342,4 @@
     after = [ "homepage-secrets.service" ];
     serviceConfig.EnvironmentFile = "/etc/homepage-dashboard/secrets.env";
   };
-
-  # Copy homepage configuration files to /nix/storage/homepage as reference backup
-  # The actual dashboard config is generated inline above by services.homepage-dashboard
-  system.activationScripts.homepage-config = ''
-        mkdir -p /nix/storage/homepage
-
-        cat > /nix/storage/homepage/services.yaml << 'HOMEEOF'
-    ---
-    services:
-      - Media:
-          - Jellyfin:
-              href: https://jellyfin.minerales.network
-              description: Media server with hardware acceleration
-              icon: jellyfin.png
-              widget:
-                type: jellyfin
-                url: http://localhost:8096
-                key: {{HOMEPAGE_VAR_JELLYFIN_API_KEY}}
-
-      - Downloads:
-          - Transmission:
-              href: https://transmission.minerales.network
-              description: Torrent client
-              icon: transmission.png
-              widget:
-                type: transmission
-                url: http://localhost:9091
-
-      - Synchronization:
-          - Syncthing:
-              href: https://syncthing.minerales.network
-              description: File synchronization
-              icon: syncthing.png
-              widget:
-                type: syncthing
-                url: http://localhost:8384
-
-      - AI/ML:
-          - LLM Hub:
-              href: https://llm.minerales.network
-              description: Large Language Models interface
-              icon: openai.png
-
-          - Text Generation:
-              href: https://textgen.minerales.network
-              description: Advanced text generation WebUI
-              icon: huggingface.png
-
-          - Jupyter Lab:
-              href: https://jupyter.minerales.network
-              description: Machine Learning notebooks
-              icon: jupyter.png
-    HOMEEOF
-
-        cat > /nix/storage/homepage/settings.yaml << 'HOMEEOF'
-    ---
-    title: Cobalto Media & AI Server
-
-    theme: dark
-
-    color: Material Darker
-
-    headerStyle: boxed
-
-    layout:
-      Media:
-        style: row
-        columns: 2
-      Downloads:
-        style: row
-        columns: 2
-      Synchronization:
-        style: row
-        columns: 2
-      Management:
-        style: row
-        columns: 3
-      AI/ML:
-        style: row
-        columns: 3
-
-    providers:
-      glances: http://localhost:61208
-
-    quicklaunch:
-      searchDescriptions: true
-      hideInternetSearch: true
-      hideVisitURL: true
-    HOMEEOF
-
-        cat > /nix/storage/homepage/widgets.yaml << 'HOMEEOF'
-    ---
-    - resources:
-        backend: glances
-        expanded: true
-        cpu: true
-        memory: true
-        disk: /
-
-    - search:
-        provider: duckduckgo
-        target: _blank
-
-    - datetime:
-        text_size: xl
-        format:
-          timeStyle: short
-          dateStyle: short
-          hourCycle: h23
-
-    - glances:
-        url: http://localhost:61208
-        version: 4
-        metric: info
-    HOMEEOF
-
-        cat > /nix/storage/homepage/bookmarks.yaml << 'HOMEEOF'
-    ---
-    - Development:
-        - GitHub:
-            - href: https://github.com/DiegoBarrosA/nix-config
-              description: This NixOS configuration repository
-              icon: github.png
-
-        - NixOS:
-            - href: https://nixos.org
-              description: NixOS homepage
-              icon: nixos.png
-            - href: https://search.nixos.org/packages
-              description: NixOS package search
-              icon: nixos.png
-
-    - Documentation:
-        - Services:
-            - href: https://jellyfin.org/docs/
-              description: Jellyfin documentation
-              icon: jellyfin.png
-    HOMEEOF
-
-        chown -R 1000:1000 /nix/storage/homepage
-        chmod -R 644 /nix/storage/homepage/*.yaml
-  '';
 }

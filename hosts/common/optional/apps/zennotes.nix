@@ -32,7 +32,7 @@ in
         ZENNOTES_DEFAULT_VAULT_PATH = cfg.vaultPath;
         ZENNOTES_BROWSE_ROOTS = cfg.vaultPath;
         ZENNOTES_ALLOWED_ORIGINS = "https://notes.minerales.network";
-        # ponytail: no auth token — access is Tailscale-gated via nginx
+
         ZENNOTES_ALLOW_INSECURE_NOAUTH = "1";
       };
 

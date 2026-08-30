@@ -6,8 +6,7 @@
 }:
 let
   port = 8086;
-  # Material Darker (matches the Stylix/nix-colors "material-darker" scheme used
-  # across the flake) — applied to Miniflux via its per-user custom stylesheet.
+
   minifluxCss = ''
     :root {
       --body-background: #212121;
@@ -44,7 +43,7 @@ let
     ::-webkit-scrollbar-track { background: #212121; }
   '';
   cssFile = pkgs.writeText "miniflux-material-darker.css" minifluxCss;
-  # OPML of the four hackertab-style dev feeds, imported once for the admin user.
+
   opml = pkgs.writeText "miniflux-feeds.opml" ''
     <?xml version="1.0" encoding="UTF-8"?>
     <opml version="2.0">
@@ -61,15 +60,13 @@ let
   '';
 in
 {
-  # Miniflux admin credentials (EnvironmentFile format: ADMIN_USERNAME/ADMIN_PASSWORD).
+
   sops.secrets."miniflux-admin" = {
     owner = "root";
     group = "root";
     mode = "0400";
   };
 
-  # Miniflux — self-hosted RSS reader, themed to match the Stylix material-darker
-  # palette and embedded in the Home Assistant dashboard "Dev News" tab.
   services.miniflux = {
     enable = true;
     createDatabaseLocally = true;
@@ -78,15 +75,12 @@ in
       LISTEN_ADDR = "127.0.0.1:${toString port}";
       BASE_URL = "https://rss.minerales.network";
       CREATE_ADMIN = 1;
-      # Refresh feeds hourly; keep the UI clean.
+
       POLLING_FREQUENCY = 60;
       CLEANUP_ARCHIVE_READ_DAYS = 30;
     };
   };
 
-  # Reverse proxy + allow embedding inside the Home Assistant iframe card.
-  # Uses the same minimal proxy pattern as the other working minerales.network
-  # vhosts; framing headers are added via extraConfig.
   services.nginx.virtualHosts."rss.minerales.network" = {
     forceSSL = true;
     useACMEHost = "minerales.network";
@@ -99,8 +93,6 @@ in
     };
   };
 
-  # One-time setup: import feeds (OPML) and apply the material-darker stylesheet
-  # for the admin user via Miniflux's REST API. Idempotent via a marker file.
   systemd.services.miniflux-setup = {
     description = "Seed Miniflux feeds + material-darker theme";
     after = [ "miniflux.service" ];
@@ -118,7 +110,6 @@ in
       marker="/var/lib/miniflux/.setup-done"
       mkdir -p /var/lib/miniflux
 
-      # Wait for Miniflux to be ready.
       for i in $(seq 1 60); do
         if curl -sf -o /dev/null "$base/healthcheck"; then break; fi
         sleep 2
@@ -126,8 +117,6 @@ in
 
       auth=( -u "$ADMIN_USERNAME:$ADMIN_PASSWORD" )
 
-      # Apply material-darker custom CSS to the admin user (id 1) every activation
-      # (cheap; keeps theme in sync with the Nix-managed CSS).
       css=$(jq -Rs . < ${cssFile})
       curl -sf "$base/v1/me" "''${auth[@]}" > /tmp/miniflux-me.json || true
       uid=$(jq -r '.id // 1' /tmp/miniflux-me.json 2>/dev/null || echo 1)
@@ -135,7 +124,6 @@ in
         -H 'Content-Type: application/json' \
         -d "{\"stylesheet\": $css, \"theme\": \"dark_serif\"}" > /dev/null || true
 
-      # Import feeds only once.
       if [ ! -f "$marker" ]; then
         curl -sf -X POST "$base/v1/import" "''${auth[@]}" \
           --data-binary @${opml} > /dev/null || true

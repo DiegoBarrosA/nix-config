@@ -5,7 +5,7 @@
   ...
 }:
 {
-  # mDNS/Zeroconf for device discovery (Yeelight, Apple TV, HomeKit Bridge/Siri)
+
   services.avahi = {
     enable = true;
     nssmdns4 = true;
@@ -14,30 +14,28 @@
     publish.workstation = true;
   };
 
-  # Matter smart home protocol server
   services.matter-server = {
     enable = true;
   };
 
-
   services.home-assistant = {
     enable = true;
-    # Bundle Python deps + register config-flow handlers for these components.
+
     extraComponents = [
-      "default_config" # HA default (kept from module default)
-      "met"            # HA default
-      "esphome"        # HA default
+      "default_config"
+      "met"
+      "esphome"
     ];
     extraPackages = ps: with ps; [
-      # alexapy              # TEMPORARILY DISABLED: broken on Python 3.14
-      music-assistant-client # required by built-in music_assistant integration
+
+      music-assistant-client
       python-miio
-      python-otbr-api        # required by homekit_controller integration
+      python-otbr-api
       pyatv
-      pyswitchbot            # required by switchbot integration (BLE)
+      pyswitchbot
       yeelight
-      gtts                   # required by google_translate TTS integration
-      reolink-aio            # required by reolink integration
+      gtts
+      reolink-aio
     ] ++ [ pkgs.ffmpeg-headless ];
     customComponents = [
       pkgs."home-assistant-custom-components".tuya_local
@@ -45,27 +43,24 @@
     config = {
       default_config = {};
 
-      # Material Darker theme (matches the Stylix/nix-colors "material-darker"
-      # scheme used across the flake). Select it per-user in Profile > Themes,
-      # or it applies as the default via the dashboard.
       frontend = {
         themes = {
           material-darker = {
-            # Base
+
             primary-color = "#82AAFF";
             accent-color = "#C792EA";
             dark-primary-color = "#82AAFF";
             light-primary-color = "#303030";
-            # Text
+
             primary-text-color = "#EEFFFF";
             secondary-text-color = "#B2CCD6";
             text-primary-color = "#212121";
             disabled-text-color = "#4A4A4A";
-            # Backgrounds
+
             primary-background-color = "#212121";
             secondary-background-color = "#262626";
             divider-color = "#353535";
-            # App header / sidebar
+
             "app-header-background-color" = "#303030";
             "app-header-text-color" = "#EEFFFF";
             "sidebar-background-color" = "#303030";
@@ -73,16 +68,16 @@
             "sidebar-text-color" = "#EEFFFF";
             "sidebar-selected-icon-color" = "#82AAFF";
             "sidebar-selected-text-color" = "#82AAFF";
-            # Cards
+
             "card-background-color" = "#262626";
             "ha-card-background" = "#262626";
             "ha-card-border-radius" = "10px";
             "paper-card-background-color" = "#262626";
-            # States / labels
+
             "label-badge-background-color" = "#303030";
             "state-icon-color" = "#82AAFF";
             "switch-checked-color" = "#82AAFF";
-            # Sensor/graph accents
+
             "error-color" = "#F07178";
             "warning-color" = "#FFCB6B";
             "success-color" = "#C3E88D";
@@ -91,16 +86,6 @@
         };
       };
 
-      # Cameras — declared against go2rtc (single source), so a rebuild reproduces
-      # them with no manual UI configuration. go2rtc serves:
-      #   xiaomi_cam  (Xiaomi C200, native xiaomi:// source)
-      #   reolink_e1  (Reolink E1 via the neolink RTSP bridge)
-      # See go2rtc.nix / cameras.nix. Reolink credentials stay in the neolink sops
-      # template; go2rtc only proxies its local RTSP.
-      #
-      # NOTE: the `generic` camera platform is config-flow only (no YAML). The
-      # `ffmpeg` camera platform still supports declarative YAML, so we use it to
-      # pull the go2rtc RTSP streams.
       camera = [
         {
           platform = "ffmpeg";
@@ -114,14 +99,9 @@
         }
       ];
 
-      # ffmpeg integration — provides the binary used by the ffmpeg camera platform.
       ffmpeg = {
         ffmpeg_bin = "${pkgs.ffmpeg-headless}/bin/ffmpeg";
       };
-
-      # Cameras set up via HA UI:
-      #   Reolink E1 → Reolink integration (UI: Settings → Devices → Reolink)
-      #   Xiaomi C200 → ONVIF integration (UI: Settings → Devices → ONVIF)
 
       homeassistant = {
         external_url = "https://homeassistant.minerales.network";
@@ -135,7 +115,6 @@
         trusted_proxies = [ "127.0.0.1" "::1" ];
       };
 
-      # System monitor — CPU, memory, disk, network, temperature sensors for cobalto
       systemmonitor = {
         resources = [
           { type = "disk_use_percent"; arg = "/"; }
@@ -151,30 +130,24 @@
         ];
       };
 
-      # Jellyfin media server
       jellyfin = {
         host = "127.0.0.1";
         http_port = 8096;
       };
 
-      # Music Assistant
       music_assistant = {};
 
-      # Snapcast multi-room audio
       snapcast = {
         host = "127.0.0.1";
         port = 1705;
       };
 
-      # SwitchBot IoT devices (BLE)
       switchbot = {};
 
-      # Matter smart home protocol (connects to local matter-server)
       matter = {
         url = "http://localhost:5580";
       };
 
-      # Transmission torrent client
       transmission = {
         host = "127.0.0.1";
         port = 9091;
@@ -182,42 +155,38 @@
         password = "";
       };
 
-      # Syncthing file sync
       syncthing = {
         url = "http://127.0.0.1:8384";
-        api_key = ""; # Set via HA UI or secrets
+        api_key = "";
       };
 
-      # Servarr suite — media management
       sonarr = {
         url = "http://127.0.0.1:8989";
-        api_key = ""; # Set via HA UI
+        api_key = "";
       };
 
       radarr = {
         url = "http://127.0.0.1:7878";
-        api_key = ""; # Set via HA UI
+        api_key = "";
       };
 
       lidarr = {
         url = "http://127.0.0.1:8686";
-        api_key = ""; # Set via HA UI
+        api_key = "";
       };
 
       prowlarr = {
         url = "http://127.0.0.1:9696";
-        api_key = ""; # Set via HA UI
+        api_key = "";
       };
 
       bazarr = {
         url = "http://127.0.0.1:6767";
-        api_key = ""; # Set via HA UI
+        api_key = "";
       };
 
-      # Tailscale VPN
       tailscale = {};
 
-      # Amazon Alexa Smart Home Skill — control HA via Alexa voice
       alexa = {
         smart_home = {
           endpoint = "https://alexa-homeassistant.minerales.network/api/alexa/smart_home";
@@ -240,7 +209,6 @@
         };
       };
 
-      # Apple HomeKit / Siri — exposes entities to the Apple Home app
       homekit = [{
         filter = {
           include_domains = [
@@ -262,24 +230,12 @@
     };
   };
 
-  # Declarative Lovelace dashboard (YAML mode).
-  #
-  # NOTE: Setting lovelaceConfig registers a YAML-mode dashboard named
-  # "nixos-lovelace" (this one). It is NOT automatically the panel you land on:
-  # Home Assistant's "default dashboard" is a per-user profile setting. To make
-  # this your default, once per user go to:
-  #   Profile (bottom-left avatar) > Default dashboard > pick "Overview".
-  # The UI "Edit Dashboard" button is disabled in YAML mode; edit this file instead.
-  #
-  # RSS feeds (hackertab.dev-style developer news) are served by Miniflux (see
-  # miniflux.nix), themed to the Stylix material-darker palette, and embedded in
-  # the "Dev News" tab below via an iframe card.
   services.home-assistant.lovelaceConfig = {
     title = "Cobalto Home";
-    # Apply the material-darker theme to this dashboard.
+
     theme = "material-darker";
     views = [
-      # ---------------------------------------------------------------- Home
+
       {
         title = "Home";
         path = "home";
@@ -316,7 +272,7 @@
           }
         ];
       }
-      # ------------------------------------------------------------- Cameras
+
       {
         title = "Cameras";
         path = "cameras";
@@ -336,7 +292,7 @@
           }
         ];
       }
-      # -------------------------------------------------------------- Lights
+
       {
         title = "Lights";
         path = "lights";
@@ -369,7 +325,7 @@
           }
         ];
       }
-      # -------------------------------------------------------------- System
+
       {
         title = "System";
         path = "system";
@@ -410,12 +366,12 @@
           }
         ];
       }
-      # ------------------------------------------------------------ Dev News
+
       {
         title = "Dev News";
         path = "dev-news";
         icon = "mdi:rss";
-        panel = true; # full-width for the embedded reader
+        panel = true;
         cards = [
           {
             type = "iframe";

@@ -1,9 +1,6 @@
 ---
-# For configuration options and examples, please see:
-# https://gethomepage.dev/latest/configs/widgets
 
 - resources:
-    # change backend to 'netdata' 'glances' or 'gotop' etc.
     backend: glances
     expanded: true
     cpu: true

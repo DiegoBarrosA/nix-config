@@ -1,0 +1,21 @@
+{
+
+  base00 = "0B0C16";
+  base01 = "080910";
+  base02 = "1f253a";
+  base03 = "2d3450";
+
+  base04 = "6a6e95";
+  base05 = "ddf7ff";
+  base06 = "b5c5db";
+  base07 = "ddf7ff";
+
+  base08 = "50f872";
+  base09 = "50f7a3";
+  base0A = "50f7d4";
+  base0B = "4fe88f";
+  base0C = "7cf8f7";
+  base0D = "829dd4";
+  base0E = "86a7df";
+  base0F = "287b51";
+}

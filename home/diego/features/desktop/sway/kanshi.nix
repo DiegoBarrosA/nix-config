@@ -5,10 +5,9 @@
   ...
 }:
 let
-  # Default true unless rubi.desktop.manageKanshi is false (Niri-only users).
+
   enableKanshi = lib.attrByPath [ "rubi" "desktop" "manageKanshi" ] true config;
 
-  # Script to switch display profiles by reloading kanshi
   kanshiSwitch = pkgs.writeShellScriptBin "kanshi-switch" ''
     PROFILE="$1"
     case "$PROFILE" in
@@ -25,7 +24,6 @@ let
     esac
   '';
 
-  # UI for switching display modes
   displayModeUI = pkgs.writeShellScriptBin "display-mode-selector" ''
     #!/usr/bin/env bash
     CHOICE=$(printf "Single (Laptop)\nDocked (Samsung)\nTriple (All Monitors)" | ${config.launcher.dmenu} --prompt-text "display")
@@ -57,14 +55,7 @@ lib.mkMerge [
       enable = true;
 
       settings = [
-        # NOTE: Do NOT add global (non-profile) `output.status = "disable"`
-        # directives here. Global output directives are applied on top of every
-        # matched profile, so a global disable for DP-1/DP-9 overrides a profile
-        # that enables them (this is what killed the Samsung display in docked
-        # mode). Instead, each profile explicitly disables the outputs it does
-        # not use.
 
-        # Profiles ordered most-specific first — first matching profile wins
         {
           profile.name = "triple";
           profile.outputs = [

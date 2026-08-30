@@ -8,8 +8,11 @@
 {
   system.stateVersion = "24.05";
 
-  # Phone LLM server: llama.cpp (llama-server) with Vulkan + CPU backends,
-  # plus tooling for model downloads, git, and SSH (client + server).
+  android-integration = {
+    termux-setup-storage.enable = true;
+    termux-open-url.enable = true;
+  };
+
   environment.packages = [
     pkgs.llama-cpp-vulkan
     pkgs.curl
@@ -20,25 +23,17 @@
   ];
 
   home-manager.sharedModules = [
-    # `colorscheme` option used by helix/zellij theming (see modules/home-manager/colors.nix)
+
     ../../modules/home-manager/colors.nix
   ];
 
-  # Pass repo inputs down into the home-manager submodule system (used by the
-  # colors module and the shared global/cli configs). `isNixOnDroid` lets the
-  # shared configs detect the phone (their pkgs are aarch64-linux, not
-  # aarch64-android, so hostPlatform.isAndroid can't).
   home-manager.extraSpecialArgs = {
     inherit inputs nix-colors;
     isNixOnDroid = true;
   };
 
-  # Use the flake's pkgs (allowUnfree + repo overlays) instead of letting
-  # home-manager evaluate its own nixpkgs, which refuses unfree packages.
   home-manager.useGlobalPkgs = true;
 
-  # Home-manager config. Reuses the shared CLI feature set (platform-guarded,
-  # so desktop-only packages are skipped on Android) and the shared global base.
   home-manager.config =
     { pkgs, lib, ... }:
     let
@@ -65,9 +60,6 @@
           "$@"
       '';
 
-      # SSH server for the phone. Start it in a session, like the LLM server:
-      #   phone-sshd
-      # Then from the laptop: ssh infinix (LAN) or ssh infinix-usb (adb reverse).
       sshdScript = pkgs.writeShellScriptBin "phone-sshd" ''
         set -e
         : ''${SSHD_PORT:="8022"}
@@ -81,7 +73,6 @@
         exec ${pkgs.openssh}/bin/sshd -D -e -p "$SSHD_PORT" -f "$HOME/.ssh/sshd_config"
       '';
 
-      # Inbound SSH keys. Same set as hosts/common/global/openssh.nix for NixOS hosts.
       authorizedKeys = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOXblym20SD75es2z5Qay0mfW+g2zvKPBVMsUFakIyBK diegobarrosaraya@outlook.com"
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIpXSRXYbg97jxtfnnitIgNQLvGnLgZBWE9079qD2U4C diego@lazulita"
@@ -96,7 +87,7 @@
 
       home.packages = [ serverScript sshdScript ];
       home.stateVersion = "26.05";
-      # nix-on-droid doesn't ship systemd; don't attempt to start user services.
+
       systemd.user.startServices = false;
 
       home.sessionVariables = {
@@ -111,11 +102,10 @@
       };
 
       home.file = {
-        # Allow SSH into the phone (user: nix-on-droid).
+
         ".ssh/authorized_keys".text = (lib.concatStringsSep "\n" authorizedKeys) + "\n";
-        # sshd config. %h expands to the user home (the nix-on-droid app data dir).
+
         ".ssh/sshd_config".text = ''
-          # Managed by home-manager (hosts/infinix/nix-on-droid.nix).
           Port 8022
           PasswordAuthentication no
           PermitRootLogin no
@@ -132,8 +122,6 @@
         '';
       };
 
-      # features/cli/ssh.nix assumes the laptop's GitHub key layout and an
-      # omnistation fragment from private-config; adapt both for the phone.
       programs.ssh = {
         includes = lib.mkForce [ ];
         settings."github.com" = {

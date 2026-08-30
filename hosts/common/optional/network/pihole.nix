@@ -81,14 +81,9 @@ in
             "no-hosts"
             "interface=tailscale0"
             "interface=enp7s0"
-            # bind-dynamic, not bind-interfaces: deploy-rs activation restarts
-            # tailscaled, which tears down tailscale0 under a running FTL.
-            # bind-interfaces binds once at startup and never rebinds, so the
-            # listener on the tailnet IP is silently lost until a manual
-            # restart (connection refused for all *.minerales.network).
-            # bind-dynamic copes with interfaces coming and going.
+
             "bind-dynamic"
-            "address=/minerales.network/100.69.115.53" # cobalto's tailnet IP
+            "address=/minerales.network/100.69.115.53"
           ];
         };
         dns = {
@@ -118,10 +113,6 @@ in
       ports = [ cfg.webPort ];
     };
 
-    # The pihole-ftl-setup service is missing PIHOLE_CONFIG in its environment,
-    # so getFTLConfigValue returns wrong paths (e.g. /etc/pihole/gravity.db
-    # instead of /var/lib/pihole/gravity.db), causing downloads to silently fail.
-    # Propagate from the main FTL service.
     systemd.services.pihole-ftl-setup.environment.PIHOLE_CONFIG =
       config.systemd.services.pihole-ftl.environment.PIHOLE_CONFIG;
 

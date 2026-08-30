@@ -7,7 +7,7 @@
 let
   nixfmt = pkgs.nixfmt;
   inherit (config.colorscheme) colors;
-  # Use base01 instead of base00 for editor background
+
   bg = "#${colors.base00 or "000000"}";
 in
 {
@@ -64,7 +64,7 @@ in
         space.space = "file_picker";
         space.w = ":w";
         space.q = ":q";
-        # Reload all buffers after agent edits (Helix has no auto-reload)
+
         space.r = ":reload-all";
       };
     };
@@ -134,12 +134,7 @@ in
             nix.flake.autoEvalInputs = true;
           };
         };
-        # lexical = {
-        #   command = "${inputs.lexical.packages.${pkgs.system}.default}/bin/lexical";
-        #   config.lexical = {
-        #     # formatting.command = [ "${nixpkgs-fmt}/bin/nixpkgs-fmt" ];
-        #   };
-        # };
+
         ltex-ls.command = "ltex-ls";
         markdown-oxide = {
           command = "${pkgs.markdown-oxide}/bin/markdown-oxide";
@@ -191,7 +186,7 @@ in
             ];
             formatter = {
               command = "${pkgs.shfmt}/bin/shfmt";
-              # Indent with 2 spaces, simplify the code, indent switch cases, add space after redirection
+
               args = [
                 "-i"
                 "4"
@@ -201,7 +196,7 @@ in
               ];
             };
           }
-          # { name = "ruby"; file-types = [ "rb" "rake" "rakefile" "irb" "gemfile" "gemspec" "Rakefile" "Gemfile" "Fastfile" "Matchfile" "Pluginfile" "Appfile" ]; }
+
           {
             name = "rust";
             auto-format = false;
@@ -211,14 +206,6 @@ in
             ];
             language-servers = [ "rust-analyzer" ];
           }
-
-          # {
-          #   name = "rust";
-          #   language-server = { command = "${pkgs.rust-analyzer}/bin/rust-analyzer"; };
-          #   config.checkOnSave = {
-          #     command = "clippy";
-          #   };
-          # }
 
           {
             name = "c-sharp";
@@ -264,8 +251,7 @@ in
             name = "elixir";
             formatter.command = "${pkgs.beamPackages.elixir}/bin/mix format";
           }
-          # { name = "elixir"; language-servers = [ "lexical" ]; }
-          # { name = "heex"; language-servers = [ "lexical" ]; }
+
           {
             name = "json";
             language-servers = [
@@ -298,7 +284,7 @@ in
 
           {
             name = "xml";
-            # auto-format = true;
+
             file-types = [ "xml" ];
             formatter = {
               command = "${pkgs.yq-go}/bin/yq";
@@ -312,15 +298,7 @@ in
               ];
             };
           }
-          # {
-          #   name = "markdown";
-          #   language-server = {
-          #     command = "${pkgs.ltex-ls}/bin/ltex-ls";
-          #   };
-          #   file-types = [ "md" "txt" ];
-          #   scope = "source.markdown";
-          #   roots = [ ];
-          # }
+
         ];
     };
 

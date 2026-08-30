@@ -2,9 +2,9 @@
 {
   environment.localBinInPath = true;
   environment.sessionVariables = rec {
-    #Wayland compliant backend for electron basde apps
+
     NIXOS_OZONE_WL = "1";
-    #XDG compliant directories
+
     XDG_CACHE_HOME = "$HOME/.cache";
     XDG_CONFIG_HOME = "$HOME/.config";
     XDG_BIN_HOME = "$HOME/.local/bin";
@@ -13,7 +13,7 @@
     PATH = "$XDG_BIN_HOME:$XDG_CONFIG_HOME/emacs/bin:${XDG_DATA_HOME}/npm/bin";
 
   };
-  ##TODO organze each variable under especific program configurations.
+
   environment.variables = {
     ANDROID_HOME = "${config.environment.sessionVariables.XDG_DATA_HOME}/android";
     GRADLE_USER_HOME = "${config.environment.sessionVariables.XDG_DATA_HOME}/gradle";

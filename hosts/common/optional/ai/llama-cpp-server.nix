@@ -1,17 +1,3 @@
-# llama.cpp server with Vulkan backend for AMD GPUs (including legacy GCN4/Polaris like RX580)
-# Provides an OpenAI-compatible API for LLM inference with full GPU acceleration
-#
-# Unlike ROCm which dropped support for gfx803 (Polaris) after ROCm 4.5,
-# Vulkan via RADV works reliably on all AMD GPUs with modern Mesa.
-#
-# Usage:
-#   services.llama-cpp-server = {
-#     enable = true;
-#     model = "bartowski/Qwen2.5-7B-Instruct-GGUF:Q4_K_M";  # HuggingFace format
-#   };
-#
-# API endpoint: http://localhost:11435/v1/chat/completions (OpenAI-compatible)
-
 { config, lib, pkgs, ... }:
 
 let
@@ -46,7 +32,7 @@ in
         Model to load. Can be:
         - HuggingFace format: "owner/repo:quantization" (e.g., "bartowski/Qwen2.5-7B-Instruct-GGUF:Q4_K_M")
         - Local path: "/path/to/model.gguf"
-        
+
         For 8GB VRAM (RX580), recommended quantizations:
         - 7B models: Q4_K_M (~4.5GB) or Q5_K_M (~5GB)
         - 3B models: Q8_0 (~3.5GB) for maximum quality
@@ -128,38 +114,37 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Create dedicated user/group for the service
+
     users.users.${cfg.user} = {
       isSystemUser = true;
       group = cfg.group;
-      extraGroups = [ "video" "render" ];  # Required for GPU access
+      extraGroups = [ "video" "render" ];
       home = cfg.modelsDirectory;
       description = "llama.cpp server user";
     };
 
     users.groups.${cfg.group} = { };
 
-    # Systemd service
     systemd.services.llama-cpp-server = {
       description = "llama.cpp LLM Server (Vulkan GPU Acceleration)";
       after = [ "network.target" "local-fs.target" "gpu-setup.service" ];
       wants = [ "gpu-setup.service" ];
       wantedBy = [ "multi-user.target" ];
 
-      path = [ cfg.package pkgs.curl ];  # curl needed for HF downloads
+      path = [ cfg.package pkgs.curl ];
 
       environment = {
-        # Vulkan device selection
+
         GGML_VULKAN_DEVICE = "0";
-        # Ensure Vulkan uses RADV (AMD's open-source Vulkan driver)
+
         AMD_VULKAN_ICD = "RADV";
-        # Model cache directory for HuggingFace downloads
+
         HF_HOME = "${cfg.modelsDirectory}/huggingface";
         HF_HUB_CACHE = "${cfg.modelsDirectory}/huggingface/hub";
-        # Mesa shader cache (for Vulkan)
+
         MESA_SHADER_CACHE_DIR = "${cfg.modelsDirectory}/.cache/mesa";
-        RADV_PERFTEST = "gpl";  # Enable graphics pipeline library for faster shader compilation
-        # Home directory for the service
+        RADV_PERFTEST = "gpl";
+
         HOME = cfg.modelsDirectory;
       };
 
@@ -167,8 +152,7 @@ in
         Type = "simple";
         User = cfg.user;
         Group = cfg.group;
-        
-        # Build the command with all options
+
         ExecStart = let
           flashAttnArg = if cfg.flashAttention then "--flash-attn on" else "";
           modelArg = if lib.hasPrefix "/" cfg.model
@@ -191,7 +175,6 @@ in
         Restart = "on-failure";
         RestartSec = 10;
 
-        # Allow GPU device access
         PrivateDevices = false;
         DeviceAllow = [
           "/dev/dri/renderD128 rw"
@@ -199,24 +182,18 @@ in
         ];
         SupplementaryGroups = [ "video" "render" ];
 
-        # Security hardening (where possible)
         NoNewPrivileges = true;
         ProtectSystem = "strict";
         ProtectHome = "read-only";
         ReadWritePaths = [ cfg.modelsDirectory ];
         PrivateTmp = true;
 
-        # Resource limits
         LimitNOFILE = 65536;
-        
-        # Working directory for model downloads
+
         WorkingDirectory = cfg.modelsDirectory;
       };
     };
 
-    # Ensure models directory exists with correct permissions.
-    # The "z" line fixes ownership on existing directories (e.g. created as root:root
-    # by the impermanence module before the llama user was configured).
     systemd.tmpfiles.rules = [
       "z ${cfg.modelsDirectory} 0755 ${cfg.user} ${cfg.group} -"
       "d ${cfg.modelsDirectory} 0755 ${cfg.user} ${cfg.group} -"
@@ -227,10 +204,8 @@ in
       "d ${cfg.modelsDirectory}/.cache/llama.cpp 0755 ${cfg.user} ${cfg.group} -"
     ];
 
-    # Firewall
     networking.firewall.allowedTCPPorts = lib.optional cfg.openFirewall cfg.port;
 
-    # Ensure Vulkan tools are available for debugging
     environment.systemPackages = [ pkgs.vulkan-tools ];
   };
 }

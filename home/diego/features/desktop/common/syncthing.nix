@@ -6,8 +6,6 @@
 }:
 
 {
-  # Syncthing service via Home Manager
-  # Syncs with cobalto (folder IDs must match hosts/common/optional/network/syncthing.nix)
 
   services.syncthing = {
     enable = true;
@@ -70,7 +68,6 @@
 
   home.file.".config/syncthing/.stfolder".text = "";
 
-  # Ensure Sync and Obsidian dirs exist (capitalized; Pictures has Wallpapers, Photos, Screenshots)
   home.activation.createSyncthingDirs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     mkdir -p "${config.home.homeDirectory}/Sync"/{Music,Books,Documents,Pictures,Notes}
     mkdir -p "${config.home.homeDirectory}/Sync/Pictures"/{Wallpapers,Photos,Screenshots}

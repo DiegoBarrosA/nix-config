@@ -1,5 +1,3 @@
-# jcode — RAM-efficient AI coding harness (pre-built binary from GitHub releases).
-# https://github.com/1jehuang/jcode
 {
   lib,
   stdenv,
@@ -30,7 +28,6 @@ stdenv.mkDerivation {
   ];
   autoPatchelfIgnoreMissing = [ "libgcc_s.so.1" ];
 
-  # The tarball contains a single binary named `jcode-linux-x86_64`.
   sourceRoot = ".";
 
   installPhase = ''

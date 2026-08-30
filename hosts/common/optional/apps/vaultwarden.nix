@@ -9,9 +9,6 @@
     content = ''
       ADMIN_TOKEN=${config.sops.placeholder."vaultwarden-admin-token"}
       SMTP_HOST=smtp.resend.com
-      # Cobalto's ISP blocks outbound 25/465/587, so use Resend's alternate
-      # STARTTLS port. A blocked SMTP port stalls new-device login for 30s,
-      # which is long enough that the Bitwarden apps time out and fail.
       SMTP_PORT=2587
       SMTP_SECURITY=starttls
       SMTP_TIMEOUT=5
@@ -31,12 +28,10 @@
     domain = "vault.minerales.network";
     backupDir = "/var/lib/vaultwarden/backups";
 
-    # Signups disabled — invite-only via admin panel
     config = {
       SIGNUPS_ALLOWED = false;
     };
 
-    # Admin panel enabled via ADMIN_TOKEN from sops
     environmentFile = config.sops.templates."vaultwarden.env".path;
   };
 }

@@ -1,5 +1,3 @@
-# Impermanence configuration for rubi (desktop system)
-# Based on cobalto's pattern but tailored for desktop use
 {
   config,
   lib,
@@ -10,11 +8,10 @@
 {
   imports = [ inputs.impermanence.nixosModules.impermanence ];
 
-  # Impermanence: define what persists across reboots
   environment.persistence."/nix/persist" = {
     hideMounts = true;
     directories = [
-      # System directories
+
       "/etc/nixos"
       "/etc/ssh"
       "/var/log"
@@ -22,38 +19,25 @@
       "/var/lib/nixos"
       "/var/lib/sops-nix"
 
-      # NetworkManager (desktop networking)
       "/var/lib/NetworkManager"
       "/etc/NetworkManager/system-connections"
 
-      # Bluetooth
       "/var/lib/bluetooth"
 
-       # Tailscale
        "/var/lib/tailscale"
 
-       # Secure Boot keys (sbctl)
        "/var/lib/sbctl"
 
-      # CUPS printing
       "/var/lib/cups"
 
-      # VPN client state (/opt/paloaltonetworks/prismaaccessagent) is
-      # contributed by the customer module (private-config).
-
-      # PipeWire/audio state
       "/var/lib/pipewire"
 
-      # Sunshine game streaming (pairing keys, credentials)
       "/var/lib/sunshine"
 
-      # Flatpak (if used with COSMIC Store)
       "/var/lib/flatpak"
 
-      # libvirt VM state (disks, OVMF nvram, swtpm TPM state)
       "/var/lib/libvirt"
 
-      # Ollama model cache (large files, must persist across reboots)
       {
         directory = "/var/lib/ollama";
         user = "ollama";
@@ -61,7 +45,6 @@
         mode = "0755";
       }
 
-      # User home directory (persisted entirely)
       {
         directory = "/home/diego";
         user = "diego";
@@ -71,21 +54,14 @@
     ];
 
     files = [
-      # SSH host keys
+
       "/etc/ssh/ssh_host_ed25519_key"
       "/etc/ssh/ssh_host_ed25519_key.pub"
       "/etc/ssh/ssh_host_rsa_key"
       "/etc/ssh/ssh_host_rsa_key.pub"
 
-      # Machine ID
       "/etc/machine-id"
 
-      # systemd credential host key. Used to decrypt LoadCredentialEncrypted
-      # secrets (e.g. libvirtd's secrets-encryption-key, which lives in the
-      # persisted /var/lib/libvirt). Without persisting this, a root wipe
-      # regenerates the host key and libvirtd fails with 243/CREDENTIALS
-      # ("Failed to determine local credential key"). Persist it so the
-      # encrypted libvirt secret stays decryptable across reboots.
       "/var/lib/systemd/credential.secret"
     ];
 
@@ -103,30 +79,23 @@
         ".local"
         ".cache"
 
-        # Browser data
         ".mozilla"
 
-        # Development
         ".cargo"
         ".rustup"
         ".npm"
         ".node_modules"
 
-        # Misc app data
         ".gnupg"
 
-        # Syncthing (preserve device identity across reboots)
         ".config/syncthing"
 
-        # VPN client user state (paloaltonetworks/prismaaccessagent) is
-        # contributed by the customer module (private-config).
       ];
 
       files = [ ];
     };
   };
 
-  # Filesystem mounts for impermanence
   fileSystems."/nix/persist" = {
     device = "/dev/mapper/rubi-root";
     fsType = "btrfs";
@@ -149,13 +118,10 @@
     neededForBoot = lib.mkForce true;
   };
 
-  # Boot configuration for impermanence
   boot.initrd.supportedFilesystems = [ "btrfs" ];
 
-  # Use systemd stage 1 for initrd (required by newer nixpkgs)
   boot.initrd.systemd.enable = true;
 
-  # Reset root subvolume on every boot - converted to systemd service
   boot.initrd.systemd.services.wipe-root = {
     description = "Wipe root subvolume and restore from blank snapshot";
     wantedBy = [ "initrd.target" ];
@@ -201,12 +167,10 @@
     '';
   };
 
-  # Systemd tmpfiles for runtime directories
   systemd.tmpfiles.rules = [
-    # Runtime directories
+
     "d /run/secrets 0755 root root -"
 
-    # Persist directory structure
     "d /nix/persist/etc 0755 root root -"
     "d /nix/persist/etc/ssh 0755 root root -"
     "d /nix/persist/var 0755 root root -"
@@ -217,7 +181,6 @@
     "d /nix/persist/home/diego 0755 diego users -"
   ];
 
-  # SSH host key generation service
   services.openssh = {
     enable = true;
     hostKeys = [
@@ -239,7 +202,6 @@
     };
   };
 
-  # Generate SSH keys if missing
   systemd.services."generate-ssh-keys" = {
     description = "Generate SSH host keys if missing";
     wantedBy = [ "multi-user.target" ];
@@ -283,7 +245,6 @@
     '';
   };
 
-  # Machine ID creation service
   systemd.services."create-machine-id" = {
     description = "Create machine ID";
     wantedBy = [ "multi-user.target" ];
@@ -301,16 +262,13 @@
     '';
   };
 
-  # Security
   security = {
     sudo.wheelNeedsPassword = false;
     protectKernelImage = true;
   };
 
-  # Firewall
   networking.firewall.allowedTCPPorts = [ 22 ];
 
-  # User configuration (needed for impermanence)
   users.users.diego = {
     isNormalUser = true;
   };

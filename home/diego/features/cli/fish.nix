@@ -7,18 +7,6 @@ in
   programs.fish = {
     enable = true;
 
-    # Ensure home-manager paths are loaded first on non-NixOS
-    # shellInit = ''
-    #   # Add home-manager paths
-    #   set -gx PATH $HOME/.nix-profile/bin $PATH
-    #   set -gx PATH $HOME/.local/state/nix/profile/bin $PATH
-
-    #   # Source home-manager session variables
-    #   if test -e $HOME/.nix-profile/etc/profile.d/hm-session-vars.sh
-    #     bass source $HOME/.nix-profile/etc/profile.d/hm-session-vars.sh
-    #   end
-    # '';
-
     shellAbbrs = {
       top = "${pkgs.bottom}/bin/btm";
       jqless = "jq -C | less -r";
@@ -36,17 +24,17 @@ in
       hm = "home-manager --flake .";
       hms = "home-manager --flake . switch";
       moe = "iina https://listen.moe/stream";
-      # Note: 'up' alias removed - use 'hms' (home-manager --flake . switch) instead
+
       e = "emacsclient -t";
       v = "hx";
       vi = "hx";
     };
     shellAliases = {
-      # Get ip
+
       getip = "curl ifconfig.me";
-      # SSH with kitty terminfo
+
       kssh = "kitty +kitten ssh";
-      # Clear screen and scrollback
+
       clear = "printf '\\033[2J\\033[3J\\033[1;1H'";
     };
     functions = {
@@ -56,14 +44,12 @@ in
     };
 
     shellInit = ''
-      # Source nix-daemon for multi-user nix installs (non-NixOS)
       if test -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish
         source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish
       else if test -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
         bass source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
       end
 
-      # Source user profile nix
       if test -e ~/.nix-profile/etc/profile.d/nix.fish
         source ~/.nix-profile/etc/profile.d/nix.fish
       end
@@ -72,13 +58,13 @@ in
     '';
 
     interactiveShellInit =
-      # Open command buffer in vim when alt+e is pressed
+
       ''
         bind \ee edit_command_buffer
         starship init fish | source
       ''
       +
-        # alacritty integration
+
         ''
           complete -c alacritty -n "__fish_use_subcommand" -l embed -d 'X11 window ID to embed Alacritty within (decimal or hexadecimal with "0x" prefix)' -r
           complete -c alacritty -n "__fish_use_subcommand" -l config-file -d 'Specify alternative configuration file [default: $XDG_CONFIG_HOME/alacritty/alacritty.yml]' -r -F
@@ -113,7 +99,7 @@ in
           complete -c alacritty -n "__fish_seen_subcommand_from msg; and __fish_seen_subcommand_from config" -s h -l help -d 'Print help information'
         ''
       +
-        # Use vim bindings and cursors
+
         ''
           fish_vi_key_bindings
           set fish_cursor_default     block      blink
@@ -122,17 +108,17 @@ in
           set fish_cursor_visual      block
         ''
       +
-        #use clipboard on vi mode
+
         ''
           function fish_user_key_bindings
             bind yy fish_clipboard_copy
             bind Y fish_clipboard_copy
             bind p fish_clipboard_paste
-          bind dd  'fish_clipboard_copy && commandline -r ""' 
+          bind dd  'fish_clipboard_copy && commandline -r ""'
           end
         ''
       +
-        # Use terminal colors
+
         ''
           set -U fish_color_autosuggestion      brblack
           set -U fish_color_cancel              -r

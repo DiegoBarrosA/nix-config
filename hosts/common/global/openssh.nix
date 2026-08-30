@@ -4,7 +4,7 @@ let
   hostname = config.networking.hostName;
   prefix = "";
   pubKey = host: builtins.toPath (../../${host}/ssh_host_ed25519_key.pub);
-  # SSH public keys for authorized access
+
   authorizedKeys = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOXblym20SD75es2z5Qay0mfW+g2zvKPBVMsUFakIyBK diegobarrosaraya@outlook.com"
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIpXSRXYbg97jxtfnnitIgNQLvGnLgZBWE9079qD2U4C diego@lazulita"
@@ -13,15 +13,15 @@ let
 in {
   services.openssh = {
     enable = true;
-    # Harden
+
     settings.PasswordAuthentication = false;
     settings.PubkeyAuthentication = true;
-    settings.PermitRootLogin = lib.mkForce "prohibit-password";  # Allow key-based access only
-    # Automatically remove stale sockets
+    settings.PermitRootLogin = lib.mkForce "prohibit-password";
+
     extraConfig = ''
       StreamLocalBindUnlink yes
     '';
-    # Allow forwarding ports to everywhere
+
     settings.GatewayPorts = "clientspecified";
 
     hostKeys = [{
@@ -29,14 +29,13 @@ in {
       type = "ed25519";
     }];
   };
-  
-  # Configure root SSH access
+
   users.users.root.openssh.authorizedKeys.keys = authorizedKeys;
 
   programs.ssh = {
-    # Known hosts - disabled to avoid file access errors during first boot
+
     knownHosts = {};
   };
-  # Passwordless sudo when SSH'ing with keys
+
   security.pam.sshAgentAuth.enable = true;
 }

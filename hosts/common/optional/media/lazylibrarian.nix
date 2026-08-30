@@ -1,8 +1,6 @@
 { config, lib, pkgs, customPkgs, ... }:
 
 {
-  # LazyLibrarian - Book automation (ebooks, audiobooks, magazines)
-  # Port 5299 - Web UI
 
   networking.firewall.interfaces."enp6s0".allowedTCPPorts = [ 5299 ];
 

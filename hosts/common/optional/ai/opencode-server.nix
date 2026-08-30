@@ -1,25 +1,3 @@
-# OpenCode HTTP server
-# Provides the OpenCode API server for remote clients (Android app, web UI)
-# and the built-in web interface via `opencode web`.
-#
-# Usage:
-#   services.opencode-server = {
-#     enable = true;
-#     host = "0.0.0.0";   # bind all interfaces (Tailsecured)
-#     port = 4096;
-#     secretEnv = {
-#       OPENCODE_API_KEY = "/run/secrets/opencode-api-key";
-#       WORK_API_KEY = "/run/secrets/work-api-key";
-#     };
-#   };
-#
-# The server uses Basic Auth via OPENCODE_SERVER_PASSWORD.
-# Set passwordFile to a SOPS-managed file containing the password.
-#
-# API docs: http://<host>:<port>/doc
-# Web UI:   http://<host>:<port>
-# Android:  https://github.com/giuliastro/opencode-remote-android
-
 { config, lib, pkgs, ... }:
 
 let

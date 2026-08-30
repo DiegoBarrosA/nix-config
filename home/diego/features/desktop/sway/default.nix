@@ -6,49 +6,35 @@
 }:
 let
   inherit (config.colorscheme) colors;
-  inherit (config.stylix) fonts;
+  inherit (config) fontProfiles;
   cursorName = config.stylix.cursor.name;
   cursorSize = toString config.stylix.cursor.size;
   workspaces = (import ./workspaces.nix { inherit lib; }).registry;
 
-  # Workspace target for sway commands: the registry's `name` when set (so
-  # named workspaces are addressed by their plain label, no leading number),
-  # otherwise the registry key itself.
-  wsTarget = n: v: v.name or n;
+  wsTarget = n: if workspaces.${n}.nameless or false then "${n}:" else n;
 
-  # Package helper scripts
   launch-or-focus = pkgs.writeShellScriptBin "launch-or-focus" ''
     #!/usr/bin/env bash
-    #
-    # Launch an app on a specific workspace, or focus it if already running
-    # Usage: launch-or-focus <app_id_or_class> <workspace> <launch_command>
-    #
 
     APP_ID="$1"
     WORKSPACE="$2"
     shift 2
     LAUNCH_CMD="$@"
 
-    # Check if window exists by app_id or class
     WINDOW_EXISTS=$(swaymsg -t get_tree | jq -r ".. | objects | select(.app_id == \"$APP_ID\" or .class == \"$APP_ID\") | .id" 2>/dev/null | head -1)
 
     if [ -n "$WINDOW_EXISTS" ]; then
-        # Window exists - focus it (this also switches to its workspace)
         swaymsg "[con_id=\"$WINDOW_EXISTS\"] focus"
     else
-        # Window doesn't exist - switch to workspace and launch
-        swaymsg "workspace \"$WORKSPACE\""
+        swaymsg "workspace number $WORKSPACE"
         $LAUNCH_CMD &
     fi
   '';
 
-  # Launcher for yazi on the "files" workspace (file manager)
-  # Switches to it; opens yazi if empty, or focuses existing
   yazi-launcher = pkgs.writeShellScriptBin "yazi-launcher" ''
     #!/usr/bin/env bash
-    WORKSPACE="${wsTarget "7" workspaces."7"}"
+    WORKSPACE="7"
 
-    # Count leaf windows (app_id != null) on this workspace
     HAS_WINDOWS=$(swaymsg -t get_tree | jq -r "
       [.. | objects |
         select(.type == \"workspace\" and .name == \"$WORKSPACE\") |
@@ -58,20 +44,15 @@ let
     " 2>/dev/null)
 
     if [ "$HAS_WINDOWS" -gt 0 ]; then
-      swaymsg "workspace \"$WORKSPACE\""
+      swaymsg "workspace number $WORKSPACE"
     else
-      # Switch to the workspace, then tell Sway to exec alacritty -e yazi.
-      # Using a single swaymsg command with ; ensures the workspace switch
-      # completes before the app launches, so the window lands there.
-      swaymsg "workspace \"$WORKSPACE\"; exec alacritty -e yazi"
+      swaymsg "workspace number $WORKSPACE; exec alacritty -e yazi"
     fi
   '';
 
-  # Launcher for helix on the "code" workspace (editor)
-  # Switches to it; opens helix if empty, or focuses existing
   helix-launcher = pkgs.writeShellScriptBin "helix-launcher" ''
     #!/usr/bin/env bash
-    WORKSPACE="${wsTarget "9" workspaces."9"}"
+    WORKSPACE="9"
 
     HAS_WINDOWS=$(swaymsg -t get_tree | jq -r "
       [.. | objects |
@@ -82,21 +63,15 @@ let
     " 2>/dev/null)
 
     if [ "$HAS_WINDOWS" -gt 0 ]; then
-      swaymsg "workspace \"$WORKSPACE\""
+      swaymsg "workspace number $WORKSPACE"
     else
-      swaymsg "workspace \"$WORKSPACE\"; exec alacritty -e hx"
+      swaymsg "workspace number $WORKSPACE; exec alacritty -e hx"
     fi
   '';
 
-  # Launcher for opencode (ocp) on the "chat" workspace
-  # Switches to it; opens ocp if empty, or focuses existing.
-  # `--daily` seeds the session with the morning focus prompt (login only).
-  #
-  # Runs in ~/Notes rather than $HOME: opencode's file picker refuses to index
-  # a home directory, and the vault is what the focus prompt reads anyway.
   opencode-launcher = pkgs.writeShellScriptBin "opencode-launcher" ''
     #!/usr/bin/env bash
-    WORKSPACE="${wsTarget "10" workspaces."10"}"
+    WORKSPACE="10"
 
     DAILY_PROMPT="Read today's daily note, the active projects, and anything due \
     or overdue in the vault, then answer one question: what should I focus on today? \
@@ -118,25 +93,18 @@ let
     " 2>/dev/null)
 
     if [ "$HAS_WINDOWS" -gt 0 ]; then
-      swaymsg "workspace \"$WORKSPACE\""
+      swaymsg "workspace number $WORKSPACE"
       exit 0
     fi
 
-    # Quote the whole command for sway's exec, which re-parses the string.
     CMD="alacritty --working-directory $HOME/Notes -e ocp"
     for a in ''${ARGS+"''${ARGS[@]}"}; do
       CMD+=" $(printf '%q' "$a")"
     done
 
-    swaymsg "workspace \"$WORKSPACE\"; exec $CMD"
+    swaymsg "workspace number $WORKSPACE; exec $CMD"
   '';
 
-  # Login session apps, generated from the workspaces registry (`autostart`).
-  #
-  # Staggered rather than fired all at once: five cold starts competing for CPU
-  # and disk makes every one of them slow to appear, and opencode — the slowest
-  # — is the one that most needs an uncontended start. Each entry reuses the
-  # normal launcher, so re-running this is a no-op for apps already open.
   session-apps =
     let
       autostartWorkspaces = lib.filterAttrs (_: v: v ? autostart) workspaces;
@@ -148,25 +116,24 @@ let
         if v ? launcher then
           "${v.launcher}${lib.optionalString (v ? autostartArgs) " ${v.autostartArgs}"}"
         else
-          "launch-or-focus ${v.app} ${wsTarget n v} ${v.launch}";
-      firstTarget = wsTarget (lib.head ordered).name (lib.head ordered).value;
+          "launch-or-focus ${v.app} ${n} ${v.launch}";
+      firstTarget = wsTarget (lib.head ordered).name;
 
-      # `persistent` workspaces are created (by name) up front, so they show
-      # up in the bar even if their app never autostarts (e.g. "code"). The
-      # autostart launchers below address the same names, so they reuse
-      # these rather than creating a second, duplicate workspace.
-      persistentWorkspaces = lib.filterAttrs (_: v: v.persistent or false) workspaces;
-      warmup = lib.mapAttrsToList (n: v: ''swaymsg 'workspace "${wsTarget n v}"' '') persistentWorkspaces;
+      namelessWorkspaces = lib.filterAttrs (_: v: v.nameless or false) workspaces;
+      renameNameless = lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (
+          n: _: ''swaymsg 'rename workspace number ${n} to "${n}:"' 2>/dev/null || true''
+        ) namelessWorkspaces
+      );
     in
     pkgs.writeShellScriptBin "session-apps" ''
       #!/usr/bin/env bash
-      ${lib.concatStringsSep "\n" warmup}
+      ${renameNameless}
 
       ${lib.concatMapStringsSep "\nsleep 1.5\n" (e: launcherFor e.name e.value) ordered}
 
-      # Land on the first autostart workspace once everything is up.
       sleep 1.5
-      swaymsg "workspace \"${firstTarget}\""
+      swaymsg "workspace number ${firstTarget}"
     '';
 
   power-menu = pkgs.writeShellScriptBin "power-menu" ''
@@ -182,21 +149,8 @@ let
     esac
   '';
 
-  # Script to manage virtual output for phone streaming via Sunshine
   sunshine-stream = pkgs.writeShellScriptBin "sunshine-stream" ''
     #!/usr/bin/env bash
-    #
-    # Manage virtual output for Sunshine phone streaming
-    # Resolution is set via swaymsg directly (kanshi doesn't handle HEADLESS modes)
-    #
-    # Usage:
-    #   sunshine-stream start [WxH]   - start stream at resolution (default: 1080x2436)
-    #   sunshine-stream start 1290x2796
-    #   sunshine-stream start landscape
-    #   sunshine-stream stop
-    #   sunshine-stream toggle [WxH]
-    #   sunshine-stream status
-    #
 
     ACTION="''${1:-toggle}"
     RES_ARG="''${2:-}"
@@ -231,17 +185,14 @@ let
         exit 0
       fi
 
-      # Create virtual output
       swaymsg create_output HEADLESS
       sleep 0.5
 
-      # Set custom resolution (HEADLESS outputs have no built-in modes)
       swaymsg output HEADLESS-1 resolution "$RES"
 
-      # Move the "code" workspace to virtual output and switch to it
-      swaymsg 'workspace "${wsTarget "9" workspaces."9"}"; move workspace to output HEADLESS-1'
+      swaymsg 'workspace number 9; move workspace to output HEADLESS-1'
 
-      notify-send "Sunshine" "Phone stream ready on workspace ${wsTarget "9" workspaces."9"} ($RES)"
+      notify-send "Sunshine" "Phone stream ready on workspace 9 ($RES)"
     }
 
     case "$ACTION" in
@@ -253,11 +204,8 @@ let
           notify-send "Sunshine" "Phone stream not active"
           exit 0
         fi
-        # Move the "code" workspace back to primary
-        swaymsg 'workspace "${wsTarget "9" workspaces."9"}"; move workspace to output eDP-1' || true
-        # Switch back to single mode
+        swaymsg 'workspace number 9; move workspace to output eDP-1' || true
         kanshictl switch single || true
-        # Destroy virtual output
         swaymsg output HEADLESS-1 unplug 2>/dev/null || true
         notify-send "Sunshine" "Phone stream stopped"
         ;;
@@ -288,32 +236,8 @@ let
     esac
   '';
 
-  # Script to mirror and control Android device via scrcpy
   scrcpy-stream = pkgs.writeShellScriptBin "scrcpy-stream" ''
     #!/usr/bin/env bash
-    #
-    # Mirror and control an Android device via scrcpy on a dedicated workspace.
-    #
-    # Usage:
-    #   scrcpy-stream toggle               - toggle mirroring (default)
-    #   scrcpy-stream start                 - start mirroring on workspace 10
-    #   scrcpy-stream stop                  - stop mirroring
-    #   scrcpy-stream status                - show ADB device status
-    #   scrcpy-stream list                  - list connected ADB devices
-    #
-    # Wireless ADB (no USB cable needed after setup):
-    #   1. Connect phone via USB, then run:  scrcpy-stream wireless
-    #   2. Disconnect USB, note the IP from: scrcpy-stream ip
-    #   3. Connect over WiFi:                scrcpy-stream connect <ip>
-    #   Then use scrcpy-stream toggle as usual.
-    #
-    #   scrcpy-stream wireless [port]  - switch USB device to TCP mode (default port 5555)
-    #   scrcpy-stream ip               - show IP address of connected device
-    #   scrcpy-stream connect <ip>     - connect to a wireless device
-    #   scrcpy-stream disconnect [id]  - disconnect wireless device
-    #   scrcpy-stream pair <host> <code> - pair with Android 11+ wireless debugging
-    #
-    # Requirements: scrcpy, android-tools (adb)
 
     ACTION="''${1:-toggle}"
 
@@ -325,15 +249,10 @@ let
     }
 
     count_devices() {
-      # adb devices plain-text output:
-      #   List of devices attached
-      #   R58NA04G8YA    device product:... model:... device:...
-      # Count lines after the header that have a serial (non-empty, not "attached")
       "$ADB" devices 2>/dev/null | awk 'NR>1 && NF>0 && !/attached/ {count++} END {print count+0}'
     }
 
     has_usb_device() {
-      # Only count USB-connected devices (serial has no ":" like IP:port would)
       "$ADB" devices -l 2>/dev/null | awk 'NR>1 && NF>0 && !/attached/ && $1 !~ /:/ {count++} END {exit count==0}'
     }
 
@@ -341,7 +260,6 @@ let
       [ "$(count_devices)" -gt 0 ] 2>/dev/null
     }
 
-    # Check if scrcpy is running (match the binary name, not the helper script)
     is_running() {
       pgrep -x scrcpy >/dev/null 2>&1
     }
@@ -357,29 +275,19 @@ let
     start_mirror() {
       if is_running; then
         notify-send "scrcpy" "Android mirror already active (PID $(get_scrcpy_pid))"
-        # Focus the scrcpy window
         swaymsg "[app_id=\"scrcpy\"] focus" 2>/dev/null || true
         exit 0
       fi
 
-      # Ensure ADB server is running
       "$ADB" start-server 2>/dev/null
 
-      # Check for connected device
       if ! has_device; then
         notify-send -u critical "scrcpy" "No Android device detected via ADB\nConnect your phone or run 'scrcpy-stream connect <ip>' for wireless."
         exit 1
       fi
 
-      # Switch to the "chat" workspace before launching
-      swaymsg 'workspace "${wsTarget "10" workspaces."10"}"'
+      swaymsg 'workspace number 10'
 
-      # Launch scrcpy with optimal defaults:
-      #   --turn-screen-off : conserve phone battery
-      #   --max-size 1080   : cap resolution for performance
-      #   --stay-awake      : keep phone awake while connected
-      #   --no-audio        : avoid audio capture issues on some devices
-      #   --window-title    : identify the window in sway
       $SCRCPY \
         --turn-screen-off \
         --max-size 1080 \
@@ -387,11 +295,10 @@ let
         --no-audio \
         --window-title "Android (scrcpy)" &
 
-      # Wait for window to appear then ensure it's on the "chat" workspace
       sleep 1
-      swaymsg "[title=\"Android (scrcpy)\"] move workspace \"${wsTarget "10" workspaces."10"}\"" 2>/dev/null || true
+      swaymsg "[title=\"Android (scrcpy)\"] move workspace number 10" 2>/dev/null || true
 
-      notify-send "scrcpy" "Android mirror started on workspace ${wsTarget "10" workspaces."10"}"
+      notify-send "scrcpy" "Android mirror started on workspace 10"
     }
 
     stop_mirror() {
@@ -409,7 +316,6 @@ let
     enable_wireless() {
       local PORT="''${2:-5555}"
 
-      # First ensure the adb server is running
       "$ADB" start-server 2>/dev/null
 
       if ! has_usb_device; then
@@ -473,7 +379,6 @@ let
       if [ -n "$HOST" ]; then
         "$ADB" disconnect "$HOST"
       else
-        # Disconnect all wireless devices
         "$ADB" disconnect
       fi
     }
@@ -611,6 +516,34 @@ let
       "Brightness" "$BRI%"
   '';
 
+  rename-workspace = pkgs.writeShellScriptBin "rename-workspace" ''
+        #!/usr/bin/env bash
+        WS=$(swaymsg -t get_workspaces | ${pkgs.jq}/bin/jq -r '.[] | select(.focused) | .name')
+        NUM=$(echo "$WS" | grep -oP '^\d+')
+        default_name() {
+          case "$1" in
+    ${
+      lib.concatStrings (
+        lib.mapAttrsToList (
+          n: v: lib.optionalString (v.nameless or false) "        ${n}) echo \"${n}:\" ;;\n"
+        ) workspaces
+      )
+    }        *) echo "$1" ;;
+          esac
+        }
+
+        LABEL=$(echo | ${config.launcher.dmenu} --require-match false --prompt-text "New name:")
+        if [ -z "$LABEL" ]; then
+          [ -n "$NUM" ] && swaymsg rename workspace to "$(default_name "$NUM")"
+          exit 0
+        fi
+        if [ -n "$NUM" ]; then
+          swaymsg rename workspace to "$NUM: $LABEL"
+        else
+          swaymsg rename workspace to "$LABEL"
+        fi
+  '';
+
   swap-workspace-output = pkgs.writeShellScriptBin "swap-workspace-output" ''
         #!/usr/bin/env bash
         set -euo pipefail
@@ -624,40 +557,29 @@ let
             ;;
         esac
 
-        # Resolve the output and workspace the user is currently on.
         CUR_OUT=$(swaymsg -t get_outputs | ${pkgs.jq}/bin/jq -r '.[] | select(.focused) | .name')
         CUR_WS=$(swaymsg -t get_outputs | ${pkgs.jq}/bin/jq -r '.[] | select(.focused) | .current_workspace // empty')
 
         [ -n "$CUR_WS" ] || exit 0
 
-        # Resolve the adjacent output in the requested direction by its name.
-        # `focus output left|right` is cyclic, so capture the resolved name and
-        # always operate on explicit output names afterwards (deterministic on 2+
-        # monitors, no reliance on directional move semantics).
         swaymsg focus output "$DIRECTION" >/dev/null
         ADJ_OUT=$(swaymsg -t get_outputs | ${pkgs.jq}/bin/jq -r '.[] | select(.focused) | .name')
         ADJ_WS=$(swaymsg -t get_outputs | ${pkgs.jq}/bin/jq -r '.[] | select(.focused) | .current_workspace // empty')
 
-        # Single-monitor (or no distinct adjacent output): focus wrapped back to us.
         if [ "$ADJ_OUT" = "$CUR_OUT" ] || [ -z "$ADJ_WS" ]; then
           swaymsg focus output "$CUR_OUT" >/dev/null
           swaymsg workspace "$CUR_WS" >/dev/null
           exit 0
         fi
 
-        # Swap the two workspaces by explicit output name.
-        # ADJ_WS is currently focused on ADJ_OUT; send it to CUR_OUT.
         swaymsg move workspace to output "$CUR_OUT" >/dev/null
-        # Bring CUR_WS into focus on CUR_OUT, then send it to ADJ_OUT.
         swaymsg focus output "$CUR_OUT" >/dev/null
         swaymsg workspace "$CUR_WS" >/dev/null
         swaymsg move workspace to output "$ADJ_OUT" >/dev/null
 
-        # Stay on the physical output the user started on (CUR_OUT), now showing ADJ_WS.
         swaymsg focus output "$CUR_OUT" >/dev/null
         swaymsg workspace "$ADJ_WS" >/dev/null
 
-        # Move the pointer to the center of CUR_OUT so it follows the user's output.
         eval "$(${pkgs.jq}/bin/jq -r --arg out "$CUR_OUT" '
           .[] | select(.name == $out) |
           "CURSOR_X=\(.rect.x + .rect.width / 2 | floor)
@@ -666,19 +588,6 @@ let
         swaymsg seat seat0 cursor set "$CURSOR_X" "$CURSOR_Y" >/dev/null
   '';
 
-  # Hold a logind idle inhibitor for as long as a screencast is running, so
-  # swayidle doesn't lock the session mid-presentation.
-  #
-  # sway only honours zwp_idle_inhibit_manager_v1 for surfaces belonging to a
-  # visible view, so headless helpers (wlinhibit et al) are silently ignored.
-  # swayidle does watch logind's BlockInhibited property and calls
-  # disable_timeouts() when it contains "idle", so systemd-inhibit is the
-  # mechanism that actually works here. Verified on sway 1.12.
-  #
-  # xdg-desktop-portal-wlr names each screencast stream "xdpw-stream-XXXXXX"
-  # with media.class=Video/Source. Keying on that prefix covers every client
-  # (Firefox, Chromium, Electron) and won't match the v4l2 webcam nodes, which
-  # are also Video/Source but named "v4l2_input.*".
   screencast-idle-inhibit = pkgs.writeShellScriptBin "screencast-idle-inhibit" ''
     #!/usr/bin/env bash
     set -uo pipefail
@@ -719,7 +628,7 @@ let
 in
 {
   imports = [
-    ./i3status-rust.nix
+    ./waybar.nix
     ./kanshi.nix
     ./mako.nix
     ./swaylock.nix
@@ -727,14 +636,13 @@ in
     ./bluetooth.nix
   ];
 
-  # Cliphist clipboard manager (systemd service)
   services.cliphist = {
     enable = true;
     allowImages = true;
   };
 
-  # Sway packages and helper scripts
   home.packages = with pkgs; [
+
     wdisplays
     j
     nice-dcv-client
@@ -742,27 +650,29 @@ in
     jq
     autotiling-rs
     polkit_gnome
-    # Screenshot tools
-    swappy
+
+    flameshot
     grim
     slurp
     wl-clipboard
     xdg-utils
     wifitui
-    # Helper scripts
+
     launch-or-focus
     yazi-launcher
     helix-launcher
     opencode-launcher
     session-apps
     power-menu
+    rename-workspace
+
     sunshine-stream
     swap-workspace-output
     scrcpy-stream
     volume-notify
     brightness-notify
     screencast-idle-inhibit
-    # Android mirroring & control
+
     scrcpy
   ];
 
@@ -785,50 +695,11 @@ in
       terminal = "alacritty";
       menu = config.launcher.drun;
 
-      bars = [
-        {
-          position = "bottom";
-          statusCommand = "${lib.getExe config.programs.i3status-rust.package} ${config.xdg.configHome}/i3status-rust/config-main.toml";
-          fonts = {
-            names = [ fonts.monospace.name ];
-            size = 1.0 * fonts.sizes.desktop;
-          };
-          colors = {
-            background = "#${colors.base00}";
-            statusline = "#${colors.base05}";
-            separator = "#${colors.base02}";
-            focusedWorkspace = {
-              border = "#${colors.base0D}";
-              background = "#${colors.base0D}";
-              text = "#${colors.base00}";
-            };
-            activeWorkspace = {
-              border = "#${colors.base02}";
-              background = "#${colors.base02}";
-              text = "#${colors.base05}";
-            };
-            inactiveWorkspace = {
-              border = "#${colors.base00}";
-              background = "#${colors.base00}";
-              text = "#${colors.base04}";
-            };
-            urgentWorkspace = {
-              border = "#${colors.base08}";
-              background = "#${colors.base01}";
-              text = "#${colors.base08}";
-            };
-            bindingMode = {
-              border = "#${colors.base0E}";
-              background = "#${colors.base0E}";
-              text = "#${colors.base00}";
-            };
-          };
-        }
-      ];
+      bars = [ ];
 
       fonts = {
-        names = [ fonts.monospace.name ];
-        size = lib.mkForce (1.0 * fonts.sizes.desktop);
+        names = [ "Fantasque Sans Mono" ];
+        size = lib.mkForce 17.0;
       };
 
       window = {
@@ -842,8 +713,8 @@ in
       };
 
       gaps = {
-        inner = 5;
-        outer = 5;
+        inner = 15;
+        outer = 15;
         smartGaps = "on";
         smartBorders = "on";
       };
@@ -864,45 +735,39 @@ in
           childBorder = "#${colors.base01}";
         };
         unfocused = {
-          border = "#${colors.base00}";
-          background = "#${colors.base00}";
+          border = "#${colors.base01}";
+          background = "#${colors.base01}";
           text = "#${colors.base06}";
-          indicator = "#${colors.base00}";
-          childBorder = "#${colors.base00}";
+          indicator = "#${colors.base01}";
+          childBorder = "#${colors.base01}";
         };
         urgent = {
           border = "#${colors.base08}";
-          background = "#${colors.base00}";
+          background = "#${colors.base01}";
           text = "#${colors.base08}";
           indicator = "#${colors.base08}";
           childBorder = "#${colors.base08}";
         };
         placeholder = {
-          border = "#${colors.base00}";
-          background = "#${colors.base00}";
+          border = "#${colors.base01}";
+          background = "#${colors.base01}";
           text = "#${colors.base03}";
-          indicator = "#${colors.base00}";
-          childBorder = "#${colors.base00}";
+          indicator = "#${colors.base01}";
+          childBorder = "#${colors.base01}";
         };
-        background = "#${colors.base00}";
+        background = "#${colors.base01}";
       };
 
-      assigns = lib.mapAttrs' (n: v: lib.nameValuePair (wsTarget n v) [ { app_id = v.app; } ]) (
-        lib.filterAttrs (_: v: v ? app) workspaces
-      );
+      assigns = lib.mapAttrs (_: v: [ { app_id = v.app; } ]) (lib.filterAttrs (_: v: v ? app) workspaces);
 
       window.commands = [
         {
           criteria = {
-            app_id = "swappy";
+            app_id = "flameshot";
           };
           command = "floating enable";
         }
-        # NOTE: idle inhibition during screen shares is handled by the
-        # screencast-idle-inhibit service, not by per-app inhibit_idle rules.
-        # "inhibit_idle focus" only held while the window was focused, so it
-        # dropped the moment you focused the app you were actually presenting,
-        # and it never covered Chromium/Electron clients at all.
+
       ];
 
       input = {
@@ -932,17 +797,15 @@ in
       };
 
       startup = [
-        # Idle daemon: lock after 5min, display off after 10min
+
         {
           command = "swayidle -w timeout 300 'swaylock -f' timeout 600 'swaymsg \"output * power off\"' resume 'swaymsg \"output * power on\"' before-sleep 'swaylock -f'";
         }
 
-        # Suppress the idle timers above while a screencast is active
         {
           command = "${screencast-idle-inhibit}/bin/screencast-idle-inhibit";
         }
 
-        # Cursor theme for XWayland apps
         {
           command = "export XCURSOR_THEME=${cursorName}";
           always = true;
@@ -952,16 +815,12 @@ in
           always = true;
         }
 
-        # Polkit authentication agent
         { command = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"; }
 
-        # Swayr daemon for window tracking
         { command = "swayr daemon"; }
 
-        # Autotiling for automatic split orientation
         { command = "autotiling-rs"; }
 
-        # DBus environment
         {
           command = "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway XCURSOR_THEME XCURSOR_SIZE";
         }
@@ -975,7 +834,6 @@ in
           command = "hash dbus-update-activation-environment 2>/dev/null && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP";
         }
 
-        # GTK cursor theme
         {
           command = "gsettings set org.gnome.desktop.interface cursor-theme '${cursorName}'";
           always = true;
@@ -985,13 +843,11 @@ in
           always = true;
         }
 
-        # Default session apps on their registry workspaces (see workspaces.nix).
-        # No `always` — a config reload should not reshuffle a working session.
         { command = "${session-apps}/bin/session-apps"; }
       ];
 
       keybindings = {
-        # Basics
+
         "Mod4+Return" = "exec alacritty";
         "Mod4+w" = "kill";
 
@@ -1001,26 +857,21 @@ in
         "Mod4+Shift+e" = "exec power-menu";
         "Mod4+Escape" = "exec swaylock -f";
 
-        # Brightness controls
         "XF86MonBrightnessUp" = "exec brightness-notify up";
         "XF86MonBrightnessDown" = "exec brightness-notify down";
 
-        # Volume controls
         "XF86AudioRaiseVolume" = "exec volume-notify up";
         "XF86AudioLowerVolume" = "exec volume-notify down";
         "XF86AudioMute" = "exec volume-notify mute";
         "XF86AudioMicMute" = "exec volume-notify mic";
 
-        # Screenshots
-        "Mod4+Shift+s" = "exec grim -g \"$(slurp)\" - | swappy -f -";
-        "Print" = "exec grim - | wl-copy";
+        "Mod4+Shift+s" = "exec flameshot gui";
+        "Mod4+Shift+x" = "exec grim - | wl-copy";
         "Mod4+Shift+a" = "exec grim -g \"$(slurp)\" ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png";
 
-        # Clipboard history
         "Mod4+v" =
           "exec sh -c 'cliphist list | ${config.launcher.dmenu} --prompt-text \"clip\" | cliphist decode | wl-copy'";
 
-        # Focus movement
         "Mod4+h" = "focus left";
         "Mod4+j" = "focus down";
         "Mod4+k" = "focus up";
@@ -1030,7 +881,6 @@ in
         "Mod4+Up" = "focus up";
         "Mod4+Right" = "focus right";
 
-        # Move focused window
         "Mod4+Shift+h" = "move left";
         "Mod4+Shift+j" = "move down";
         "Mod4+Shift+k" = "move up";
@@ -1040,14 +890,9 @@ in
         "Mod4+Shift+Up" = "move up";
         "Mod4+Shift+Right" = "move right";
 
-        # Workspace switching and container moves are generated below from the
-        # registry (see workspaces.nix).
-
-        # Horizontal workspace switching
         "Mod4+Tab" = "workspace next";
         "Mod4+Shift+Tab" = "workspace prev";
 
-        # Layout
         "Mod4+Shift+b" = "splith";
         "Mod4+Shift+v" = "splitv";
         "Mod4+u" = "layout stacking";
@@ -1057,32 +902,26 @@ in
         "Mod4+Shift+space" = "floating toggle";
         "Mod4+a" = "focus parent";
 
-        # Scratchpad
         "Mod4+Shift+minus" = "move scratchpad";
         "Mod4+minus" = "scratchpad show";
 
-        # App shortcuts (generated from workspaces registry — see workspaces.nix)
+        "Mod4+Shift+r" = "exec rename-workspace";
 
-        # Display mode switching (kanshi)
         "Mod4+Shift+d" = "exec display-mode-selector";
         "Mod4+Ctrl+1" = "exec kanshi-switch single";
         "Mod4+Ctrl+2" = "exec kanshi-switch docked";
         "Mod4+Ctrl+3" = "exec kanshi-switch triple";
 
-        # Sunshine iPhone streaming (Moonlight/Sunshine)
-        "Mod4+Shift+p" = "exec sunshine-stream toggle"; # Toggle phone stream mode
+        "Mod4+Shift+p" = "exec sunshine-stream toggle";
         "Mod4+Ctrl+p" =
-          "exec sunshine-stream status && notify-send 'Sunshine' \"$(sunshine-stream status)\""; # Show status
+          "exec sunshine-stream status && notify-send 'Sunshine' \"$(sunshine-stream status)\"";
 
-        # Android mirroring & control (scrcpy)
-        "Mod4+Shift+o" = "exec scrcpy-stream toggle"; # Toggle Android mirror
-        "Mod4+Ctrl+o" = "exec scrcpy-stream status && notify-send 'scrcpy' \"$(scrcpy-stream status)\""; # Show status
+        "Mod4+Shift+o" = "exec scrcpy-stream toggle";
+        "Mod4+Ctrl+o" = "exec scrcpy-stream status && notify-send 'scrcpy' \"$(scrcpy-stream status)\"";
 
-        # Swap workspaces between outputs
         "Mod4+Ctrl+Left" = "exec swap-workspace-output left";
         "Mod4+Ctrl+Right" = "exec swap-workspace-output right";
 
-        # Gap resizing
         "Mod4+Ctrl+equal" = "gaps inner current plus 4";
         "Mod4+Ctrl+minus" = "gaps inner current minus 4";
         "Mod4+Ctrl+Shift+equal" = "gaps outer current plus 4";
@@ -1090,33 +929,26 @@ in
         "Mod4+Ctrl+0" = "gaps inner current set 0, gaps outer current set 0";
         "Mod4+Ctrl+9" = "gaps inner current set 8, gaps outer current set 4";
 
-        # Bar visibility toggle
-        "Mod4+F1" = "bar mode toggle";
+        "Mod4+F1" = "exec systemctl --user kill --kill-whom=main -s SIGUSR1 waybar.service";
 
-        # Bluetooth pairing/management (TUI)
-        "Mod4+Shift+u" = "exec alacritty -e bluetuith";
-
-        # Resize mode
         "Mod4+r" = "mode resize";
       }
-      # Mod4+<n> switches, Mod4+Shift+<n> moves the container. Workspace 10 sits
-      # on the 0 key. Named workspaces are addressed by their plain name, not
-      # the number, so `${n}` here is only ever the switch key.
+
       // lib.listToAttrs (
         lib.concatMap (
           n:
           let
             key = if n == "10" then "0" else n;
-            target = wsTarget n (workspaces.${n} or { });
+            target = wsTarget n;
           in
           [
-            (lib.nameValuePair "Mod4+${key}" "workspace \"${target}\"")
-            (lib.nameValuePair "Mod4+Shift+${key}" "move container to workspace \"${target}\"")
+            (lib.nameValuePair "Mod4+${key}" "workspace number ${target}")
+            (lib.nameValuePair "Mod4+Shift+${key}" "move container to workspace number ${target}")
           ]
         ) (map toString (lib.range 1 10))
       )
       // lib.mapAttrs' (
-        n: v: lib.nameValuePair "Mod4+${v.key}" "exec launch-or-focus ${v.app} ${wsTarget n v} ${v.launch}"
+        n: v: lib.nameValuePair "Mod4+${v.key}" "exec launch-or-focus ${v.app} ${n} ${v.launch}"
       ) (lib.filterAttrs (_: v: (v ? app) && (v ? key)) workspaces)
       // lib.mapAttrs' (_: v: lib.nameValuePair "Mod4+${v.key}" "exec ${v.launcher}") (
         lib.filterAttrs (_: v: (v ? launcher) && (v ? key)) workspaces
@@ -1144,7 +976,7 @@ in
       titlebar_border_thickness 0
       titlebar_padding 8 4
 
-      output * bg /home/diego/Pictures/Wallpapers/General/jan-huber-oiLeSc7PwA4-unsplash.jpg fill
+      output * bg #${colors.base00} solid_color
       bindgesture swipe:4:left workspace prev
       bindgesture swipe:4:right workspace next
 

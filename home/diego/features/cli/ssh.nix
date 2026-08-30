@@ -8,10 +8,6 @@
 let
   inherit (lib) concatStringsSep mapAttrsToList mkIf;
 
-  # Easy names for each SSH key. Add a new key here and it's wired up
-  # everywhere: per-host selection, agent registration at login, and the
-  # `ssh-add-all` nu helper. Point these at existing key files; the private
-  # keys themselves never live in this repo.
   keys = {
     diego = "~/.ssh/id_ed25519";
     github = "~/.ssh/keys/github_ed25519";
@@ -20,8 +16,6 @@ let
 
   hasSystemd = pkgs.stdenv.isLinux && !(isNixOnDroid || pkgs.stdenv.hostPlatform.isAndroid or false);
 
-  # ssh-add every key. Passphrase-protected keys fail silently here (no tty at
-  # login); AddKeysToAgent picks them up interactively on first use.
   addAllScript = pkgs.writeShellScript "ssh-add-all" (
     concatStringsSep "\n" (
       mapAttrsToList (name: path: ''
@@ -34,12 +28,8 @@ in
   programs.ssh = {
     enable = true;
 
-    # Pull in config fragments managed elsewhere. home-manager only owns
-    # ~/.ssh/config; the teleport/omnistation fragments from private-config
-    # stay as separate files and are included at the top.
     includes = [ "~/.ssh/omnistation-config" ];
 
-    # The "*" block below replaces the deprecated built-in defaults.
     enableDefaultConfig = false;
 
     settings = {
@@ -48,7 +38,6 @@ in
         IdentitiesOnly = true;
       };
 
-      # Homelab hosts use the personal key
       cobalto = {
         HostName = "100.69.115.53";
         IdentityFile = keys.diego;
@@ -57,8 +46,6 @@ in
         IdentityFile = keys.diego;
       };
 
-      # nix-on-droid on the Infinix phone. `infinix` uses the phone's LAN
-      # address; `infinix-usb` requires `adb reverse tcp:8022 tcp:8022` first.
       infinix = {
         HostName = "192.168.1.36";
         Port = 8022;
@@ -81,17 +68,14 @@ in
         IdentityFile = keys.work;
       };
 
-      # Work / Omnistation teleport clusters use the work key
       "*.teleport.sh" = {
         IdentityFile = keys.work;
       };
     };
   };
 
-  # SSH agent with SSH_AUTH_SOCK exported in nushell (sshAuthSock handles it).
   services.ssh-agent.enable = true;
 
-  # Register all keys into the agent at login (Linux).
   systemd.user.services.ssh-add = mkIf hasSystemd {
     Unit = {
       Description = "Register SSH keys into the agent at login";
@@ -107,7 +91,6 @@ in
     };
   };
 
-  # Same on macOS via launchd.
   launchd.agents.ssh-add = mkIf pkgs.stdenv.isDarwin {
     enable = true;
     config = {
@@ -116,9 +99,7 @@ in
     };
   };
 
-  # nu helper: re-register all keys on demand (no restart needed).
   programs.nushell.extraConfig = ''
-    # Add every SSH key to the agent
     def ssh-add-all [] {
     ${concatStringsSep "\n" (mapAttrsToList (name: path: "    ssh-add ${path}") keys)}
     }

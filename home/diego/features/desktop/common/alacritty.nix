@@ -11,17 +11,16 @@ in
   programs.alacritty = {
     enable = true;
     settings = {
-      # General settings
+
       general = {
-        # Enable IPC socket for server/client mode
+
         ipc_socket = true;
-        # Live config reload
+
         live_config_reload = true;
       };
 
-      # Terminal settings
       terminal = {
-        # Shell configuration
+
         shell = {
           program = "${pkgs.nushell}/bin/nu";
           args = [ "--login" ];
@@ -29,10 +28,7 @@ in
       };
 
       window = {
-        # decorations = "None";  # No window decorations (Sway handles this)
-        # Background-only opacity; text stays fully opaque. `blur` exists too
-        # but only does anything on macOS/KDE Wayland, not sway, so it's
-        # omitted here.
+
         opacity = 1;
         padding = {
           x = 15;
@@ -63,7 +59,7 @@ in
           family = fonts.monospace.name;
           style = "Bold Italic";
         };
-        size = 14;
+        size = fonts.sizes.terminal;
       };
 
       cursor = {
@@ -78,11 +74,8 @@ in
         hide_when_typing = true;
       };
 
-      # Complete colorscheme configuration
       colors = {
-        # Apply window.opacity to every cell background (selection, dim rows,
-        # etc.), not just the default background, so nothing looks like an
-        # opaque patch against the transparent rest of the window.
+
         transparent_background_colors = true;
 
         primary = {
@@ -141,7 +134,6 @@ in
         }
       ];
 
-      # Better defaults
       selection.save_to_clipboard = true;
     };
   };
