@@ -1,8 +1,6 @@
 { pkgs, ... }:
 let
-  # Opens selected file(s) in the Helix pane when inside the dev Zellij layout.
-  # Moves focus right to the editor pane, sends :open <file>, then returns.
-  # Falls back to plain hx when not inside Zellij.
+
   hx-open = pkgs.writeShellScriptBin "hx-open" ''
     FILE=$(realpath "$1")
     if [ -n "''${ZELLIJ:-}" ]; then
@@ -38,6 +36,44 @@ in
         run = ''shell 'hx-open "$1"' --confirm'';
         desc = "Open in Helix (Zellij dev layout)";
       }
+      {
+        on = [ "g" "h" ];
+        run = "cd ~";
+        desc = "Go to home";
+      }
+      {
+        on = [ "g" "d" ];
+        run = "cd ~/Downloads";
+        desc = "Go to Downloads";
+      }
+      {
+        on = [ "g" "n" ];
+        run = "cd ~/Projects/Personal/nix/nix-config";
+        desc = "Go to nix-config";
+      }
+      {
+        on = [ "g" "N" ];
+        run = "cd ~/Projects/NVIDIA";
+        desc = "Go to Projects/NVIDIA";
+      }
+      {
+        on = [ "g" "s" ];
+        run = "cd ~/Projects/ServiceRocket";
+        desc = "Go to Projects/ServiceRocket";
+      }
+      {
+        on = [ "g" "p" ];
+        run = "cd ~/Projects/Personal";
+        desc = "Go to Projects/Personal";
+      }
+      {
+        on = [ "g" "c" ];
+        run = [
+          "shell 'mkdir -p ~/mnt/cobalto; mountpoint -q ~/mnt/cobalto || sshfs cobalto: ~/mnt/cobalto' --confirm"
+          "cd ~/mnt/cobalto"
+        ];
+        desc = "Go to cobalto (sshfs)";
+      }
     ];
     theme = {
       status = {
@@ -54,7 +90,6 @@ in
     };
   };
 
-  # Custom desktop file so Yazi appears as a file manager for MIME association
   xdg.dataFile."applications/yazi-fm.desktop" = {
     text = ''
       [Desktop Entry]

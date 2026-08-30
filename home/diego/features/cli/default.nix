@@ -5,9 +5,7 @@
   ...
 }:
 let
-  # Platform detection. nix-on-droid (phone) passes `isNixOnDroid = true` via
-  # home-manager.extraSpecialArgs; its pkgs are aarch64-linux, so
-  # `hostPlatform.isAndroid` can't detect the phone by itself.
+
   isLinux = pkgs.stdenv.isLinux;
   isDarwin = pkgs.stdenv.isDarwin;
   isAndroid = isNixOnDroid || pkgs.stdenv.hostPlatform.isAndroid or false;
@@ -22,9 +20,9 @@ in
     ./starship.nix
     ./fzf.nix
     ./bat.nix
-    ./zellij.nix # Zellij multiplexer (manual material-darker theme)
-    ./nushell.nix # Nushell with vi mode, Ctrl+T for Zellij
-    ./ssh.nix # Multiple SSH keys with per-host selection, agent registration
+    ./zellij.nix
+    ./nushell.nix
+    ./ssh.nix
     ./yazi.nix
     ./zathura.nix
     ./bottom.nix
@@ -32,24 +30,24 @@ in
 
   home.packages =
     with pkgs;
-    # Core CLI tools (all platforms)
+
     [
       timr-tui
       basalt
-      comma # Install and run programs by sticking a , before them
-      fd # Better find
+      comma
+      fd
       fzf
-      jq # JSON pretty printer and manipulator
+      jq
       nixfmt-rfc-style
-      ouch # TUI/CLI archive compress+decompress (tar/zip/7z/…); pairs with yazi
+      ouch
       pv
-      ripgrep # Better grep
-      sqlite # sqlite3 CLI — used by the netsuite-mcp Firefox cookie extraction
+      ripgrep
+      sqlite
       wget
       zip
       cursor-cli
     ]
-    # Linux/macOS desktop tools (not Android)
+
     ++ lib.optionals (isDesktop || isDarwin) [
       gh
       broot
@@ -61,17 +59,16 @@ in
       scope-tui
       antigravity-cli
 
-      # AI coding tools
-      aider-chat # AI pair programming (works with Ollama)
-      llm # Simon Willison's unified LLM CLI
-      claude-monitor # Real-time Claude Code usage monitor
+      aider-chat
+      llm
+      claude-monitor
     ]
-    # Desktop-only tools (Linux desktop or macOS, not servers/mobile)
+
     ++ lib.optionals (isDesktop || isDarwin) [
       cursor-cli
       claude-code
     ]
-    # Deployment tools (only useful on systems that deploy to others)
+
     ++ lib.optionals (isLinux && !isAndroid) [
       deploy-rs
     ];

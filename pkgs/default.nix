@@ -1,5 +1,3 @@
-# When you add custom packages, list them here
-# These are similar to nixpkgs packages
 { pkgs, lib ? null, colors ? null, privatePackages ? {}, ... }:
 
 let
@@ -13,4 +11,5 @@ in
   codex-acp = pkgs.callPackage ./codex-acp { };
   claude-desktop = pkgs.callPackage ./claude-desktop { };
   jcode = pkgs.callPackage ./jcode { };
+  happier = pkgs.callPackage ./happier { };
 } // privatePackages

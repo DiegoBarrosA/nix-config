@@ -6,19 +6,12 @@
 }:
 
 {
-  # Calibre Content Server - serves the calibre library via OPDS/API
-  # Port 8081
-  # Calibre-Web - Web UI for browsing/reading ebooks
-  # Port 8083 - nicer web interface
-  # Public access enabled - no authentication, all IPs allowed
 
-  # Allow access from all interfaces/IPs
   networking.firewall.allowedTCPPorts = [
     8081
     8083
   ];
 
-  # Calibre Content Server
   services.calibre-server = {
     enable = true;
     openFirewall = true;
@@ -27,10 +20,9 @@
     host = "0.0.0.0";
     port = 8081;
     libraries = [ "/nix/storage/calibre/library" ];
-    auth.enable = false; # Public access - no authentication required
+    auth.enable = false;
   };
 
-  # Calibre-Web - Web UI for browsing/reading ebooks
   services.calibre-web = {
     enable = true;
     user = "diego";
@@ -46,10 +38,8 @@
     };
   };
 
-  # Ensure media group exists
   users.groups.media = { };
 
-  # Initialize calibre library if it doesn't exist
   systemd.services.calibre-init = {
     description = "Initialize Calibre library";
     wantedBy = [ "multi-user.target" ];
@@ -74,7 +64,6 @@
     '';
   };
 
-  # Configure calibre-web for public access (no authentication required)
   systemd.services.calibre-web-public = {
     description = "Configure Calibre-Web for public access";
     wantedBy = [ "multi-user.target" ];
@@ -90,7 +79,6 @@
     script = ''
       DB="/nix/storage/calibre-web/app.db"
 
-      # Wait for database to exist
       for i in $(seq 1 15); do
         if [ -f "$DB" ]; then
           break
@@ -105,14 +93,12 @@
 
       echo "[calibre-web-public] Enabling public access (anonymous browsing)..."
 
-      # Enable anonymous browsing in settings (config_anonbrowse = 1)
       sqlite3 "$DB" "UPDATE settings SET config_anonbrowse = 1, config_calibre_dir = '/nix/storage/calibre/library' WHERE id = 1;"
 
       echo "[calibre-web-public] Public access enabled - no login required"
     '';
   };
 
-  # Systemd tmpfiles for calibre directories
   systemd.tmpfiles.rules = [
     "d /nix/storage/calibre 0750 diego media -"
     "d /nix/storage/calibre/library 0750 diego media -"

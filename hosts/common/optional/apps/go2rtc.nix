@@ -14,8 +14,7 @@ in {
       xiaomi.${"6704780226"} = xiaomiToken;
       streams = {
         xiaomi_cam = "xiaomi://6704780226:us@192.168.1.2?did=1078941680&model=chuangmi.camera.046c04";
-        # Reolink E1 via the neolink RTSP bridge (see cameras.nix). go2rtc becomes
-        # the single source for both cameras, consumed declaratively by Home Assistant.
+
         reolink_e1 = "rtsp://127.0.0.1:8554/reolink_e1";
       };
       webrtc.listen = ":8555";

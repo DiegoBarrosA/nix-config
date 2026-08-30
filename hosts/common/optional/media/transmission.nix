@@ -1,4 +1,3 @@
-
 { config, pkgs, ... }:
 {
     systemd.services.transmission = {
@@ -23,7 +22,7 @@
       umask = 2;
       peer-port = 51413;
       peer-port-random-on-start = false;
-        #   rpc-url = "/transmission/rpc";
+
     };
     user = "diego";
     group = "media";

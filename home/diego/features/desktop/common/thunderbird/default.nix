@@ -18,9 +18,9 @@ in
       isDefault = true;
       extensions = [ thunderbird-mcp-extension ];
       settings = {
-        # Auto-enable extensions without manual intervention
+
         "extensions.autoDisableScopes" = 0;
-        # Allow unsigned extensions (required for experiment_apis used by thunderbird-mcp)
+
         "xpinstall.signatures.required" = false;
       };
     };

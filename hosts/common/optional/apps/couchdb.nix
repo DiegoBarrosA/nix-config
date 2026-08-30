@@ -23,7 +23,6 @@ let
     echo "-- CouchDB LiveSync init done"
   '';
 
-  # Script to write admin credentials as CouchDB ini file at runtime
   prepareAdminScript = pkgs.writeShellScript "couchdb-prepare-admin" ''
     set -e
     mkdir -p /run/couchdb
@@ -44,7 +43,7 @@ in
     port = 5984;
     adminUser = "";
     adminPass = null;
-    # Runtime-generated admin credentials file
+
     extraConfigFiles = [ adminIniPath ];
     extraConfig = {
       chttpd = {
@@ -82,8 +81,6 @@ in
     };
   };
 
-  # Write admin credentials into /run/couchdb/admin.ini before couchdb starts
-  # Runs as couchdb user so the ini file is owned correctly for couchdb to read
   systemd.services.couchdb-prepare-admin = {
     description = "Prepare CouchDB admin credentials from SOPS secrets";
     before = [ "couchdb.service" ];
@@ -98,7 +95,6 @@ in
     };
   };
 
-  # One-shot init after couchdb is running (cluster setup, first-time CouchDB init)
   systemd.services.couchdb-livesync-init = {
     description = "Initialize CouchDB for Obsidian LiveSync";
     after = [ "couchdb.service" ];
@@ -113,7 +109,6 @@ in
     };
   };
 
-  # Clean up admin ini on stop
   systemd.tmpfiles.rules = [
     "d /run/couchdb 0750 couchdb couchdb -"
   ];

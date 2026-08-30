@@ -1,5 +1,3 @@
-# Base SOPS configuration shared across all hosts that use sops-nix
-# Host-specific secrets are defined in each host's sops.nix file
 {
   config,
   lib,
@@ -20,7 +18,6 @@ with lib;
     age.keyFile = "/nix/persist/var/lib/sops-nix/key.txt";
     age.generateKey = false;
 
-    # Core secrets needed on ALL hosts
     secrets."diego-password" = {
       neededForUsers = true;
       owner = "root";
@@ -41,13 +38,11 @@ with lib;
     };
   };
 
-  # Ensure sops-install-secrets doesn't fail on missing optional secrets
   systemd.services."sops-install-secrets" = {
     unitConfig.ConditionFileNotEmpty = lib.mkForce "";
     onFailure = lib.mkForce [ ];
   };
 
-  # ACME user for certificate management
   users.users.acme = {
     isSystemUser = true;
     group = "acme";

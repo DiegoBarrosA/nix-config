@@ -1,4 +1,3 @@
-# Home Manager configuration for rubi (NixOS with Sway desktop)
 {
   config,
   lib,
@@ -10,13 +9,13 @@
   ...
 }:
 {
-  colorscheme.type = "macintosh";
+  colorscheme.mode = "dark";
+  colorscheme.type = "grayscale-dark";
   colorscheme.iconFolderColor = "black";
-  # No light/dark toggle for this host — one scheme, no specialisations.
   colorscheme.specialisations = { };
 
   imports = [
-    # Rubi-local toggles for desktop setup.
+
     (
       { lib, ... }:
       {
@@ -31,24 +30,28 @@
     )
     ./global
     ./features/cli
-    ./features/desktop/common # Firefox, Qt, Stylix
+
+    ./features/cli/ekphos-theme.nix
+    ./features/desktop/common
+    ./features/desktop/zennotes-theme.nix
     ./features/ai
-    # ./features/ai/pixel-office.nix # Pixel Office dashboard + plugin (replaces Caffa blob-office)
-    # ./features/desktop/obsidian.nix
+    ./features/audio
+
   ]
   ++ lib.optional (desktop != null) ./features/desktop/${desktop};
 
   home.packages = [
-    # customPkgs.clin
+
     customPkgs.coderabbit-cli
     customPkgs.claude-desktop
     customPkgs.personal-assistant
-    pkgs.zennotes-desktop
-    pkgs.transmission_4-gtk
-    pkgs.nodejs_24 # provides npx, needed by the notes and supermercados MCP servers
+    pkgs.zed-editor-fhs
+
+    customPkgs.ekphos
+
+    pkgs.nodejs_24
   ];
 
-  # GTK bookmarks for file manager (using config.home.homeDirectory to avoid hardcoding)
   gtk.gtk3.bookmarks = [
     "file://${config.home.homeDirectory}/Documents"
     "file://${config.home.homeDirectory}/Downloads"
@@ -56,12 +59,9 @@
     "file://${config.home.homeDirectory}/Projects"
   ];
 
-  # OpenCode MCP configuration (managed by the nix-ai-tooling opencode-config module)
-  # MCP servers are shared with Zed, Claude Code, Cursor, Antigravity via programs.mcp-config
   programs.opencode-config = {
     enable = true;
 
-    # Work machine: work-provider inference only — no Go/Zen (personal resources)
     opencodeGo.enable = false;
     opencodeZen.enable = false;
 
@@ -69,7 +69,7 @@
 
     profiles =
       lib.optionalAttrs ((privateConfig.workProfile or null) != null) {
-        # opencode-work → work-provider inference + local Ollama for offline/coding
+
         work = lib.recursiveUpdate privateConfig.workProfile {
           config.provider."local-llm" = {
             npm = "@ai-sdk/openai-compatible";
@@ -112,12 +112,10 @@
         };
       }
       // {
-        # opencode-personal → Go/Zen (Big Pickle) + Groq (no work resources)
+
         personal = {
           scriptName = "ocp";
-          # Personal profile: no work MCP servers (project trackers etc.).
-          # Only general + personal tooling. Keeps work
-          # tool definitions out of personal-context sessions entirely.
+
           mcpServers = [
             "nixos"
             "jobspy"
@@ -126,7 +124,7 @@
             "thunderbird"
           ];
           config = (import ./features/ai/opencode-personal.nix).config // {
-            # profiles don't read opencodeGo/Zen options — include the providers explicitly
+
             provider."opencode-go" = {
               npm = "@ai-sdk/openai-compatible";
               name = "OpenCode Go";
@@ -209,15 +207,12 @@
                 };
               };
             };
-            # Personal profile uses Big Pickle for all agents (no work resources)
+
             agent = (import ./features/ai/opencode-personal.nix).config.agent // {
               title.model = "opencode/big-pickle";
               summary.model = "opencode/big-pickle";
               compaction.model = "opencode/big-pickle";
-              # Context-creep control: github (~dozens of tools, flagged by
-              # opencode docs as a token hog) and playwright (~25 tools) are
-              # disabled globally below and re-enabled only inside these
-              # purpose-built subagents. Invoke with @browser / @github.
+
               browser = {
                 description = "Web/browser automation via Playwright MCP (navigate, click, screenshot, scrape).";
                 mode = "subagent";
@@ -233,20 +228,17 @@
                 };
               };
             };
-            # Disable the chatty MCP servers globally; they are re-enabled
-            # per-agent above. The lean default keeps nixos/jobspy hot
-            # (small tool counts) while gating the big ones.
+
             tools = {
               "github_*" = false;
               "playwright_*" = false;
             };
           };
         };
-        # opencode-groq → Groq free tier (personal free resources)
+
         groq = {
           scriptName = "ocg";
-          # Groq models are small/fast — keep the tool surface minimal to avoid
-          # blowing the context window with MCP tool definitions.
+
           mcpServers = [
             "nixos"
           ];
@@ -275,7 +267,7 @@
                 };
               };
             };
-            # Local Ollama models for offline/coding use (rubi)
+
             provider."local-llm" = {
               npm = "@ai-sdk/openai-compatible";
               name = "Local LLM (Ollama)";
@@ -314,20 +306,20 @@
                 };
               };
             };
-            # Map agents by capability tier
+
             agent = {
-              # Heavy reasoning tasks → large model
+
               build.model = "groq/llama-3.3-70b-versatile";
               plan.model = "groq/llama-3.3-70b-versatile";
               oracle.model = "groq/llama-3.3-70b-versatile";
               metis.model = "groq/llama-3.3-70b-versatile";
               momus.model = "groq/llama-3.3-70b-versatile";
-              # General tasks → medium model
+
               explore.model = "groq/llama-3.1-8b-instant";
               general.model = "groq/llama-3.1-8b-instant";
               librarian.model = "groq/llama-3.1-8b-instant";
               prometheus.model = "groq/llama-3.1-8b-instant";
-              # Lightweight tasks → fast model
+
               compaction.model = "groq/llama-3.1-8b-instant";
               summary.model = "groq/llama-3.1-8b-instant";
               title.model = "groq/llama-3.1-8b-instant";
@@ -336,13 +328,6 @@
         };
       };
 
-    # Billing-context dispatcher (`oc`): routes to the right profile wrapper
-    # script based on $OPENCODE_BILLING_CONTEXT. Neutral contexts are literal;
-    # the work context is sourced from private-config (customer values live
-    # there), keyed by the neutral keyword "work" — the old customer keyword
-    # is dropped (type `work` instead). The work API-key env-var name and the
-    # secretEnv entry backing it also come from private-config
-    # (workInferenceEnvVar / workSecretEnv).
     dispatcher.contexts = {
       personal = {
         scriptName = "ocp";
@@ -364,13 +349,10 @@
       };
     };
 
-    # workSecretEnv already carries the work inference key entry, so no
-    # customer-named literal is needed here.
     secretEnv = (privateConfig.workSecretEnv or { }) // {
       GROQ_API_KEY = "/run/secrets/groq-api-key";
     };
 
-    # Skills are sourced from the vault via programs.ai-skills (all prompts migrated there).
     skills = { };
     commands = {
       "review" = ''
@@ -401,13 +383,9 @@
     };
   };
 
-  # Jcode configuration (managed by the nix-ai-tooling jcode-config module).
-  # Same MCP servers and model providers as opencode, but using jcode's
-  # TOML config format (~/.jcode/config.toml) and MCP JSON (~/.jcode/mcp.json).
   programs.jcode-config = {
     enable = true;
 
-    # Same provider toggles as opencode on rubi
     opencodeGo.enable = false;
     opencodeZen.enable = false;
 
@@ -415,12 +393,12 @@
       lib.optionalAttrs ((privateConfig.workProfile or null) != null) {
         work = {
           scriptName = "jcw";
-          mcpServers = null; # inherit all
+          mcpServers = null;
           config = privateConfig.jcodeWorkConfig or { };
         };
       }
       // {
-        # jcode-personal → Go/Zen (Big Pickle) + Local LLM + Groq
+
         personal = {
           scriptName = "jcp";
           mcpServers = [
@@ -506,7 +484,7 @@
             };
           };
         };
-        # jcode-groq → Groq free tier
+
         groq = {
           scriptName = "jcg";
           mcpServers = [
@@ -579,10 +557,6 @@
     };
   };
 
-  # Claude Desktop: resolve ${VAR} placeholders in MCP server env blocks at
-  # activation time by reading actual values from /run/secrets/ files.
-  # privateConfig.secretEnv maps env var names -> sops secret file paths
-  # (defined in customers/nvidia/secret-env.nix in private-config).
   programs.claude-desktop-config.secretEnv = privateConfig.workSecretEnv or { };
 
   programs.ai-skills.opencodeProfiles = [
@@ -597,9 +571,39 @@
     "groq"
   ];
 
-  # COSMIC-specific user configuration
-  # COSMIC stores its config in ~/.config/cosmic/ (RON format)
-  # These are managed at runtime by COSMIC Settings, but we can set defaults
+  programs.happier-config = {
+    enable = true;
 
-  # Default cursor is managed by Stylix via features/desktop/common/stylix.nix
+    package = customPkgs.happier;
+
+    server = {
+      name = "happier-cloud";
+      useByDefault = true;
+    };
+
+    daemon.enable = true;
+
+    providers = {
+      claude.enable = true;
+      opencode.enable = true;
+      jcode.enable = true;
+      codex.enable = false;
+      gemini.enable = false;
+    };
+
+    secretEnv =
+      lib.removeAttrs
+        (
+          (privateConfig.workSecretEnv or { })
+          // {
+            GROQ_API_KEY = "/run/secrets/groq-api-key";
+          }
+        )
+        [
+          "ANTHROPIC_API_KEY"
+          "NVIDIA_API_KEY"
+          "OPENCODE_API_KEY"
+        ];
+  };
+
 }

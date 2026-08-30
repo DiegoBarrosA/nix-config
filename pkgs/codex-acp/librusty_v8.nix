@@ -1,5 +1,3 @@
-# auto-generated file -- DO NOT EDIT!
-# librusty_v8 147.4.0 — required by codex-acp 0.16.0 (codex-core rust-v0.137.0).
 {
   lib,
   stdenv,

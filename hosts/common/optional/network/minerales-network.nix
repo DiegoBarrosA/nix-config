@@ -6,7 +6,7 @@
 }:
 
 let
-  # Helper to add SSL config via ACME to all virtualHosts
+
   withSSL =
     domain: vhostConfig:
     vhostConfig
@@ -15,11 +15,6 @@ let
       useACMEHost = "minerales.network";
     };
 
-  # Standard proxy config (use 127.0.0.1 explicitly to avoid IPv6 resolution issues)
-  # NOTE: Don't set Host $host here — recommendedProxySettings already includes a global
-  # proxy_set_header Host $host via the headers include.  Duplicating it in the location
-  # block can cause issues with ASP.NET Core apps (Sonarr/Prowlarr/Lidarr/etc.) when
-  # nginx processes the include after the explicit directive, resulting in a spurious 400.
   standardProxy = port: {
     proxyPass = "http://127.0.0.1:${toString port}";
     proxyWebsockets = true;
@@ -31,21 +26,14 @@ let
   };
 in
 {
-  # Private minerales.network subdomains accessible only through Tailscale
-  # This configuration assumes:
-  # 1. You own minerales.network domain in Cloudflare
-  # 2. DNS records point to your Tailscale IP (100.x.x.x)
-  # 3. Access is only possible when connected to your Tailscale network
-  # 4. Let's Encrypt wildcard cert via Cloudflare DNS challenge
 
   systemd.tmpfiles.rules = [
     "d /var/lib/private 0700 root root -"
   ];
 
-  # ACME configuration for Let's Encrypt wildcard certificate
   security.acme = {
     acceptTerms = true;
-    defaults.email = "diego@minerales.network"; # Change to your email
+    defaults.email = "diego@minerales.network";
 
     certs."minerales.network" = {
       domain = "minerales.network";
@@ -55,30 +43,27 @@ in
       credentialFiles = {
         "CF_DNS_API_TOKEN_FILE" = config.sops.secrets."cloudflare-dns-token".path;
       };
-      # Reload nginx when cert is renewed
+
       reloadServices = [ "nginx" ];
     };
   };
 
-  # Allow nginx to read ACME certs
   users.users.nginx.extraGroups = [ "acme" ];
 
   services.nginx = {
     enable = true;
 
-    # Recommended settings
     recommendedTlsSettings = true;
     recommendedOptimisation = true;
     recommendedGzipSettings = true;
     recommendedProxySettings = true;
 
-    # Fix proxy_headers_hash warnings
     proxyTimeout = "300s";
 
     clientMaxBodySize = "1g";
 
     virtualHosts = {
-      # Catch-all: redirect unknown subdomains to the dashboard
+
       "_" = {
         forceSSL = true;
         useACMEHost = "minerales.network";
@@ -88,12 +73,14 @@ in
         '';
       };
 
-      # Main server dashboard
       "home.minerales.network" = withSSL "home" {
         locations."/" = standardProxy 8082;
+
+        locations."/zennotes-icon.svg" = {
+          root = ../../../../assets/homepage;
+        };
       };
 
-      # Media Services
       "jellyfin.minerales.network" = withSSL "jellyfin" {
         locations."/" = standardProxy 8096;
       };
@@ -111,7 +98,6 @@ in
         };
       };
 
-      # Servarr Suite
       "prowlarr.minerales.network" = withSSL "prowlarr" {
         locations."/" = standardProxy 9696;
       };
@@ -152,7 +138,6 @@ in
         locations."/" = standardProxy 6767;
       };
 
-      # Infrastructure Services
       "syncthing.minerales.network" = withSSL "syncthing" {
         locations."/" = {
           proxyPass = "http://localhost:8384";
@@ -177,15 +162,14 @@ in
         locations."/" = standardProxy 8098;
       };
 
-      # AI/LLM Services
       "llm.minerales.network" = withSSL "llm" {
         locations = {
-          # Open WebUI chat interface
+
           "/" = {
             proxyPass = "http://localhost:8080";
             proxyWebsockets = true;
           };
-          # llama.cpp OpenAI-compatible API (replaces Ollama)
+
           "/v1/" = {
             proxyPass = "http://localhost:11435/v1/";
             proxyWebsockets = true;
@@ -197,7 +181,6 @@ in
         };
       };
 
-      # Direct access to llama.cpp server API
       "llama.minerales.network" = withSSL "llama" {
         locations."/" = {
           proxyPass = "http://localhost:11435";
@@ -213,10 +196,9 @@ in
         locations."/" = standardProxy 8888;
       };
 
-      # Matrix Synapse - Private chat server
       "matrix.minerales.network" = withSSL "matrix" {
         locations = {
-          # Client-Server API
+
           "~* ^(/_matrix|/_synapse/client)" = {
             proxyPass = "http://localhost:8008";
             proxyWebsockets = true;
@@ -229,7 +211,7 @@ in
               client_max_body_size 100M;
             '';
           };
-          # Well-known for client discovery
+
           "= /.well-known/matrix/client" = {
             extraConfig = ''
               default_type application/json;
@@ -237,14 +219,14 @@ in
               return 200 '{"m.homeserver": {"base_url": "https://matrix.minerales.network"}}';
             '';
           };
-          # Well-known for server discovery (federation)
+
           "= /.well-known/matrix/server" = {
             extraConfig = ''
               default_type application/json;
               return 200 '{"m.server": "matrix.minerales.network:443"}';
             '';
           };
-          # Root - friendly message
+
           "/" = {
             extraConfig = ''
               default_type text/html;
@@ -254,7 +236,6 @@ in
         };
       };
 
-      # Element Web - Matrix client UI
       "element.minerales.network" = withSSL "element" {
         root = "/var/www/element";
         locations = {
@@ -265,8 +246,6 @@ in
         };
       };
 
-      # Obsidian LiveSync - CouchDB sync backend for obsidian-livesync plugin
-      # CORS is handled by CouchDB itself (configured in couchdb.nix via extraConfig.cors)
       "sync.minerales.network" = withSSL "sync" {
         locations."/" = {
           proxyPass = "http://localhost:5984";
@@ -280,7 +259,6 @@ in
         };
       };
 
-      # Home Automation
       "homeassistant.minerales.network" = withSSL "homeassistant" {
         locations."/" = {
           proxyPass = "http://localhost:8123";
@@ -294,7 +272,6 @@ in
         };
       };
 
-      # Music Assistant
       "ma.minerales.network" = withSSL "ma" {
         locations."/" = {
           proxyPass = "http://localhost:8095";
@@ -308,7 +285,6 @@ in
         };
       };
 
-      # Snapcast multi-room audio
       "snapcast.minerales.network" = withSSL "snapcast" {
         root = "${pkgs.snapweb}";
         locations = {
@@ -330,22 +306,18 @@ in
         };
       };
 
-      # OpenCode remote access (API + web UI)
       "opencode.minerales.network" = withSSL "opencode" {
         locations."/" = standardProxy 4096;
       };
 
-      # ZenNotes - keyboard-first Markdown notes web UI
       "notes.minerales.network" = withSSL "notes" {
         locations."/" = standardProxy 7879;
       };
 
-      # Yattee Server - self-hosted video API (yt-dlp based stream proxy)
       "yattee.minerales.network" = withSSL "yattee" {
         locations."/" = standardProxy 8085;
       };
 
-      # TURN server domain (for TLS TURN connections)
       "turn.minerales.network" = withSSL "turn" {
         locations."/" = {
           extraConfig = ''
@@ -355,7 +327,6 @@ in
         };
       };
 
-      # Vaultwarden - self-hosted Bitwarden compatible password manager
       "vault.minerales.network" = withSSL "vault" {
         locations."/" = {
           proxyPass = "http://127.0.0.1:8000";
@@ -372,7 +343,6 @@ in
     };
   };
 
-  # Firewall configuration for Tailscale access
   networking.firewall = {
     allowedTCPPorts = [
       80
@@ -384,7 +354,6 @@ in
     '';
   };
 
-  # Real IP from Tailscale
   services.nginx.appendHttpConfig = ''
     set_real_ip_from 100.64.0.0/10;
     real_ip_header X-Forwarded-For;

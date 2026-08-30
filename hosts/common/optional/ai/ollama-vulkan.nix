@@ -1,17 +1,3 @@
-# Ollama with Vulkan GPU acceleration for AMD GPUs
-# Works on all AMD GPUs via RADV Mesa driver (including legacy GCN4/Polaris).
-#
-# Unlike ROCm which dropped gfx803 support after ROCm 4.5,
-# Vulkan via RADV works reliably on all AMD GPUs with modern Mesa.
-#
-# Usage:
-#   services.ollama-vulkan = {
-#     enable = true;
-#     loadModels = [ "qwen2.5-coder:7b" ];
-#   };
-#
-# API endpoint: http://localhost:11434/v1 (OpenAI-compatible)
-
 { config, lib, pkgs, ... }:
 
 let
@@ -70,9 +56,6 @@ in
       };
     };
 
-    # The NixOS module's DynamicUser + sandboxing conflicts with impermanence
-    # mounts and Vulkan GPU device access. Strip sandboxing entirely — the
-    # service runs as a static user with minimal privileges anyway.
     systemd.services.ollama = {
       serviceConfig = lib.mkForce {
         Type = "exec";
@@ -85,7 +68,7 @@ in
         DynamicUser = false;
         Restart = "on-failure";
         RestartSec = 5;
-        # No sandboxing — Vulkan GPU + impermanence need open access
+
         ProtectSystem = lib.mkForce false;
         ProtectHome = lib.mkForce false;
         PrivateDevices = lib.mkForce false;
@@ -112,21 +95,18 @@ in
         OLLAMA_HOST = "${cfg.host}:${toString cfg.port}";
         OLLAMA_MODELS = "/var/lib/ollama/models";
         OLLAMA_ORIGINS = "*";
-        # Vulkan GPU detection — systemd services don't inherit session variables
+
         VK_ICD_FILENAMES = "/run/opengl-driver/share/vulkan/icd.d/radeon_icd.x86_64.json";
         AMD_VULKAN_ICD = "RADV";
-        # AMD 680M is an iGPU — ollama drops integrated GPUs by default
+
         OLLAMA_IGPU_ENABLE = "1";
-        # OpenCode sends ~13k tokens of system prompt + tools per request.
-        # Default 4096 context truncates everything. 32k fits comfortably
-        # in the 680M's 16 GB shared VRAM alongside the 14B model (~9 GB).
+
         OLLAMA_CONTEXT_LENGTH = "32768";
       };
     };
 
     networking.firewall.allowedTCPPorts = lib.optional cfg.openFirewall cfg.port;
 
-    # Ensure diego can access ollama models
     users.users.diego.extraGroups = [ "ollama" ];
   };
 }

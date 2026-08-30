@@ -8,10 +8,9 @@ let
   ifTheyExist = groups: builtins.filter (group: builtins.hasAttr group config.users.groups) groups;
 in
 {
-  # Add shells to /etc/shells for compatibility with programs that check it
-  # (e.g., GlobalProtect VPN checks SHELL against /etc/shells)
+
   environment.shells = with pkgs; [ nushell bash fish ];
-  
+
   users.mutableUsers = false;
   users.groups.diego = {};
   users.users = {
@@ -39,7 +38,7 @@ in
         ];
       shell = pkgs.nushell;
       description = "Diego Barros";
-      # Password is set from SOPS secret if available
+
       hashedPasswordFile = "/run/secrets-for-users/diego-password";
       openssh.authorizedKeys.keys = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOXblym20SD75es2z5Qay0mfW+g2zvKPBVMsUFakIyBK diegobarrosaraya@outlook.com"

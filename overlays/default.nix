@@ -1,17 +1,10 @@
-# This file defines overlays
 { inputs, ... }:
 {
-  # This one brings our custom packages from the 'pkgs' directory
+
   additions = final: _prev: import ../pkgs { pkgs = final; };
 
-  # NixGL overlay for graphics support on non-NixOS systems
   nixgl = inputs.nixgl.overlay;
 
-  # Python 3.14 metadata compatibility shim.
-  # All python-tree-sitter-* language packages (graphify deps) fail
-  # pythonMetadataCheckPhase under Python 3.14 — importlib.metadata cannot
-  # locate their dist-info. Disable doInstallCheck for all of them at once
-  # so graphify and any other dependents still build.
   pythonFixes = _final: prev: {
     pythonPackagesExtensions = (prev.pythonPackagesExtensions or [ ]) ++ [
       (_self: super:
@@ -49,20 +42,9 @@
     ];
   };
 
-  # This one contains whatever you want to overlay
-  # You can change versions, add patches, set compilation flags, anything really.
-  # https://nixos.wiki/wiki/Overlays
   modifications = final: prev: {
     dummy = prev.hello;
 
-    # xdg-desktop-portal-wlr 0.8.3 deadlocks screencasts after the first frame.
-    # The ext_image_copy_capture_v1 path negotiates a 2-buffer pool, the consumer
-    # holds both, pw_stream_dequeue_buffer() returns NULL and nothing re-arms the
-    # capture loop ("out of buffers" / "unable to export buffer"). Hits every
-    # browser because it sits below them, in the portal. Upstream issue #395,
-    # fixed by PR #397 and released in 0.8.4.
-    # Remove once nixos-unstable ships >= 0.8.4 (nixpkgs PR #546818, on master
-    # since 2026-07-30 but not yet through Hydra).
     xdg-desktop-portal-wlr = prev.xdg-desktop-portal-wlr.overrideAttrs (_oldAttrs: {
       version = "0.8.4";
       src = final.fetchFromGitHub {
@@ -78,8 +60,6 @@
       clockSupport = true;
     });
 
-    # homepage-dashboard: build from dev branch for syncthing widget (PR #6865, merged 2026-07-13)
-    # Remove once nixpkgs ships a version ≥ 1.14.0
     homepage-dashboard = prev.homepage-dashboard.overrideAttrs (oldAttrs: {
       version = "1.13.2-dev-unstable";
       src = final.fetchFromGitHub {
@@ -103,29 +83,13 @@
       };
     });
 
+    music-assistant = prev.music-assistant.overrideAttrs (old: {
+      postPatch = (old.postPatch or "") + ''
+        substituteInPlace music_assistant/providers/apple_music/constants.py \
+          --replace '"/usr/local/bin/widevine_cdm"' '"/var/lib/music-assistant/widevine_cdm"'
+      '';
+    });
 
-    # xdg-utils-spawn-terminal = prev.xdg-utils.overrideAttrs (oldAttrs: {
-    #   patches = (oldAttrs.patches or [ ]) ++ [ ./xdg-open-spawn-terminal.diff ];
-    # });
-
-    # pfetch = prev.pfetch.overrideAttrs (oldAttrs: {
-    #   version = "unstable-2021-12-10";
-    #   src = final.fetchFromGitHub {
-    #     owner = "dylanaraps";
-    #     repo = "pfetch";
-    #     rev = "a906ff89680c78cec9785f3ff49ca8b272a0f96b";
-    #     sha256 = "sha256-9n5w93PnSxF53V12iRqLyj0hCrJ3jRibkw8VK3tFDvo=";
-    #   };
-    #   # Add term option, rename de to desktop, add scheme option
-    #   patches = (oldAttrs.patches or [ ]) ++ [ ./pfetch.patch ];
-    # });
-
-    # Sane default values and crash avoidance (https://github.com/k-vernooy/trekscii/pull/1)
-
-    # python-miio: Fix click 8 compatibility (Group.__init__ has a `commands` param
-    # that causes `TypeError: argument of type 'bool' is not iterable` when
-    # positional args are used)
-    # NOTE: Only apply on x86_64-linux to avoid i686-linux pypy eval failure
     python3Packages = if final.stdenv.hostPlatform.system != "i686-linux" then
       prev.python3Packages.override {
         overrides = self: super: {
@@ -140,6 +104,10 @@
           };
 
           construct = self.callPackage ../pkgs/construct { };
+
+          authcaptureproxy = super.authcaptureproxy.overridePythonAttrs (_old: {
+            doCheck = false;
+          });
         };
       }
     else

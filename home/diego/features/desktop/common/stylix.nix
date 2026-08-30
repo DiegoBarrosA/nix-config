@@ -9,12 +9,10 @@ let
   inherit (config.colorscheme) colors;
 in
 {
-  # Enable Stylix for unified theming
+
   stylix = {
     enable = true;
 
-    # Use colorscheme from nix-colors
-    # Stylix uses base16 scheme format which matches nix-colors
     base16Scheme = {
       base00 = colors.base00;
       base01 = colors.base01;
@@ -34,8 +32,6 @@ in
       base0F = colors.base0F;
     };
 
-    # Cursor theme - Bibata Modern Classic (dark).
-    # Sway/COSMIC only: a null desktop keeps no cursor override.
     cursor =
       lib.mkIf
         (builtins.elem desktop [
@@ -48,15 +44,14 @@ in
           size = 28;
         };
 
-    # Fonts configuration
     fonts = {
       monospace = {
         package = pkgs.nerd-fonts.fantasque-sans-mono;
         name = "FantasqueSansM Nerd Font";
       };
       sansSerif = {
-        package = pkgs.ibm-plex;
-        name = "IBM Plex Sans";
+        package = pkgs.jost;
+        name = "Jost*";
       };
       serif = {
         package = pkgs.ibm-plex;
@@ -70,49 +65,41 @@ in
         applications = 15;
         desktop = 15;
         popups = 15;
-        terminal = 15;
+        terminal = 20;
       };
     };
 
-    # Opacity settings
     opacity = {
       terminal = 1.0;
       popups = 1.0;
     };
 
-    # Polarity (dark/light)
     polarity = config.colorscheme.mode;
 
-    # Target-specific settings
     targets = {
-      # GTK app theming: enabled on all supported DEs (Sway/COSMIC).
+
       gtk.enable = true;
 
-      # Qt theming via Kvantum (generated from base16 colors).
       qt = {
-        # Use xdg-desktop-portal for native file dialogs
+
         standardDialogs = "xdgdesktopportal";
       };
 
-      # Don't let Stylix manage these since we handle them separately
       alacritty.enable = false;
       mako.enable = false;
       swaylock.enable = false;
+
+      waybar.enable = false;
       bat.enable = true;
       helix.enable = true;
-      # Zellij themed manually (features/cli/zellij.nix) due to tab-bar
-      # green-fallback bug with Stylix's structured theme format
+
       zellij.enable = false;
 
-      # App targets
       yazi.enable = true;
       mpv.enable = true;
       zathura.enable = true;
     };
 
-    # useGlobalPkgs = true means HM nixpkgs.overlays is unusable; the NixOS
-    # Stylix module isn't enabled here so there's no system-level fallback —
-    # disable to silence the HM evaluation warning.
     overlays.enable = false;
   };
 
@@ -121,9 +108,6 @@ in
     "cosmic"
   ]) true;
 
-  # Icon theme (Stylix doesn't handle icons)
-  # Use Papirus with custom folder color matching our accent (base0D).
-  # Sway/COSMIC only: a null desktop keeps no icon override.
   gtk.iconTheme =
     lib.mkIf
       (builtins.elem desktop [
@@ -132,7 +116,7 @@ in
       ])
       (
         let
-          # Papirus folder colour, paired with the scheme in colors.nix.
+
           folderColor = config.colorscheme.iconFolderColor;
           papirusWithFolders = pkgs.papirus-icon-theme.override {
             color = folderColor;
@@ -144,8 +128,6 @@ in
         }
       );
 
-  # Symlink icon themes for GTK/Snap/sandboxed apps. Sway/COSMIC only;
-  # a null desktop ships no desktop icons.
   xdg.dataFile =
     lib.mkIf
       (builtins.elem desktop [
@@ -166,8 +148,6 @@ in
         }
       );
 
-  # Propagate GTK theme to apps via XSettings. Needed on Sway/Wayland
-  # (COSMIC has its own settings daemon; this references the Sway-only iconTheme).
   services.xsettingsd =
     lib.mkIf
       (builtins.elem desktop [

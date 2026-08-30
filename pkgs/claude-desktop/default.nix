@@ -1,5 +1,3 @@
-# claude-desktop — Anthropic's desktop app, extracted from their official .deb.
-# Not in nixpkgs; fetched directly from downloads.claude.ai apt repo.
 {
   lib,
   stdenv,
@@ -92,8 +90,6 @@ stdenv.mkDerivation {
   ];
 
   unpackPhase = ''
-    # dpkg-deb calls tar with -p which tries to restore the setuid bit on
-    # chrome-sandbox and fails in the Nix sandbox. Unpack manually instead.
     ar x $src
     tar xf data.tar.* --no-same-permissions
   '';
@@ -101,16 +97,12 @@ stdenv.mkDerivation {
   installPhase = ''
     runHook preInstall
 
-    # App lives in usr/lib/claude-desktop in the deb
     mkdir -p $out/lib/claude-desktop
     cp -r usr/lib/claude-desktop/. $out/lib/claude-desktop/
 
-    # Desktop entry and icons
     mkdir -p $out/share
     cp -r usr/share/. $out/share/ 2>/dev/null || true
 
-    # Wrapper: autoPatchelfHook fixes the bundled electron binary;
-    # makeWrapper puts xdg-utils on $PATH for xdg-open etc.
     mkdir -p $out/bin
     makeWrapper $out/lib/claude-desktop/claude-desktop $out/bin/claude-desktop \
       --prefix PATH : ${lib.makeBinPath [ xdg-utils ]}
@@ -118,8 +110,6 @@ stdenv.mkDerivation {
     runHook postInstall
   '';
 
-  # autoPatchelfHook handles the bundled electron so we don't need to list
-  # every transitive dep — just the direct ones above.
   autoPatchelfIgnoreMissingDeps = [
     "libEGL_nvidia.so.0"
     "libGLESv2_nvidia.so.2"

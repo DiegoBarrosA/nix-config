@@ -1,4 +1,3 @@
-# This file (and the global directory) holds config that i use on all hosts
 { inputs, outputs, customPkgs ? {}, desktop ? null, ... }: {
   imports = [
     inputs.home-manager.nixosModules.home-manager
@@ -13,16 +12,15 @@
     inherit inputs outputs customPkgs desktop;
     inherit (inputs) nix-colors;
     privateConfig = inputs.private-config or { };
+    isNixOnDroid = false;
   };
   environment = {
     loginShellInit = ''
-      # Activate home-manager environment, if not already
       [ -d "$HOME/.nix-profile" ] || /nix/var/nix/profiles/per-user/$USER/home-manager/activate &> /dev/null
     '';
-    # Not using enableAllTerminfo - pulls in termite which has broken vte build
-    # in pinned nixpkgs. Common terminals provide their own terminfo via packages.
+
   };
-  # Allows users to allow others on their binds
+
   programs.fuse.userAllowOther = true;
   hardware.enableRedistributableFirmware = true;
   security.pam.loginLimits = [

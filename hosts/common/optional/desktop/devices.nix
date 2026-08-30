@@ -10,13 +10,11 @@
     ifuse
     exfatprogs
     ntfs3g
-    mtpfs
+    simple-mtpfs
     android-tools
   ];
   users.groups.adbusers = { };
   services.udev.extraRules = ''
-    # Android Developer USB devices (ADB protocol)
-    # Grants the adbusers group rw access to any USB device with Android ADB interface
     ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="18d1", MODE="0664", GROUP="adbusers"
     ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bb4", MODE="0664", GROUP="adbusers"
     ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="04e8", MODE="0664", GROUP="adbusers"
@@ -33,7 +31,6 @@
     ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="2b4c", MODE="0664", GROUP="adbusers"
     ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="1d6b", MODE="0664", GROUP="adbusers"
     ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="1f53", MODE="0664", GROUP="adbusers"
-    # Fastboot mode
     ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="18d1", ATTR{idProduct}=="d00d", MODE="0664", GROUP="adbusers"
     ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="18d1", ATTR{idProduct}=="d001", MODE="0664", GROUP="adbusers"
   '';

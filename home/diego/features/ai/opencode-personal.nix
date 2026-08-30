@@ -1,6 +1,3 @@
-# Shared "personal" OpenCode definition (Big Pickle + local LLM).
-# Imported as data: let personal = import ./opencode-personal.nix; in ...
-# rubi overrides title/summary/compaction to local-llm in rubi.nix.
 {
   config = {
     model = "opencode/big-pickle";

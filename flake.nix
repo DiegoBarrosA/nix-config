@@ -18,14 +18,21 @@
 
     stylix.url = "github:danth/stylix";
 
-    # Cascade: minimalistic, keyboard-centered userChrome theme. Consumed as
-    # raw chrome/ files (no flake), symlinked into the Firefox profile.
+    musnix = {
+      url = "github:musnix/musnix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    vital-presets = {
+      url = "github:Miserlou/VitalPresets";
+      flake = false;
+    };
+
     cascade = {
       url = "github:cascadefox/cascade";
       flake = false;
     };
 
-    # NixVirt for declarative libvirt VM definitions
     nixvirt = {
       url = "github:AshleyYakeley/NixVirt";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -44,32 +51,24 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # CodeRabbit CLI (AI code review)
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Agent skills for Obsidian (kepano/obsidian-skills). Consumed as raw
-    # SKILL.md files via programs.ai-skills.extraSkillSources, so flake=false.
     obsidian-skills = {
       url = "github:kepano/obsidian-skills";
       flake = false;
     };
 
-    # Reusable AI/agent tooling modules (extracted from this repo)
     ai-tooling = {
       url = "github:DiegoBarrosA/nix-ai-tooling";
     };
 
-    # Private local config (not pushed to github)
     clin.url = "github:reekta92/clin-rs";
 
     private-config = {
-      # TEMP: pinned to the in-flight cleanup branch (this nix-config branch
-      # consumes the neutral work* exports, which don't exist on
-      # private-config master yet). Drop ?ref when both cleanup branches
-      # merge.
+
       url = "git+ssh://git@github.com/DiegoBarrosA/nix-private-config.git?ref=employer-cleanup";
       flake = true;
     };
@@ -79,9 +78,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Nix-on-Droid: declarative phone env (Infinix). Uses its own module
-    # system, wired as a nixOnDroidConfigurations output (not a NixOS host).
-    # release-24.05 matches the installed app version (0.3.7, mid-2025).
+    ekphos = {
+      url = "github:hanebox/ekphos";
+      flake = false;
+    };
+
     nix-on-droid = {
       url = "github:nix-community/nix-on-droid/release-24.05";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -112,6 +113,7 @@
           antigravity-config
           ai-skills
           ai-system-prompt
+          happier-config
           ;
       };
       devShells = forAllSystems (system: {
@@ -126,9 +128,9 @@
             allowUnfree = true;
             allowUnsupportedSystem = true;
             permittedInsecurePackages = [
-              "olm-3.2.16" # Required by maubot for E2EE
-              "pypy2.7-setuptools-44.0.0" # Pulled in via python3 evaluation chain
-              "pypy2.7-pip-20.3.4" # Pulled in via python3 evaluation chain
+              "olm-3.2.16"
+              "pypy2.7-setuptools-44.0.0"
+              "pypy2.7-pip-20.3.4"
             ];
           };
         }
@@ -145,6 +147,7 @@
           clin = inputs.clin.packages.${system}.default;
           coderabbit-cli = inputs.llm-agents.packages.${system}.coderabbit-cli;
           zennotes-server = inputs.zennotes.packages.${system}.zennotes-server;
+          ekphos = pkgs.callPackage ./pkgs/ekphos { src = inputs.ekphos; };
         }
       );
       myLib = import ./lib {
@@ -162,14 +165,13 @@
         rubi = myLib.mkHost "x86_64-linux" "rubi" { desktop = "sway"; };
       };
 
-      # Deploy-rs configuration
       deploy = {
         nodes = {
           cobalto = {
-            hostname = "cobalto"; # Use Tailscale hostname
+            hostname = "cobalto";
             fastConnection = false;
-            remoteBuild = true; # Build on cobalto (avoids copying large closures)
-            magicRollback = false; # network (tailscaled) restarts mid-activation sever the confirm SSH
+            remoteBuild = true;
+            magicRollback = false;
             autoRollback = false;
             profiles = {
               system = {
@@ -182,11 +184,6 @@
         };
       };
 
-      # Deploy-rs checks disabled due to platform conflicts
-      # This will now work if uncommented, because 'self' is defined
-      # checks.x86_64-linux = deploy-rs.lib.x86_64-linux.deployChecks self.deploy;
-
-      # Expose deploy-rs as an app (--skip-checks avoids warnings about non-standard outputs)
       apps = forAllSystems (
         system:
         let
@@ -198,7 +195,7 @@
             type = "app";
             program = toString (
               pkgs.writeShellScript "deploy" ''
-                exec ${deploy-rs}/bin/deploy-rs --skip-checks "$@"
+                exec ${deploy-rs}/bin/deploy --skip-checks "$@"
               ''
             );
             meta = {
@@ -208,7 +205,6 @@
         }
       );
 
-      # --- MOVE homeConfigurations TO TOP LEVEL ---
       homeConfigurations = {
         "diego@cobalto" = myLib.mkHome "x86_64-linux" ./home/diego/cobalto.nix [ ] { };
         "diego@rubi" = myLib.mkHome "x86_64-linux" ./home/diego/rubi.nix [
@@ -217,12 +213,10 @@
         ] { desktop = "sway"; };
       };
 
-      # Nix-on-Droid (phone): applies on-device via `nix-on-droid switch`.
       nixOnDroidConfigurations = {
         infinix = myLib.mkNixOnDroid "infinix";
       };
 
-      # MODIFICATION 3: Added the missing 'in' block to return the outputs
     in
     {
       inherit
@@ -236,8 +230,6 @@
         apps
         ;
 
-      # Non-standard outputs (will show warnings but work correctly)
-      # deploy-rs expects this exact structure
       inherit deploy;
     };
 }

@@ -1,6 +1,5 @@
-# Shell for bootstrapping flake-enabled nix and other tooling
 { pkgs ?
-# If pkgs is not defined, instanciate nixpkgs from locked commit
+
   let
     lock =
       (builtins.fromJSON (builtins.readFile ./flake.lock)).nodes.nixpkgs.locked;

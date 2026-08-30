@@ -1,4 +1,3 @@
-# Server-specific secrets for cobalto (media services, sync, etc.)
 {
   config,
   lib,
@@ -8,7 +7,7 @@
 
 {
   sops.secrets = {
-    # Cloudflare integration
+
     "cloudflare-dns-token" = {
       owner = "root";
       group = "root";
@@ -20,14 +19,12 @@
       mode = "0400";
     };
 
-    # Matrix/TURN server
     "turn-shared-secret" = {
       owner = "root";
       group = "root";
       mode = "0400";
     };
 
-    # Media service API keys (for homepage dashboard widgets)
     "jellyfin-api-key" = {
       owner = "root";
       group = "root";
@@ -59,7 +56,6 @@
       mode = "0400";
     };
 
-    # Syncthing
     "syncthing-api-key" = {
       owner = "diego";
       group = "users";

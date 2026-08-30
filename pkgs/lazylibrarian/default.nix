@@ -34,23 +34,16 @@ import re
 with open('pyproject.toml', 'r') as f:
     content = f.read()
 
-# Remove ez_setup from requires
 content = content.replace('"ez_setup"', "")
 content = content.replace(", ,", ",")
 content = content.replace("[,", "[")
 
-# Remove [tool.setuptools.packages.find] section
 content = re.sub(r'\[tool\.setuptools\.packages\.find\]\nwhere = \["lazylibrarian"\]\n', "", content)
 
-# Fix bs4 → beautifulsoup4
 content = content.replace("'bs4'", "'beautifulsoup4'")
 
-# Remove slskd_api line (not packaged in nixpkgs, optional Soulseek support)
 content = re.sub(r"\s+'slskd_api',\n", "\n", content)
 
-# iso639-lang stays as-is - provided by our custom package
-
-# Add console_scripts entry point after [project.urls]
 content = content.replace(
     "[project.urls]",
     "[project.scripts]\nlazylibrarian = \"LazyLibrarian:main\"\n\n[project.urls]",

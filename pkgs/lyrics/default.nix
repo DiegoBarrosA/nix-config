@@ -1,12 +1,10 @@
-# Fetches current playing song lyrics from makeitpersonal.co
 { lib, writeShellApplication, curl, less, playerctl, gnused }:
 (writeShellApplication {
   name = "lyrics";
   runtimeInputs = [ playerctl curl less gnused ];
 
-  text = # bash
+  text =
     ''
-      # Exit the script if not playing
       playerctl -s status > /dev/null
       artist="$(playerctl metadata artist)"
       title="$(playerctl metadata title)"
@@ -14,7 +12,6 @@
       title="''${title#"$prefix"}"
       suffix=" - $artist"
       title="''${title%"$suffix"}"
-      # Cleanup featurings
       title="$(echo "$title" | sed -E 's/ ?\(fe?a?t\.?[^\)]*\)//')"
       artist="$(echo "$artist" | sed -E 's/ ?\(fe?a?t\.?[^\)]*\)//')"
       content="$(curl -f -s --get "https://makeitpersonal.co/lyrics" \
