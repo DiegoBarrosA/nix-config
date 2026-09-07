@@ -1,6 +1,7 @@
 {
   pkgs,
   lib,
+  customPkgs ? {},
   isNixOnDroid ? false,
   ...
 }:
@@ -26,6 +27,7 @@ in
     ./yazi.nix
     ./zathura.nix
     ./bottom.nix
+    ./teams-calls-fetch.nix
   ];
 
   home.packages =
@@ -71,5 +73,12 @@ in
 
     ++ lib.optionals (isLinux && !isAndroid) [
       deploy-rs
+    ]
+    ++ lib.optionals isDesktop [
+      customPkgs.device-mount
+      customPkgs.device-umount
+    ]
+    ++ lib.optionals (customPkgs ? teams-calls-fetcher) [
+      customPkgs.teams-calls-fetcher
     ];
 }
