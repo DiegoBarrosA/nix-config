@@ -23,6 +23,7 @@ let
   iconServer = u "f233";
   iconSync = u "f021";
   iconShare = u "f1e0";
+  iconCamera = u "f030";
 
   waybar-cb = pkgs.writeShellScriptBin "waybar-cb" ''
     if systemctl is-active --quiet cbagentd; then
@@ -117,6 +118,28 @@ let
         ;;
       "Open TUI")
         alacritty -e ${lib.getExe pkgs.jocalsend}
+        ;;
+    esac
+  '';
+
+  waybar-droidcam-icon = pkgs.writeShellScriptBin "waybar-droidcam-icon" ''
+    printf '{"text":"%s","tooltip":"droidcam"}\n' "${iconCamera}"
+  '';
+
+  waybar-droidcam = pkgs.writeShellScriptBin "waybar-droidcam" ''
+    CHOICE=$(printf 'Connect via IP\nConnect via ADB (USB)\nConnect via iOS (usbmuxd)' | ${config.launcher.dmenu} --prompt-text "droidcam")
+    [ -z "$CHOICE" ] && exit 0
+    case "$CHOICE" in
+      "Connect via IP")
+        IP=$(echo | ${config.launcher.dmenu} --require-match false --prompt-text "phone ip:")
+        [ -z "$IP" ] && exit 0
+        alacritty -e droidcam-cli -a -v "$IP" 4747
+        ;;
+      "Connect via ADB (USB)")
+        alacritty -e droidcam-cli -a -v adb 4747
+        ;;
+      "Connect via iOS (usbmuxd)")
+        alacritty -e droidcam-cli -a -v ios 4747
         ;;
     esac
   '';
@@ -316,6 +339,7 @@ in
               "custom/cobalto"
               "custom/syncthing"
               "custom/jocalsend-icon"
+              "custom/droidcam-icon"
             ];
           };
 
@@ -383,6 +407,13 @@ in
             interval = "once";
             return-type = "json";
             on-click = "${lib.getExe waybar-jocalsend}";
+          };
+
+          "custom/droidcam-icon" = {
+            exec = "${lib.getExe waybar-droidcam-icon}";
+            interval = "once";
+            return-type = "json";
+            on-click = "${lib.getExe waybar-droidcam}";
           };
 
           "custom/sys-icon" = {
@@ -656,6 +687,7 @@ in
       #custom-cobalto,
       #custom-syncthing,
       #custom-jocalsend-icon,
+      #custom-droidcam-icon,
       #custom-sys-icon,
       #custom-worldclock-palo-alto,
       #custom-worldclock-london,
@@ -704,6 +736,8 @@ in
     waybar-syncthing
     waybar-jocalsend-icon
     waybar-jocalsend
+    waybar-droidcam-icon
+    waybar-droidcam
     waybar-sys-icon
     waybar-location-clock
   ]

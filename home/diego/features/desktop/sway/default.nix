@@ -632,7 +632,7 @@ in
     ./kanshi.nix
     ./mako.nix
     ./swaylock.nix
-    ./tofi.nix
+    ./fuzzel.nix
     ./bluetooth.nix
   ];
 
