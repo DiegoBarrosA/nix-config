@@ -1,8 +1,6 @@
 {
   config,
   pkgs,
-  lib,
-  desktop ? null,
   ...
 }:
 let
@@ -10,8 +8,15 @@ let
 in
 {
 
+  home.packages = [ pkgs.font-awesome ];
   stylix = {
     enable = true;
+
+    cursor = {
+      package = pkgs.bibata-cursors;
+      name = "Bibata-Modern-Classic";
+      size = 28;
+    };
 
     base16Scheme = {
       base00 = colors.base00;
@@ -31,18 +36,6 @@ in
       base0E = colors.base0E;
       base0F = colors.base0F;
     };
-
-    cursor =
-      lib.mkIf
-        (builtins.elem desktop [
-          "sway"
-          "cosmic"
-        ])
-        {
-          package = pkgs.bibata-cursors;
-          name = "Bibata-Modern-Classic";
-          size = 28;
-        };
 
     fonts = {
       monospace = {
@@ -69,96 +62,24 @@ in
       };
     };
 
-    opacity = {
-      terminal = 1.0;
-      popups = 1.0;
-    };
+    opacity.terminal = 1.0;
 
     polarity = config.colorscheme.mode;
 
     targets = {
-
-      gtk.enable = true;
-
-      qt = {
-
-        standardDialogs = "xdgdesktopportal";
-      };
-
+      gtk.enable = false;
+      qt.enable = false;
       alacritty.enable = false;
       mako.enable = false;
       swaylock.enable = false;
-
-      waybar.enable = false;
-      bat.enable = true;
-      helix.enable = true;
-
+      bat.enable = false;
+      helix.enable = false;
       zellij.enable = false;
-
-      yazi.enable = true;
-      mpv.enable = true;
-      zathura.enable = true;
+      yazi.enable = false;
+      mpv.enable = false;
+      zathura.enable = false;
     };
 
     overlays.enable = false;
   };
-
-  home.pointerCursor.enable = lib.mkIf (builtins.elem desktop [
-    "sway"
-    "cosmic"
-  ]) true;
-
-  gtk.iconTheme =
-    lib.mkIf
-      (builtins.elem desktop [
-        "sway"
-        "cosmic"
-      ])
-      (
-        let
-
-          folderColor = config.colorscheme.iconFolderColor;
-          papirusWithFolders = pkgs.papirus-icon-theme.override {
-            color = folderColor;
-          };
-        in
-        {
-          name = if config.colorscheme.mode == "light" then "Papirus-Light" else "Papirus-Dark";
-          package = papirusWithFolders;
-        }
-      );
-
-  xdg.dataFile =
-    lib.mkIf
-      (builtins.elem desktop [
-        "sway"
-        "cosmic"
-      ])
-      (
-        let
-          folderColor = config.colorscheme.iconFolderColor;
-          papirusWithFolders = pkgs.papirus-icon-theme.override {
-            color = folderColor;
-          };
-        in
-        {
-          "icons/Papirus".source = "${papirusWithFolders}/share/icons/Papirus";
-          "icons/Papirus-Dark".source = "${papirusWithFolders}/share/icons/Papirus-Dark";
-          "icons/Papirus-Light".source = "${papirusWithFolders}/share/icons/Papirus-Light";
-        }
-      );
-
-  services.xsettingsd =
-    lib.mkIf
-      (builtins.elem desktop [
-        "sway"
-        "cosmic"
-      ])
-      {
-        enable = true;
-        settings = {
-          "Net/ThemeName" = "${config.gtk.theme.name}";
-          "Net/IconThemeName" = "${config.gtk.iconTheme.name}";
-        };
-      };
 }
