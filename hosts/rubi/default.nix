@@ -36,6 +36,8 @@
     ../common/optional/desktop/virtualization.nix
     inputs.nixvirt.nixosModules.default
 
+    ../common/optional/desktop/sunshine.nix
+
     inputs.private-config.nixosModules.work
   ];
 
@@ -124,6 +126,8 @@
   };
 
   services.upower.enable = true;
+
+  automount.blacklistAppleNet = true;
 
   services.opencode-server = {
     enable = true;
@@ -234,7 +238,6 @@
     backupFileExtension = "backup";
     extraSpecialArgs = {
       inherit inputs;
-      inherit (inputs) nix-colors;
       customPkgs = inputs.self.packages."x86_64-linux";
       privateConfig = inputs.private-config or { };
       inherit desktop;
@@ -245,6 +248,7 @@
         ../../modules/home-manager/colors.nix
         ../../modules/home-manager/kanshi.nix
         ../../modules/home-manager/monitors.nix
+        ../../modules/home-manager/bar.nix
         inputs.ai-tooling.homeManagerModules.opencode-config
         inputs.ai-tooling.homeManagerModules.mcp-config
         inputs.ai-tooling.homeManagerModules.antigravity-config

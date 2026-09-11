@@ -29,7 +29,7 @@ in
 
       window = {
 
-        opacity = 1;
+        opacity = 0.6;
         padding = {
           x = 15;
           y = 15;

@@ -73,7 +73,7 @@ in
       mako.enable = false;
       swaylock.enable = false;
       bat.enable = false;
-      helix.enable = false;
+      # helix.enable = false;
       zellij.enable = false;
       yazi.enable = false;
       mpv.enable = false;

@@ -8,7 +8,7 @@
 }:
 let
 
-  hasSystemd = pkgs.stdenv.isLinux && !(isNixOnDroid || pkgs.stdenv.hostPlatform.isAndroid or false);
+  hasSystemd = pkgs.stdenv.hostPlatform.isLinux && !(isNixOnDroid || pkgs.stdenv.hostPlatform.isAndroid or false);
 in
 {
   imports = [

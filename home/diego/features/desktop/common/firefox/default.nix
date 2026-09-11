@@ -16,76 +16,23 @@ let
   };
 
   c = config.colorscheme.colors;
-  isDark = config.colorscheme.mode == "dark";
-  cascadeColours = ''
+  font = config.stylix.fonts.sansSerif;
 
+  userChromeColours = ''
     :root {
-
-      --uc-identity-colour-blue: #${c.base0D};
-      --uc-identity-colour-turquoise: #${c.base0C};
-      --uc-identity-colour-green: #${c.base0B};
-      --uc-identity-colour-yellow: #${c.base0A};
-      --uc-identity-colour-orange: #${c.base09};
-      --uc-identity-colour-red: #${c.base08};
-      --uc-identity-colour-pink: #${c.base0F};
-      --uc-identity-colour-purple: #${c.base0E};
-
-      --uc-base-colour: #${c.base00};
-      --uc-highlight-colour: #${c.base01};
-      --uc-inverted-colour: #${c.base05};
-      --uc-muted-colour: #${c.base04};
-      --uc-accent-colour: var(--uc-identity-colour-blue);
-
-      --uc-identity-glow: 0;
-
-      --uc-darken-toolbar: ${if isDark then "0.2" else "0"};
+      --tab-font: "${font.name}";
+      --urlbar-font: "${font.name}";
+      --uc-font-size: ${toString config.stylix.fonts.sizes.desktop}pt;
+      --navbar-height-setting: ${toString config.bar.height}px;
+      --tab-min-height: ${toString config.bar.height}px !important;
+      --tab-active-bg-color: #${c.base02};
+      --tab-inactive-bg-color: #${c.base00};
+      --tab-active-fg-fallback-color: #${c.base05};
+      --tab-inactive-fg-fallback-color: #${c.base04};
+      --urlbar-focused-bg-color: #${c.base01};
+      --urlbar-not-focused-bg-color: #${c.base00};
+      --toolbar-bgcolor: #${c.base00} !important;
     }
-
-    :root {
-      --lwt-frame: var(--uc-base-colour) !important;
-      --lwt-accent-color: var(--lwt-frame) !important;
-      --lwt-text-color: var(--uc-inverted-colour) !important;
-
-      --toolbar-field-color: var(--uc-inverted-colour) !important;
-
-      --toolbar-field-focus-color: var(--uc-inverted-colour) !important;
-      --toolbar-field-focus-background-color: var(--uc-highlight-colour) !important;
-      --toolbar-field-focus-border-color: transparent !important;
-
-      --toolbar-field-background-color: var(--lwt-frame) !important;
-      --lwt-toolbar-field-highlight: var(--uc-inverted-colour) !important;
-      --lwt-toolbar-field-highlight-text: var(--uc-highlight-colour) !important;
-      --urlbar-popup-url-color: var(--uc-accent-colour) !important;
-
-      --lwt-tab-text: var(--lwt-text-colour) !important;
-
-      --lwt-selected-tab-background-color: var(--uc-highlight-colour) !important;
-
-      --toolbar-bgcolor: var(--lwt-frame) !important;
-      --toolbar-color: var(--lwt-text-color) !important;
-      --toolbarseparator-color: var(--uc-accent-colour) !important;
-      --toolbarbutton-hover-background: var(--uc-highlight-colour) !important;
-      --toolbarbutton-active-background: var(--toolbarbutton-hover-background) !important;
-
-      --lwt-sidebar-background-color: var(--lwt-frame) !important;
-      --sidebar-background-color: var(--lwt-sidebar-background-color) !important;
-
-      --urlbar-box-bgcolor: var(--uc-highlight-colour) !important;
-      --urlbar-box-text-color: var(--uc-muted-colour) !important;
-      --urlbar-box-hover-bgcolor: var(--uc-highlight-colour) !important;
-      --urlbar-box-hover-text-color: var(--uc-inverted-colour) !important;
-      --urlbar-box-focus-bgcolor: var(--uc-highlight-colour) !important;
-    }
-
-    .identity-color-blue { --identity-tab-color: var(--uc-identity-colour-blue) !important; --identity-icon-color: var(--uc-identity-colour-blue) !important; }
-    .identity-color-turquoise { --identity-tab-color: var(--uc-identity-colour-turquoise) !important; --identity-icon-color: var(--uc-identity-colour-turquoise) !important; }
-    .identity-color-green { --identity-tab-color: var(--uc-identity-colour-green) !important; --identity-icon-color: var(--uc-identity-colour-green) !important; }
-    .identity-color-yellow { --identity-tab-color: var(--uc-identity-colour-yellow) !important; --identity-icon-color: var(--uc-identity-colour-yellow) !important; }
-    .identity-color-orange { --identity-tab-color: var(--uc-identity-colour-orange) !important; --identity-icon-color: var(--uc-identity-colour-orange) !important; }
-    .identity-color-red { --identity-tab-color: var(--uc-identity-colour-red) !important; --identity-icon-color: var(--uc-identity-colour-red) !important; }
-    .identity-color-pink { --identity-tab-color: var(--uc-identity-colour-pink) !important; --identity-icon-color: var(--uc-identity-colour-pink) !important; }
-    .identity-color-purple { --identity-tab-color: var(--uc-identity-colour-purple) !important; --identity-icon-color: var(--uc-identity-colour-purple) !important; }
-
   '';
 
   profileSettings = {
@@ -134,7 +81,7 @@ in
 
   programs.firefox = {
     enable = true;
-    package = pkgs.firefox-devedition;
+    package = pkgs.firefox-esr;
 
     policies = {
       DisableTelemetry = true;
@@ -185,7 +132,7 @@ in
     colorTheme.enable = true;
   };
 
-  home.activation.cascadeFirefoxProfilesIni = ''
+  home.activation.firefoxProfilesIni = ''
     ${pkgs.coreutils}/bin/install -Dm 600 ${profilesIniFile} "$HOME/.mozilla/firefox/profiles.ini"
   '';
 
@@ -193,26 +140,12 @@ in
     let
       profilePath = ".mozilla/firefox/default";
       profileChrome = "${profilePath}/chrome";
-      includesDir = "${inputs.cascade}/chrome/includes";
-
-      includeNames = builtins.attrNames (builtins.readDir includesDir);
-
-      includeLinks = builtins.listToAttrs (
-        map (name: {
-          name = "${profileChrome}/includes/${name}";
-          value = {
-            source = "${includesDir}/${name}";
-          };
-        }) (builtins.filter (n: n != "cascade-colours.css") includeNames)
-      );
     in
-    includeLinks
-    // {
-
+    {
       "${profilePath}/.keep".text = "";
       "${profilePath}/user.js".text = userJs;
-      "${profileChrome}/userChrome.css".source = "${inputs.cascade}/chrome/userChrome.css";
+      "${profileChrome}/userChrome.css".source = "${inputs.firefox-userchrome}/userChrome.css";
 
-      "${profileChrome}/includes/cascade-colours.css".text = cascadeColours;
+      "${profileChrome}/colours.css".text = userChromeColours;
     };
 }

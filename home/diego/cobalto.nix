@@ -1,7 +1,9 @@
 {
+  config,
   pkgs,
   lib,
   customPkgs,
+  theme ? null,
   privateConfig ? { },
   ...
 }:
@@ -125,7 +127,18 @@ in
   ]);
 
   colorscheme = {
-    type = "material-darker";
-    mode = "dark";
+    type = theme.scheme or "material-darker";
+    mode = theme.mode or "dark";
+  };
+
+  stylix = {
+    enable = true;
+    base16Scheme = builtins.mapAttrs (_: c: "#${c}") config.colorscheme.colors;
+    polarity = config.colorscheme.mode;
+    targets = {
+      gtk.enable = false;
+      helix.enable = true;
+    };
+    overlays.enable = false;
   };
 }

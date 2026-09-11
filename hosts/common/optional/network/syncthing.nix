@@ -108,6 +108,11 @@
     };
   };
 
+  systemd.services.syncthing = lib.mkIf config.services.syncthing.enable {
+    after = [ "mnt-media.mount" ];
+    requires = [ "mnt-media.mount" ];
+  };
+
   systemd.tmpfiles.rules = [
     "d /mnt/media/Music 0755 diego diego -"
     "d /mnt/media/Books 0755 diego diego -"

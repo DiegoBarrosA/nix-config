@@ -1,7 +1,7 @@
 { lib,
   config,
   pkgs,
-  nix-colors,
+  inputs,
   ...
 }: let
   cfg = config.colorscheme;
@@ -10,6 +10,10 @@
   hexColor = types.strMatching "#([0-9a-fA-F]{3}){1,2}";
 
   localSchemes = import ./colorschemes;
+
+  stylixBase16 = inputs.stylix.inputs.base16.lib { inherit pkgs lib; };
+  tintedSchemes = inputs.stylix.inputs.tinted-schemes;
+  schemeBySlug = slug: stylixBase16.mkSchemeAttrs (tintedSchemes + "/base16/${slug}.yaml");
 in {
   options.colorscheme = {
     mode = mkOption {
@@ -32,7 +36,7 @@ in {
       readOnly = true;
       type = types.attrs;
       default =
-        localSchemes.${cfg.type} or nix-colors.colorSchemes.${cfg.type}.palette or {};
+        localSchemes.${cfg.type} or (schemeBySlug cfg.type);
     };
 
     specialisations = mkOption {

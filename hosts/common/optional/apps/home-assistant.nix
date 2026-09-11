@@ -45,44 +45,47 @@
 
       frontend = {
         themes = {
-          material-darker = {
+          ${config.services.cobaltoTheme.scheme} =
+            let
+              theme = config.services.cobaltoTheme;
+            in
+            {
+              primary-color = theme.base16Scheme.base0D;
+              accent-color = theme.base16Scheme.base0E;
+              dark-primary-color = theme.base16Scheme.base0D;
+              light-primary-color = theme.base16Scheme.base01;
 
-            primary-color = "#82AAFF";
-            accent-color = "#C792EA";
-            dark-primary-color = "#82AAFF";
-            light-primary-color = "#303030";
+              primary-text-color = theme.base16Scheme.base05;
+              secondary-text-color = theme.base16Scheme.base04;
+              text-primary-color = theme.base16Scheme.base00;
+              disabled-text-color = theme.base16Scheme.base03;
 
-            primary-text-color = "#EEFFFF";
-            secondary-text-color = "#B2CCD6";
-            text-primary-color = "#212121";
-            disabled-text-color = "#4A4A4A";
+              primary-background-color = theme.base16Scheme.base00;
+              secondary-background-color = theme.surface;
+              divider-color = theme.base16Scheme.base02;
 
-            primary-background-color = "#212121";
-            secondary-background-color = "#262626";
-            divider-color = "#353535";
+              "app-header-background-color" = theme.base16Scheme.base01;
+              "app-header-text-color" = theme.base16Scheme.base05;
+              "sidebar-background-color" = theme.base16Scheme.base01;
+              "sidebar-icon-color" = theme.base16Scheme.base04;
+              "sidebar-text-color" = theme.base16Scheme.base05;
+              "sidebar-selected-icon-color" = theme.base16Scheme.base0D;
+              "sidebar-selected-text-color" = theme.base16Scheme.base0D;
 
-            "app-header-background-color" = "#303030";
-            "app-header-text-color" = "#EEFFFF";
-            "sidebar-background-color" = "#303030";
-            "sidebar-icon-color" = "#B2CCD6";
-            "sidebar-text-color" = "#EEFFFF";
-            "sidebar-selected-icon-color" = "#82AAFF";
-            "sidebar-selected-text-color" = "#82AAFF";
+              "card-background-color" = theme.surface;
+              "ha-card-background" = theme.surface;
+              "ha-card-border-radius" = "10px";
+              "paper-card-background-color" = theme.surface;
 
-            "card-background-color" = "#262626";
-            "ha-card-background" = "#262626";
-            "ha-card-border-radius" = "10px";
-            "paper-card-background-color" = "#262626";
+              "label-badge-background-color" = theme.base16Scheme.base01;
+              "state-icon-color" = theme.base16Scheme.base0D;
+              "switch-checked-color" = theme.base16Scheme.base0D;
 
-            "label-badge-background-color" = "#303030";
-            "state-icon-color" = "#82AAFF";
-            "switch-checked-color" = "#82AAFF";
-
-            "error-color" = "#F07178";
-            "warning-color" = "#FFCB6B";
-            "success-color" = "#C3E88D";
-            "info-color" = "#82AAFF";
-          };
+              "error-color" = theme.base16Scheme.base08;
+              "warning-color" = theme.base16Scheme.base0A;
+              "success-color" = theme.base16Scheme.base0B;
+              "info-color" = theme.base16Scheme.base0D;
+            };
         };
       };
 
@@ -233,7 +236,7 @@
   services.home-assistant.lovelaceConfig = {
     title = "Cobalto Home";
 
-    theme = "material-darker";
+    theme = config.services.cobaltoTheme.scheme;
     views = [
 
       {

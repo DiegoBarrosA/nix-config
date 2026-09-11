@@ -48,7 +48,7 @@ in
       enable = true;
       settings.screencast = {
         chooser_type = "dmenu";
-        chooser_cmd = "${pkgs.tofi}/bin/tofi --prompt-text 'share'";
+        chooser_cmd = "${pkgs.rofi}/bin/rofi -dmenu -no-custom -p share";
         max_fps = 30;
       };
     };

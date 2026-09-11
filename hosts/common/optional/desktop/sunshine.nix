@@ -14,7 +14,6 @@
     openFirewall = false;
     settings = {
       encoder = "vaapi";
-      output_name = "HEADLESS-1";
       min_fps_factor = 1;
       upnp = "disabled";
     };

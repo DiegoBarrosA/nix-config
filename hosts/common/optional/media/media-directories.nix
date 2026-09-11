@@ -15,6 +15,7 @@
        "sonarr.service"
        "radarr.service"
        "lidarr.service"
+       "prowlarr.service"
        "lazylibrarian.service"
        "calibre-server.service"
        "calibre-web.service"
@@ -46,10 +47,12 @@
 
       echo "[media-setup] Setting ownership and permissions..."
 
-      chown diego:media /mnt/media /nix/storage/servarr /nix/storage/transmission
+      chown diego:media /mnt/media /nix/storage/transmission
+      chown -R diego:media /nix/storage/servarr
 
       chmod 755 /mnt/media
-      chmod 750 /nix/storage/servarr /nix/storage/transmission
+      chmod 750 /nix/storage/transmission
+      chmod 750 /nix/storage/servarr
 
       echo "[media-setup] Directory structure created successfully:"
       echo "  Library: Movies, Tv, Music, Books, Audiobooks"

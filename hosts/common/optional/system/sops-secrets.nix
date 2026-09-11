@@ -18,6 +18,7 @@ with lib;
     defaultSopsFormat = "yaml";
     age.keyFile = "/nix/persist/var/lib/sops-nix/key.txt";
     age.generateKey = false;
+    useSystemdActivation = true;
 
     secrets."diego-password" = {
       neededForUsers = true;
@@ -123,6 +124,49 @@ with lib;
     };
 
     secrets."resend-api-key" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
+    secrets."restic-local-password" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
+    secrets."restic-remote-password" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
+    secrets."r2-access-key" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
+    secrets."r2-secret-key" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
+    secrets."r2-account-id" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
+    templates."restic.env" = {
+      content = ''
+        RESTIC_LOCAL_PASSWORD=${config.sops.placeholder."restic-local-password"}
+        RESTIC_REMOTE_PASSWORD=${config.sops.placeholder."restic-remote-password"}
+        RESTIC_S3_ENDPOINT=https://${config.sops.placeholder."r2-account-id"}.r2.cloudflarestorage.com
+        AWS_ACCESS_KEY_ID=${config.sops.placeholder."r2-access-key"}
+        AWS_SECRET_ACCESS_KEY=${config.sops.placeholder."r2-secret-key"}
+      '';
       owner = "root";
       group = "root";
       mode = "0400";

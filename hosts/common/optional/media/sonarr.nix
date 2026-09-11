@@ -13,4 +13,12 @@
   };
 
   users.groups.media = {};
+
+  systemd.tmpfiles.settings."10-sonarr".${config.services.sonarr.dataDir}.d = {
+    user = "diego";
+    group = "media";
+    mode = "0700";
+  };
+
+  backups.restic.sources = [ config.services.sonarr.dataDir ];
 }

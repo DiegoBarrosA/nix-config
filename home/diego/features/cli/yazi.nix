@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
 
   hx-open = pkgs.writeShellScriptBin "hx-open" ''
@@ -16,6 +16,11 @@ let
 in
 {
   home.packages = with pkgs; [ ueberzugpp hx-open ];
+
+  # The opencode profile sets XDG_CONFIG_HOME to a profile-specific dir,
+  # which makes Yazi look for config in the wrong place and silently drop
+  # all custom keybindings. Pin YAZI_CONFIG_HOME explicitly.
+  home.sessionVariables.YAZI_CONFIG_HOME = "${config.xdg.configHome}/yazi";
 
   programs.yazi = {
     enable = true;
@@ -73,6 +78,34 @@ in
           "cd ~/mnt/cobalto"
         ];
         desc = "Go to cobalto (sshfs)";
+      }
+      {
+        on = [ "g" "m" ];
+        run = [
+          "shell 'device-mount' --confirm"
+          "cd ~/mnt"
+        ];
+        desc = "Mount detected device";
+      }
+      {
+        on = [ "g" "M" ];
+        run = "shell 'device-umount' --confirm";
+        desc = "Unmount detected device";
+      }
+      {
+        on = [ "g" "u" ];
+        run = "cd /run/media";
+        desc = "Go to udiskie media mounts";
+      }
+      {
+        on = [ "g" "i" ];
+        run = "cd ~/mnt/iphone";
+        desc = "Go to iPhone mount";
+      }
+      {
+        on = [ "g" "a" ];
+        run = "cd ~/mnt/droid";
+        desc = "Go to Android (MTP) mount";
       }
     ];
     theme = {

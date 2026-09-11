@@ -14,7 +14,6 @@
       url = "github:mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nix-colors.url = "github:misterio77/nix-colors";
 
     stylix.url = "github:danth/stylix";
 
@@ -28,8 +27,8 @@
       flake = false;
     };
 
-    cascade = {
-      url = "github:cascadefox/cascade";
+    firefox-userchrome = {
+      url = "github:DiegoBarrosA/firefox-qutebrowser-userchrome";
       flake = false;
     };
 
@@ -87,6 +86,15 @@
       url = "github:nix-community/nix-on-droid/release-24.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    teams-calls-fetcher = {
+      url = "github:DiegoBarrosA/teams-calls-fetcher";
+    };
+
+    mixbus-source = {
+      url = "path:/home/diego/Downloads/Mixbus-12.0.1-x86_64.tar";
+      flake = false;
+    };
   };
 
   outputs =
@@ -142,12 +150,13 @@
           lib = inputs.nixpkgs.lib;
           privatePackages = inputs.private-config.packages.${system} or { };
         in
-        import ./pkgs { inherit pkgs lib privatePackages; }
+        import ./pkgs { inherit pkgs lib privatePackages; mixbus-source = inputs.mixbus-source; }
         // {
           clin = inputs.clin.packages.${system}.default;
           coderabbit-cli = inputs.llm-agents.packages.${system}.coderabbit-cli;
           zennotes-server = inputs.zennotes.packages.${system}.zennotes-server;
           ekphos = pkgs.callPackage ./pkgs/ekphos { src = inputs.ekphos; };
+          teams-calls-fetcher = inputs.teams-calls-fetcher.packages.${system}.default;
         }
       );
       myLib = import ./lib {
@@ -160,8 +169,13 @@
           nixosModules
           ;
       };
+      theme = {
+        scheme = "material-darker";
+        mode = "dark";
+      };
+
       nixosConfigurations = {
-        cobalto = myLib.mkHost "x86_64-linux" "cobalto" { };
+        cobalto = myLib.mkHost "x86_64-linux" "cobalto" { inherit theme; };
         rubi = myLib.mkHost "x86_64-linux" "rubi" { desktop = "sway"; };
       };
 
@@ -206,7 +220,7 @@
       );
 
       homeConfigurations = {
-        "diego@cobalto" = myLib.mkHome "x86_64-linux" ./home/diego/cobalto.nix [ ] { };
+        "diego@cobalto" = myLib.mkHome "x86_64-linux" ./home/diego/cobalto.nix [ ] { inherit theme; };
         "diego@rubi" = myLib.mkHome "x86_64-linux" ./home/diego/rubi.nix [
           inputs.private-config.homeManagerModules.workExtras
           inputs.private-config.homeManagerModules.workClaudeDesktopMcpConfig

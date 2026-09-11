@@ -7,8 +7,8 @@
 }:
 let
 
-  isLinux = pkgs.stdenv.isLinux;
-  isDarwin = pkgs.stdenv.isDarwin;
+  isLinux = pkgs.stdenv.hostPlatform.isLinux;
+  isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
   isAndroid = isNixOnDroid || pkgs.stdenv.hostPlatform.isAndroid or false;
   isDesktop = isLinux && !isAndroid;
 in
@@ -23,6 +23,7 @@ in
     ./bat.nix
     ./zellij.nix
     ./nushell.nix
+    ./herdr.nix
     ./ssh.nix
     ./yazi.nix
     ./zathura.nix
@@ -40,7 +41,7 @@ in
       fd
       fzf
       jq
-      nixfmt-rfc-style
+      nixfmt
       ouch
       pv
       ripgrep
@@ -60,6 +61,7 @@ in
       teleport
       scope-tui
       antigravity-cli
+      herdr
 
       aider-chat
       llm
