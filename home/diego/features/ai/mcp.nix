@@ -17,7 +17,7 @@
     };
     playwright = {
       enable = true;
-      browserPath = "${pkgs.firefox-devedition}/bin/firefox-devedition";
+      browserPath = "${pkgs.firefox-esr}/bin/firefox-esr";
 
       userDataDir = "${config.home.homeDirectory}/.config/playwright-firefox-profile";
     };

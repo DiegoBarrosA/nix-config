@@ -17,19 +17,19 @@ rec {
         outputs = self;
         customPkgs = packages.${system};
         desktop = hostArgs.desktop or null;
+        theme = hostArgs.theme or null;
       };
     };
 
   mkHome =
-    system: entrypoint: extraModules: { desktop ? null }:
+    system: entrypoint: extraModules: { desktop ? null, theme ? null }:
     inputs.home-manager.lib.homeManagerConfiguration {
       pkgs = legacyPackages.${system};
       extraSpecialArgs = {
         inherit inputs;
-        inherit (inputs) nix-colors;
         customPkgs = packages.${system};
         privateConfig = inputs.private-config or { };
-        inherit desktop;
+        inherit desktop theme;
         isNixOnDroid = false;
       };
       modules =
@@ -50,7 +50,6 @@ rec {
       home-manager-path = inputs.home-manager.outPath;
       extraSpecialArgs = {
         inherit inputs;
-        inherit (inputs) nix-colors;
       };
     };
 }

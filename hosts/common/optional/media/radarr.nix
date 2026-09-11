@@ -13,4 +13,6 @@
   };
 
   users.groups.media = {};
+
+  backups.restic.sources = [ config.services.radarr.dataDir ];
 }

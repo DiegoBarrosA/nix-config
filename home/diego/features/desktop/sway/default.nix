@@ -628,11 +628,11 @@ let
 in
 {
   imports = [
-    ./waybar.nix
+    ./status-menu.nix
     ./kanshi.nix
     ./mako.nix
     ./swaylock.nix
-    ./fuzzel.nix
+    ./launcher.nix
     ./bluetooth.nix
   ];
 
@@ -715,8 +715,8 @@ in
       gaps = {
         inner = 15;
         outer = 15;
-        smartGaps = "on";
-        smartBorders = "on";
+        smartGaps = "off";
+        smartBorders = "off";
       };
 
       colors = lib.mkForce {
@@ -852,7 +852,7 @@ in
         "Mod4+w" = "kill";
 
         "Mod4+p" = "floating enable, sticky enable";
-        "Mod4+space" = "exec ${config.launcher.drun}";
+        "Mod4+space" = "exec main-menu";
         "Mod4+Shift+c" = "reload";
         "Mod4+Shift+e" = "exec power-menu";
         "Mod4+Escape" = "exec swaylock -f";
@@ -929,8 +929,6 @@ in
         "Mod4+Ctrl+0" = "gaps inner current set 0, gaps outer current set 0";
         "Mod4+Ctrl+9" = "gaps inner current set 8, gaps outer current set 4";
 
-        "Mod4+F1" = "exec systemctl --user kill --kill-whom=main -s SIGUSR1 waybar.service";
-
         "Mod4+r" = "mode resize";
       }
 
@@ -976,7 +974,8 @@ in
       titlebar_border_thickness 0
       titlebar_padding 8 4
 
-      output * bg #${colors.base00} solid_color
+      output * bg  /home/diego/Pictures/Wallpapers/General/wallhaven-gw5xyq.png fill
+
       bindgesture swipe:4:left workspace prev
       bindgesture swipe:4:right workspace next
 

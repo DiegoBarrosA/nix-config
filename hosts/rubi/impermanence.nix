@@ -34,6 +34,8 @@
 
       "/var/lib/sunshine"
 
+      "/var/lib/lockdown"
+
       "/var/lib/flatpak"
 
       "/var/lib/libvirt"

@@ -34,6 +34,14 @@
       "/var/lib/postgresql"
       "/var/lib/private/music-assistant"
 
+      "/var/lib/bitwarden_rs"
+      "/var/lib/vaultwarden"
+      "/var/lib/couchdb"
+      "/var/lib/bazarr"
+      "/var/lib/private/open-webui"
+      "/var/lib/transmission"
+      "/var/lib/pihole"
+
       "/nix/storage/servarr"
       "/nix/storage/nextcloud"
 
@@ -340,6 +348,12 @@
       description = "Ensure storage directories exist";
       wantedBy = [ "multi-user.target" ];
       after = [ "local-fs.target" ];
+      before = [
+        "sonarr.service"
+        "radarr.service"
+        "lidarr.service"
+        "prowlarr.service"
+      ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
@@ -349,6 +363,9 @@
       script = ''
         mkdir -p /nix/storage/{run/secrets,secrets,llm,syncthing,transmission,jellyfin,homepage,nextcloud}
         mkdir -p /nix/storage/var/lib/vols/{portainer,watchtower}
+        mkdir -p /nix/storage/vaultwarden/backups
+        chown -R vaultwarden:vaultwarden /nix/storage/vaultwarden 2>/dev/null || true
+        chmod 700 /nix/storage/vaultwarden 2>/dev/null || true
         mkdir -p /mnt/media/{Movies,Tv,Music,Books,Audiobooks,Incoming,Documents,Obsidian,Repos,Archive,Pictures}
         mkdir -p /mnt/media/Pictures/{Wallpapers,Photos,Screenshots}
         mkdir -p /mnt/media/Transmission/{Downloads,Watch,Incomplete}
@@ -360,7 +377,8 @@
 
         mkdir -p /nix/storage/llm-services/text-generation-webui
 
-        chmod -R 755 /nix/storage/servarr 2>/dev/null || true
+        chown -R diego:media /nix/storage/servarr 2>/dev/null || true
+        chmod -R 750 /nix/storage/servarr 2>/dev/null || true
         chmod -R 755 /nix/storage/llm-services 2>/dev/null || true
 
         chown diego:media /mnt/media 2>/dev/null || true

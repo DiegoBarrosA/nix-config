@@ -11,7 +11,7 @@ in
       max-visible = 5;
       sort = "-time";
       layer = "overlay";
-      anchor = "top-center";
+      anchor = "top-right";
       margin = "10";
       padding = "12";
       width = 350;

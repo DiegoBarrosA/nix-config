@@ -35,6 +35,10 @@
       zj = "zellij";
 
       dev = "zellij --layout dev";
+
+      hd = "herdr";
+      # ponytail: toad isn't in nixpkgs yet, uvx runs the latest PyPI release on demand
+      toad = "uvx --from batrachian-toad toad";
     };
 
     extraEnv = ''
@@ -77,14 +81,6 @@
       $env.EDITOR = "hx"
       $env.PROMPT_INDICATOR_VI_INSERT = ""
       $env.PROMPT_INDICATOR_VI_NORMAL = ""
-
-      if ($env.ZELLIJ? | is-empty) and (which zellij | is-not-empty) {
-        if ($env.ZELLIJ_SESSION_NAME? | is-not-empty) {
-          exec zellij attach $env.ZELLIJ_SESSION_NAME --create
-        } else {
-          exec zellij attach main --create
-        }
-      }
 
       $env.config.edit_mode = "vi"
 

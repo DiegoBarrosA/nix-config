@@ -14,7 +14,7 @@ let
     work = "~/.ssh/keys/work_ed25519";
   };
 
-  hasSystemd = pkgs.stdenv.isLinux && !(isNixOnDroid || pkgs.stdenv.hostPlatform.isAndroid or false);
+  hasSystemd = pkgs.stdenv.hostPlatform.isLinux && !(isNixOnDroid || pkgs.stdenv.hostPlatform.isAndroid or false);
 
   addAllScript = pkgs.writeShellScript "ssh-add-all" (
     concatStringsSep "\n" (
@@ -91,7 +91,7 @@ in
     };
   };
 
-  launchd.agents.ssh-add = mkIf pkgs.stdenv.isDarwin {
+  launchd.agents.ssh-add = mkIf pkgs.stdenv.hostPlatform.isDarwin {
     enable = true;
     config = {
       RunAtLoad = true;

@@ -1,4 +1,4 @@
-{ pkgs, lib ? null, colors ? null, privatePackages ? {}, ... }:
+{ pkgs, lib ? null, colors ? null, privatePackages ? {}, mixbus-source, ... }:
 
 let
   iso639-lang = pkgs.python3Packages.callPackage ./iso639-lang { };
@@ -12,4 +12,6 @@ in
   claude-desktop = pkgs.callPackage ./claude-desktop { };
   jcode = pkgs.callPackage ./jcode { };
   happier = pkgs.callPackage ./happier { };
+  mixbus = pkgs.callPackage ./mixbus { inherit mixbus-source; };
+  inherit (pkgs.callPackage ./device-mount.nix { }) device-mount device-umount;
 } // privatePackages

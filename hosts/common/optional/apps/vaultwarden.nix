@@ -26,7 +26,7 @@
     enable = true;
     dbBackend = "sqlite";
     domain = "vault.minerales.network";
-    backupDir = "/var/lib/vaultwarden/backups";
+    backupDir = "/nix/storage/vaultwarden/backups";
 
     config = {
       SIGNUPS_ALLOWED = false;
@@ -34,4 +34,6 @@
 
     environmentFile = config.sops.templates."vaultwarden.env".path;
   };
+
+  backups.restic.sources = [ "/nix/storage/vaultwarden/backups" ];
 }

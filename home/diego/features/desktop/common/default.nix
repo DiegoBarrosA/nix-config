@@ -20,6 +20,8 @@
     ./obs-studio.nix
     ./mpv.nix
     ./swayimg.nix
+    ./udiskie.nix
+    ./mobile-automount.nix
   ];
   xdg.enable = true;
   xdg.userDirs.enable = true;

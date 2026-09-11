@@ -1,13 +1,5 @@
-{
-  lib,
-
-  labelFont ? "sans-serif",
-  ...
-}:
+{ ... }:
 let
-
-  u = code: builtins.fromJSON ''"\u${code}"'';
-
   registry = {
     "1" = {
       icon = "f111";
@@ -65,31 +57,4 @@ let
 in
 {
   inherit registry;
-
-  waybarWorkspaces =
-    let
-      absorb = "<span font_size='0.1pt'> ";
-
-      label = "<span font_family='${labelFont}'>";
-      iconWorkspaces = lib.filterAttrs (_: v: !(v.nameless or false)) registry;
-    in
-    {
-      disable-scroll = false;
-      all-outputs = true;
-      strip-workspace-numbers = true;
-      format = "{icon}{name}</span>";
-      format-icons =
-
-        (lib.mapAttrs (_: v: "${u v.icon}${absorb}") iconWorkspaces)
-        // {
-
-          "default" = "${u "f22d"}${label}";
-          "focused" = "${u "f192"}${label}";
-
-          "high-priority-named" = lib.attrNames iconWorkspaces;
-        };
-      persistent-workspaces = lib.mapAttrs (_: _: [ ]) (
-        lib.filterAttrs (_: v: v.persistent or false) registry
-      );
-    };
 }

@@ -7,7 +7,7 @@ in {
   ];
 
   boot.initrd.availableKernelModules =
-    [ "xhci_pci" "ahci" "nvme" "usb_storage" "usbhid" "sd_mod" ];
+    [ "xhci_pci" "ahci" "nvme" "usb_storage" "usbhid" "sd_mod" "tpm_tis" "tpm_crb" ];
 
   boot.initrd.kernelModules = [ "r8169" ];
   boot.kernelModules = [ "kvm-amd" ];
@@ -34,14 +34,22 @@ in {
             };
             root = {
               size = "100%";
-              content = {
-                type = "luks";
-                name = "cobalto-root";
-                passwordFile = "/run/secrets/luks_passphrase";
-                settings = {
-                  allowDiscards = true;
-                  crypttabExtraOpts = [ "fido2-device=auto" "tpm2-device=auto" ];
-                };
+content = {
+                  type = "luks";
+                  name = "cobalto-root";
+                  passwordFile = "/run/secrets/luks_passphrase";
+                  settings = {
+                    allowDiscards = true;
+                    # Headless unlock order: TPM2 (unattended, PCR 0+7) -> FIDO2
+                    # YubiKey fallback -> passphrase slot via initrd SSH (port 2222).
+                    # Re-enroll TPM2 after firmware/Secure Boot changes:
+                    #   systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+7 \
+                    #     --unlock-key-file=/run/secrets/luks-passphrase <device>
+                    # FIDO2 (script: scripts/cobalto-luks-fido2-enroll.sh).
+                    # Drop a YubiKey slot when lost:
+                    #   cryptsetup luksKillSlot <device> <slot>
+                    crypttabExtraOpts = [ "fido2-device=auto" "tpm2-device=auto" ];
+                  };
                 content = {
                   type = "btrfs";
                   extraArgs = [ "-f" ];

@@ -35,4 +35,16 @@
   systemd.tmpfiles.rules = [
     "d /var/lib/private 0700 root root -"
   ];
+
+  systemd.tmpfiles.settings = lib.mkIf config.services.prowlarr.enable {
+    "10-prowlarr" = lib.mkForce {
+      ${config.services.prowlarr.dataDir}.d = {
+        user = "diego";
+        group = "media";
+        mode = "0700";
+      };
+    };
+  };
+
+  backups.restic.sources = lib.mkIf config.services.prowlarr.enable [ config.services.prowlarr.dataDir ];
 }

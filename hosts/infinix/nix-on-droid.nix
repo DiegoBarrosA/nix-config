@@ -2,7 +2,6 @@
   pkgs,
   lib,
   inputs,
-  nix-colors,
   ...
 }:
 {
@@ -28,7 +27,7 @@
   ];
 
   home-manager.extraSpecialArgs = {
-    inherit inputs nix-colors;
+    inherit inputs;
     isNixOnDroid = true;
   };
 

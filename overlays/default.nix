@@ -1,7 +1,7 @@
 { inputs, ... }:
 {
 
-  additions = final: _prev: import ../pkgs { pkgs = final; };
+  additions = final: _prev: import ../pkgs { pkgs = final; mixbus-source = inputs.mixbus-source; };
 
   nixgl = inputs.nixgl.overlay;
 

@@ -10,7 +10,6 @@
   home-manager.useGlobalPkgs = true;
   home-manager.extraSpecialArgs = {
     inherit inputs outputs customPkgs desktop;
-    inherit (inputs) nix-colors;
     privateConfig = inputs.private-config or { };
     isNixOnDroid = false;
   };

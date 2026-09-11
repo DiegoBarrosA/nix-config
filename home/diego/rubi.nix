@@ -10,7 +10,7 @@
 }:
 {
   colorscheme.mode = "dark";
-  colorscheme.type = "grayscale-dark";
+  colorscheme.type = "colors";
   colorscheme.iconFolderColor = "black";
   colorscheme.specialisations = { };
 
@@ -33,6 +33,7 @@
 
     ./features/cli/ekphos-theme.nix
     ./features/desktop/common
+    ./features/desktop/common/chromium
     ./features/desktop/zennotes-theme.nix
     ./features/ai
     ./features/audio

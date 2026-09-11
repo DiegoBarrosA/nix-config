@@ -7,40 +7,42 @@
 let
   port = 8086;
 
+  th = config.services.cobaltoTheme;
+
   minifluxCss = ''
     :root {
-      --body-background: #212121;
-      --body-color: #EEFFFF;
-      --title-color: #EEFFFF;
-      --link-color: #82AAFF;
-      --link-hover-color: #C792EA;
-      --header-background: #303030;
-      --header-color: #EEFFFF;
-      --header-link-color: #EEFFFF;
-      --header-link-hover-color: #82AAFF;
-      --entry-background: #212121;
-      --entry-header-color: #EEFFFF;
-      --entry-content-color: #EEFFFF;
-      --category-background: #303030;
-      --category-color: #82AAFF;
-      --button-primary-background: #82AAFF;
-      --modal-background: #303030;
+      --body-background: ${th.base16Scheme.base00};
+      --body-color: ${th.base16Scheme.base05};
+      --title-color: ${th.base16Scheme.base05};
+      --link-color: ${th.base16Scheme.base0D};
+      --link-hover-color: ${th.base16Scheme.base0E};
+      --header-background: ${th.base16Scheme.base01};
+      --header-color: ${th.base16Scheme.base05};
+      --header-link-color: ${th.base16Scheme.base05};
+      --header-link-hover-color: ${th.base16Scheme.base0D};
+      --entry-background: ${th.base16Scheme.base00};
+      --entry-header-color: ${th.base16Scheme.base05};
+      --entry-content-color: ${th.base16Scheme.base05};
+      --category-background: ${th.base16Scheme.base01};
+      --category-color: ${th.base16Scheme.base0D};
+      --button-primary-background: ${th.base16Scheme.base0D};
+      --modal-background: ${th.base16Scheme.base01};
     }
-    body { background: #212121; color: #EEFFFF; font-family: "Nunito", "Inter", system-ui, sans-serif; }
-    .header nav li a { color: #B2CCD6; }
-    .header nav li a:hover, .header nav li a.active { color: #82AAFF; }
-    .items .item { background: #262626; border: 1px solid #353535; border-radius: 8px; margin-bottom: 8px; }
-    .item.current-item { border-color: #82AAFF; box-shadow: 0 0 0 1px #82AAFF; }
-    .item-title a { color: #EEFFFF; }
-    .item-meta, .item-meta a { color: #7E8A94; }
-    a.page-link, .pagination a { color: #82AAFF; }
-    .category { background: #303030; color: #82AAFF; border-radius: 12px; }
+    body { background: ${th.base16Scheme.base00}; color: ${th.base16Scheme.base05}; font-family: "Nunito", "Inter", system-ui, sans-serif; }
+    .header nav li a { color: ${th.base16Scheme.base04}; }
+    .header nav li a:hover, .header nav li a.active { color: ${th.base16Scheme.base0D}; }
+    .items .item { background: ${th.surface}; border: 1px solid ${th.base16Scheme.base02}; border-radius: 8px; margin-bottom: 8px; }
+    .item.current-item { border-color: ${th.base16Scheme.base0D}; box-shadow: 0 0 0 1px ${th.base16Scheme.base0D}; }
+    .item-title a { color: ${th.base16Scheme.base05}; }
+    .item-meta, .item-meta a { color: ${th.base16Scheme.base03}; }
+    a.page-link, .pagination a { color: ${th.base16Scheme.base0D}; }
+    .category { background: ${th.base16Scheme.base01}; color: ${th.base16Scheme.base0D}; border-radius: 12px; }
     button, .button { border-radius: 6px; }
-    .button-primary { background: #82AAFF; border-color: #82AAFF; color: #212121; }
-    .entry-content a { color: #82AAFF; }
+    .button-primary { background: ${th.base16Scheme.base0D}; border-color: ${th.base16Scheme.base0D}; color: ${th.base16Scheme.base00}; }
+    .entry-content a { color: ${th.base16Scheme.base0D}; }
     ::-webkit-scrollbar { width: 10px; }
-    ::-webkit-scrollbar-thumb { background: #4A4A4A; border-radius: 6px; }
-    ::-webkit-scrollbar-track { background: #212121; }
+    ::-webkit-scrollbar-thumb { background: ${th.base16Scheme.base03}; border-radius: 6px; }
+    ::-webkit-scrollbar-track { background: ${th.base16Scheme.base00}; }
   '';
   cssFile = pkgs.writeText "miniflux-material-darker.css" minifluxCss;
 
@@ -94,7 +96,7 @@ in
   };
 
   systemd.services.miniflux-setup = {
-    description = "Seed Miniflux feeds + material-darker theme";
+    description = "Seed Miniflux feeds + theme";
     after = [ "miniflux.service" ];
     requires = [ "miniflux.service" ];
     wantedBy = [ "multi-user.target" ];

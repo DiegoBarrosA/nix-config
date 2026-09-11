@@ -18,6 +18,12 @@ in
     }
   '';
 
+  xdg.configFile."zellij/layouts/notes.kdl".text = ''
+    layout {
+        pane command="ekphos"
+    }
+  '';
+
   programs.zellij = {
     enable = true;
 

@@ -23,7 +23,10 @@
 
     ../common/optional/system/sops-secrets.nix
     ../common/optional/system/automated-storage.nix
+    ../common/optional/system/offsite-backup.nix
     ./impermanence.nix
+
+    ../common/optional/system/webtheming.nix
 
     inputs.private-config.nixosModules.workSecrets
 
@@ -170,7 +173,7 @@
     enable = true;
     reolink = {
       enable = true;
-      ip = "192.168.1.65";
+      ip = "192.168.1.19";
       rtspPort = 8554;
     };
   };
@@ -194,6 +197,14 @@
     host = "127.0.0.1";
     port = 4096;
     passwordFile = config.sops.secrets."opencode-server-password".path;
+  };
+
+  backups.restic = {
+    enable = true;
+    remote = {
+      bucket = "bitwarden-backup";
+      envFile = config.sops.templates."restic.env".path;
+    };
   };
 
   system.stateVersion = "22.11";
