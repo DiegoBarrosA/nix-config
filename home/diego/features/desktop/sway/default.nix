@@ -628,11 +628,11 @@ let
 in
 {
   imports = [
-    ./status-menu.nix
+    ./waybar.nix
     ./kanshi.nix
     ./mako.nix
     ./swaylock.nix
-    ./launcher.nix
+    ./fuzzel.nix
     ./bluetooth.nix
   ];
 
@@ -852,7 +852,7 @@ in
         "Mod4+w" = "kill";
 
         "Mod4+p" = "floating enable, sticky enable";
-        "Mod4+space" = "exec main-menu";
+        "Mod4+space" = "exec ${config.launcher.drun}";
         "Mod4+Shift+c" = "reload";
         "Mod4+Shift+e" = "exec power-menu";
         "Mod4+Escape" = "exec swaylock -f";
@@ -928,6 +928,8 @@ in
         "Mod4+Ctrl+Shift+minus" = "gaps outer current minus 4";
         "Mod4+Ctrl+0" = "gaps inner current set 0, gaps outer current set 0";
         "Mod4+Ctrl+9" = "gaps inner current set 8, gaps outer current set 4";
+
+        "Mod4+F1" = "exec systemctl --user kill --kill-whom=main -s SIGUSR1 waybar.service";
 
         "Mod4+r" = "mode resize";
       }
