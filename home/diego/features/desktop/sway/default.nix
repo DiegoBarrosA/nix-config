@@ -976,7 +976,7 @@ in
       titlebar_border_thickness 0
       titlebar_padding 8 4
 
-      output * bg  /home/diego/Pictures/Wallpapers/General/wallhaven-gw5xyq.png fill
+      output * bg  #${colors.base00} solid_color
 
       bindgesture swipe:4:left workspace prev
       bindgesture swipe:4:right workspace next
