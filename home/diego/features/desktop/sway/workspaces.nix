@@ -11,18 +11,22 @@ let
   registry = {
     "1" = {
       icon = "f111";
+      nameless = true;
       persistent = true;
     };
     "2" = {
       icon = "f0c8";
+      nameless = true;
       persistent = true;
     };
     "3" = {
       icon = "f219";
+      nameless = true;
       persistent = true;
     };
     "4" = {
       icon = "f005";
+      nameless = true;
       persistent = true;
     };
     "5" = {
@@ -80,16 +84,15 @@ in
       format = "{icon}{name}</span>";
       format-icons =
 
-        (lib.mapAttrs (_: v: "${u v.icon}${absorb}") iconWorkspaces)
-        // {
+        (lib.mapAttrs (_: v: "${u v.icon}${absorb}") iconWorkspaces) // {
 
           "default" = "${u "f22d"}${label}";
           "focused" = "${u "f192"}${label}";
 
           "high-priority-named" = lib.attrNames iconWorkspaces;
         };
-      persistent-workspaces = lib.mapAttrs (_: _: [ ]) (
-        lib.filterAttrs (_: v: v.persistent or false) registry
-      );
+      persistent-workspaces = lib.mapAttrs' (
+        n: v: lib.nameValuePair (if v.nameless or false then "${n}:" else n) [ ]
+      ) (lib.filterAttrs (_: v: v.persistent or false) registry);
     };
 }
