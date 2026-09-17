@@ -17,9 +17,10 @@
     };
     playwright = {
       enable = true;
-      browserPath = "${pkgs.firefox-esr}/bin/firefox-esr";
+      browser = "chromium";
+      browserPath = "${pkgs.chromium}/bin/chromium";
 
-      userDataDir = "${config.home.homeDirectory}/.config/playwright-firefox-profile";
+      userDataDir = "${config.home.homeDirectory}/.config/playwright-chromium-profile";
     };
     thunderbird = {
       enable = true;

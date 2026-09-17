@@ -60,6 +60,11 @@
       flake = false;
     };
 
+    impeccable = {
+      url = "github:pbakaus/impeccable";
+      flake = false;
+    };
+
     ai-tooling = {
       url = "github:DiegoBarrosA/nix-ai-tooling";
     };
