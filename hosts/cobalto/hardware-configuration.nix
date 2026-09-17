@@ -87,7 +87,9 @@ content = {
       };
       storage = {
         type = "disk";
-        device = "/dev/disk/by-id/ata-WDC_WD5000LPVX-22V0TT0_WD-WX71E23XDM75";
+        # WD5000LPVX (500G) died and was replaced; this is the ST1000LM024 (931G)
+        # that took its bay. Previously held unrelated "onedrive" btrfs data - wiped.
+        device = "/dev/disk/by-id/ata-ST1000LM024_HN-M101MBB_S31QJ9DH116618";
         content = {
           type = "gpt";
           partitions = {
@@ -105,7 +107,7 @@ content = {
                   type = "btrfs";
                   extraArgs = [ "-f" ];
                   mountpoint = "/nix/storage";
-                  mountOptions = [ "compress=zstd" ];
+                  mountOptions = [ "compress=zstd" "nofail" "x-systemd.device-timeout=10" ];
                 };
               };
             };
@@ -114,7 +116,8 @@ content = {
       };
       media = {
         type = "disk";
-        device = "/dev/disk/by-id/ata-ST3000DM001-1CH166_W1F20M0B";
+        # ST3000DM001 (3TB) failed and was replaced with this WD20EARX (1.8T).
+        device = "/dev/disk/by-id/ata-WDC_WD20EARX-00PASB0_WD-WCAZAF362077";
         content = {
           type = "gpt";
           partitions = {
@@ -132,7 +135,7 @@ content = {
                   type = "btrfs";
                   extraArgs = [ "-f" ];
                   mountpoint = "/srv/media";
-                  mountOptions = [ "compress=zstd" ];
+                  mountOptions = [ "compress=zstd" "nofail" "x-systemd.device-timeout=10" ];
                 };
               };
             };
@@ -176,10 +179,12 @@ content = {
     };
   };
 
+  # Only root needs to unlock before switch-root. Storage/media are data disks,
+  # unlocked in normal (non-initrd) boot via regular crypttab; with "nofail" a
+  # missing/dead data disk can no longer block the whole machine from booting
+  # (this is what caused the 2026-09-17 outage).
   boot.initrd.luks.devices = {
     "cobalto-root".allowDiscards = true;
-    "cobalto-storage".allowDiscards = true;
-    "cobalto-media".allowDiscards = true;
   };
 
   # Legacy path kept during the /mnt/media -> /srv/media migration.
