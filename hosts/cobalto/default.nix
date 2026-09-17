@@ -220,7 +220,12 @@
   services.llama-cpp-server = {
     enable = true;
 
-    model = "bartowski/Llama-3.2-3B-Instruct-GGUF:Q8_0";
+    # Absolute path -> llama-server gets -m instead of -hf. The HuggingFace
+    # fetch fails at startup (and the old cache died with the storage disk),
+    # so keep the weights local:
+    #   curl -L -o /nix/storage/llm/models/Llama-3.2-3B-Instruct-Q8_0.gguf \
+    #     https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q8_0.gguf
+    model = "/nix/storage/llm/models/Llama-3.2-3B-Instruct-Q8_0.gguf";
 
     port = 11435;
     contextSize = 8192;
