@@ -272,4 +272,8 @@ in
       }
     ];
   };
+
+  # dataDir holds the sqlite homeserver.db, the media store, uploads and the
+  # signing key. Losing the signing key breaks federation permanently.
+  backups.restic.sources = [ "/nix/storage/matrix-synapse" ];
 }

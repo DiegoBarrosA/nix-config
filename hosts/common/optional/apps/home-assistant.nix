@@ -386,4 +386,8 @@
       }
     ];
   };
+
+  # configDir: entity registry, automations, and the recorder database, i.e.
+  # every pairing and all history. Not reproducible from this config.
+  backups.restic.sources = [ config.services.home-assistant.configDir ];
 }

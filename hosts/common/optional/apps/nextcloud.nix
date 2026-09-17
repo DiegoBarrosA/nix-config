@@ -59,5 +59,9 @@ in
     "d /nix/storage/nextcloud 0750 nextcloud nextcloud -"
   ];
 
+  # User files and config. The database is postgres and is covered separately
+  # by the pg_dump in system/postgres-backup.nix.
+  backups.restic.sources = [ "/nix/storage/nextcloud" ];
+
   environment.etc."nextcloud-admin-pass".text = "admin";
 }
