@@ -44,8 +44,15 @@
       # re-issued, which burns Let's Encrypt's duplicate-certificate quota.
       "/var/lib/acme"
       # postgres dumps, otherwise wiped on every boot and absent from any
-      # backup taken before the next nightly dump runs.
-      "/var/backup/postgresql"
+      # backup taken before the next nightly dump runs. Needs explicit
+      # ownership: impermanence would otherwise create it root:root and
+      # pg_dumpall, which runs as postgres, cannot write there.
+      {
+        directory = "/var/backup/postgresql";
+        user = "postgres";
+        group = "postgres";
+        mode = "0700";
+      }
 
       # servarr/nextcloud deliberately NOT persisted through impermanence: they
       # live directly on the /nix/storage disk. Binding them from /nix/persist
