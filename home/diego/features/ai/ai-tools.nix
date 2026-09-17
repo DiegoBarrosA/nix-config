@@ -28,7 +28,29 @@
   programs.ai-skills = {
     enable = true;
 
-    extraSkillSources = [ "${inputs.obsidian-skills}/skills" ];
+    extraSkillSources = [
+      "${inputs.obsidian-skills}/skills"
+      "${inputs.impeccable}/.claude/skills"
+    ];
+  };
+
+  programs.claude-code-config = {
+    # Impeccable ships its subagents outside the skill folder itself.
+    extraAgentSources = [ "${inputs.impeccable}/.claude/agents" ];
+
+    enabledPlugins = {
+      "superpowers@claude-plugins-official" = true;
+      "ponytail@ponytail" = true;
+    };
+
+    extraKnownMarketplaces = {
+      ponytail = {
+        source = {
+          source = "github";
+          repo = "DietrichGebert/ponytail";
+        };
+      };
+    };
   };
 
   programs.ai-system-prompt = {

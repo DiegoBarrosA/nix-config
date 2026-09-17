@@ -9,7 +9,7 @@ let
   inherit (lib) concatStringsSep mapAttrsToList mkIf;
 
   keys = {
-    diego = "~/.ssh/id_ed25519";
+    diego = "~/.ssh/keys/id_ed25519";
     github = "~/.ssh/keys/github_ed25519";
     work = "~/.ssh/keys/work_ed25519";
   };
@@ -70,6 +70,17 @@ in
 
       "*.teleport.sh" = {
         IdentityFile = keys.work;
+      };
+
+      amatista = {
+        HostName = "146.235.245.77";
+        User = "opc";
+        IdentityFile = keys.diego;
+      };
+      azabache = {
+        HostName = "146.181.58.241";
+        User = "opc";
+        IdentityFile = keys.diego;
       };
     };
   };
