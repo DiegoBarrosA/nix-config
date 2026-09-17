@@ -35,6 +35,12 @@ in
     acceptTerms = true;
     defaults.email = "diego@minerales.network";
 
+    # Resolve DNS-01 challenges against a public resolver instead of the system
+    # one. /etc/resolv.conf points at Tailscale MagicDNS (100.100.100.100),
+    # which answers REFUSED for SOA lookups on non-tailnet domains, so lego
+    # could not find the Cloudflare zone and fell back to self-signed certs.
+    defaults.dnsResolver = "1.1.1.1:53";
+
     certs."minerales.network" = {
       domain = "minerales.network";
       extraDomainNames = [ "*.minerales.network" ];

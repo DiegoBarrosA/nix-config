@@ -40,6 +40,9 @@
       "/var/lib/bazarr"
       "/var/lib/private/open-webui"
       "/var/lib/pihole"
+      # Without this the wildcard cert is destroyed on every boot and has to be
+      # re-issued, which burns Let's Encrypt's duplicate-certificate quota.
+      "/var/lib/acme"
 
       # servarr/nextcloud deliberately NOT persisted through impermanence: they
       # live directly on the /nix/storage disk. Binding them from /nix/persist
