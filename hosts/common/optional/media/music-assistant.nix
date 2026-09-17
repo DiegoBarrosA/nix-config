@@ -42,7 +42,7 @@ in
     ];
 
     serviceConfig = {
-      ReadWritePaths = [ "/mnt/media/Music" ];
+      ReadWritePaths = [ "/srv/media/library/music" ];
       MemoryDenyWriteExecute = lib.mkForce false;
 
       StateDirectory = lib.mkForce [

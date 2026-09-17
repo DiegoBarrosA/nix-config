@@ -122,7 +122,7 @@
         resources = [
           { type = "disk_use_percent"; arg = "/"; }
           { type = "disk_use_percent"; arg = "/nix/storage"; }
-          { type = "disk_use_percent"; arg = "/mnt/media"; }
+          { type = "disk_use_percent"; arg = "/srv/media"; }
           { type = "memory_use_percent"; }
           { type = "processor_use"; }
           { type = "processor_temperature"; }
@@ -151,10 +151,10 @@
         url = "http://localhost:5580";
       };
 
-      transmission = {
+      qbittorrent = {
         host = "127.0.0.1";
-        port = 9091;
-        username = "";
+        port = 8080;
+        username = "admin";
         password = "";
       };
 
@@ -360,7 +360,7 @@
             title = "Storage & Host";
             entities = [
               { entity = "sensor.system_monitor_disk_use_partition_root"; name = "Disk / (root)"; }
-              { entity = "sensor.system_monitor_disk_use_mnt_media"; name = "Disk /mnt/media"; }
+              { entity = "sensor.system_monitor_disk_use_srv_media"; name = "Disk /srv/media"; }
               { entity = "sensor.system_monitor_disk_use_nix_storage"; name = "Disk /nix/storage"; }
               { entity = "sensor.system_monitor_load_1_min"; name = "Load (1m)"; }
               { entity = "sensor.system_monitor_last_boot"; name = "Last boot"; }

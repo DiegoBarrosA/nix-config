@@ -32,12 +32,12 @@
       };
 
       media = {
-        path = "/mnt/media";
+        path = "/srv/media";
         comment = "Unified Media Library";
         browseable = "yes";
         "read only" = "no";
         "guest ok" = "yes";
-        "force user" = "diego";
+        "force user" = "media";
         "force group" = "media";
         "create mask" = "0755";
         "directory mask" = "0755";
@@ -46,13 +46,13 @@
         "store dos attributes" = "yes";
       };
 
-      movies = {
-        path = "/mnt/media/Movies";
-        comment = "Movie Library";
+      library = {
+        path = "/srv/media/library";
+        comment = "Media Library (Movies, Series, Music, Books)";
         browseable = "yes";
         "read only" = "no";
         "guest ok" = "yes";
-        "force user" = "diego";
+        "force user" = "media";
         "force group" = "media";
         "create mask" = "0755";
         "directory mask" = "0755";
@@ -60,12 +60,12 @@
       };
 
       tv = {
-        path = "/mnt/media/Tv";
+        path = "/srv/media/library/series";
         comment = "TV Show Library";
         browseable = "yes";
         "read only" = "no";
         "guest ok" = "yes";
-        "force user" = "diego";
+        "force user" = "media";
         "force group" = "media";
         "create mask" = "0755";
         "directory mask" = "0755";
@@ -73,12 +73,12 @@
       };
 
       music = {
-        path = "/mnt/media/Music";
+        path = "/srv/media/library/music";
         comment = "Music Library";
         browseable = "yes";
         "read only" = "no";
         "guest ok" = "yes";
-        "force user" = "diego";
+        "force user" = "media";
         "force group" = "media";
         "create mask" = "0755";
         "directory mask" = "0755";
@@ -86,12 +86,12 @@
       };
 
       books = {
-        path = "/mnt/media/Books";
+        path = "/srv/media/library/books";
         comment = "Book Library";
         browseable = "yes";
         "read only" = "no";
         "guest ok" = "yes";
-        "force user" = "diego";
+        "force user" = "media";
         "force group" = "media";
         "create mask" = "0755";
         "directory mask" = "0755";
@@ -99,60 +99,60 @@
       };
 
       documents = {
-        path = "/mnt/media/Documents";
+        path = "/srv/media/Documents";
         comment = "Documents (Syncthing)";
         browseable = "yes";
         "read only" = "no";
         "guest ok" = "yes";
-        "force user" = "diego";
+        "force user" = "media";
         "force group" = "media";
         "create mask" = "0755";
         "directory mask" = "0755";
         "vfs objects" = "fruit acl_xattr";
       };
       obsidian = {
-        path = "/mnt/media/Obsidian";
+        path = "/srv/media/Obsidian";
         comment = "Obsidian vault (Syncthing)";
         browseable = "yes";
         "read only" = "no";
         "guest ok" = "yes";
-        "force user" = "diego";
+        "force user" = "media";
         "force group" = "media";
         "create mask" = "0755";
         "directory mask" = "0755";
         "vfs objects" = "fruit acl_xattr";
       };
       repos = {
-        path = "/mnt/media/Repos";
+        path = "/srv/media/Repos";
         comment = "Repositories (Syncthing)";
         browseable = "yes";
         "read only" = "no";
         "guest ok" = "yes";
-        "force user" = "diego";
+        "force user" = "media";
         "force group" = "media";
         "create mask" = "0755";
         "directory mask" = "0755";
         "vfs objects" = "fruit acl_xattr";
       };
       archive = {
-        path = "/mnt/media/Archive";
+        path = "/srv/media/Archive";
         comment = "Archive / misc (Syncthing)";
         browseable = "yes";
         "read only" = "no";
         "guest ok" = "yes";
-        "force user" = "diego";
+        "force user" = "media";
         "force group" = "media";
         "create mask" = "0755";
         "directory mask" = "0755";
         "vfs objects" = "fruit acl_xattr";
       };
       pictures = {
-        path = "/mnt/media/Pictures";
+        path = "/srv/media/Pictures";
         comment = "Pictures (Syncthing: Wallpapers, Photos, Screenshots)";
         browseable = "yes";
         "read only" = "no";
         "guest ok" = "yes";
-        "force user" = "diego";
+        "force user" = "media";
         "force group" = "media";
         "create mask" = "0755";
         "directory mask" = "0755";
@@ -164,19 +164,19 @@
         browseable = "yes";
         "read only" = "no";
         "guest ok" = "no";
-        "force user" = "diego";
-        "force group" = "users";
+        "force user" = "media";
+        "force group" = "media";
         "create mask" = "0755";
         "directory mask" = "0755";
       };
 
       downloads = {
-        path = "/mnt/media/Transmission/Downloads";
-        comment = "Transmission Downloads";
+        path = "/srv/media/downloads";
+        comment = "Downloads (qBittorrent)";
         browseable = "yes";
         "read only" = "no";
         "guest ok" = "yes";
-        "force user" = "diego";
+        "force user" = "media";
         "force group" = "media";
         "create mask" = "0755";
         "directory mask" = "0755";
@@ -184,12 +184,12 @@
       };
 
       incoming = {
-        path = "/mnt/media/Incoming";
+        path = "/srv/media/Incoming";
         comment = "Incoming Media (for manual imports)";
         browseable = "yes";
         "read only" = "no";
         "guest ok" = "yes";
-        "force user" = "diego";
+        "force user" = "media";
         "force group" = "media";
         "create mask" = "0755";
         "directory mask" = "0755";

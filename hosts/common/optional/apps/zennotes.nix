@@ -10,7 +10,7 @@ in
 
     vaultPath = lib.mkOption {
       type = lib.types.str;
-      default = "/mnt/media/Obsidian/obsidiana";
+      default = "/srv/media/Obsidian/obsidiana";
       description = "Path to the default Obsidian vault exposed by ZenNotes.";
     };
 

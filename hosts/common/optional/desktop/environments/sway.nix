@@ -1,15 +1,4 @@
 { pkgs, config, ... }:
-let
-  droidcamCli = pkgs.droidcam.overrideAttrs (old: {
-    # ponytail: droidcam and droidcam-cli ship in one output; strip the GTK
-    # GUI + its desktop entry post-install so the GTK3 stack drops out of
-    # the closure. Revisit if upstream ever splits the outputs.
-    postInstall = (old.postInstall or "") + ''
-      rm -f $out/bin/droidcam
-      rm -rf $out/share/applications $out/share/icons $out/share/pixmaps
-    '';
-  });
-in
 {
   programs.sway = {
     enable = true;
@@ -24,12 +13,15 @@ in
       source "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
     '';
   };
-  environment.systemPackages = [ droidcamCli ];
+  environment.systemPackages = [ pkgs.droidcam ];
   boot.extraModulePackages = [ config.boot.kernelPackages.v4l2loopback ];
   boot.kernelModules = [
     "v4l2loopback"
     "snd-aloop"
   ];
+  boot.extraModprobeConfig = ''
+    options v4l2loopback video_nr=9 card_label="DroidCam" exclusive_caps=1
+  '';
   services.greetd = {
     enable = true;
     settings = {

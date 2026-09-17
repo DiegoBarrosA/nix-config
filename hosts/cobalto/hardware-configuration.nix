@@ -131,7 +131,7 @@ content = {
                 content = {
                   type = "btrfs";
                   extraArgs = [ "-f" ];
-                  mountpoint = "/mnt/media";
+                  mountpoint = "/srv/media";
                   mountOptions = [ "compress=zstd" ];
                 };
               };
@@ -180,5 +180,13 @@ content = {
     "cobalto-root".allowDiscards = true;
     "cobalto-storage".allowDiscards = true;
     "cobalto-media".allowDiscards = true;
+  };
+
+  # Legacy path kept during the /mnt/media -> /srv/media migration.
+  # Remove once every consumer has been re-pointed.
+  fileSystems."/mnt/media" = {
+    device = "/srv/media";
+    fsType = "none";
+    options = [ "bind" ];
   };
 }

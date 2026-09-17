@@ -4,22 +4,22 @@
 
   system.activationScripts.cobalto-storage = {
     text = ''
-
-      mkdir -p /nix/storage/{run/secrets,secrets,llm,syncthing,transmission,jellyfin,homepage}
-      mkdir -p /mnt/media/{Movies,Tv,Music,Books,Incoming,Documents,Obsidian,Repos,Archive,Pictures}
-      mkdir -p /mnt/media/Pictures/{Wallpapers,Photos,Screenshots}
+      mkdir -p /nix/storage/{run/secrets,secrets,llm,syncthing,tdarr,qbittorrent,jellyseerr,jellyfin,homepage}
+      mkdir -p /srv/media/library/{movies,series,music,books,audiobooks}
+      mkdir -p /srv/media/downloads/{complete,incomplete}
+      mkdir -p /srv/media/{Incoming,Documents,Obsidian,Repos,Archive,Pictures}
+      mkdir -p /srv/media/Pictures/{Wallpapers,Photos,Screenshots}
       mkdir -p /nix/storage/var/lib/vols/{portainer,watchtower}
 
       mkdir -p /nix/storage/syncthing/{config,data}
-      mkdir -p /mnt/media/Transmission/{Downloads,Watch,Incomplete}
       mkdir -p /nix/storage/jellyfin/{config,cache}
       mkdir -p /nix/storage/llm/models
 
-      chown -R 1000:1000 /nix/storage/syncthing
-      chown -R 1000:1000 /mnt/media/Transmission
-      chown -R 1000:1000 /nix/storage/jellyfin
-      chown -R 1000:1000 /nix/storage/homepage
-      chown -R 1000:1000 /nix/storage/llm
+      chown -R media:media /nix/storage/syncthing
+      chown -R media:media /srv/media
+      chown -R media:media /nix/storage/jellyfin
+      chown -R media:media /nix/storage/homepage
+      chown -R media:media /nix/storage/llm
 
       chmod -R 755 /nix/storage/var/lib/vols || true
 

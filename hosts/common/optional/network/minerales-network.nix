@@ -87,7 +87,7 @@ in
 
       "transmission.minerales.network" = withSSL "transmission" {
         locations."/" = {
-          proxyPass = "http://localhost:9091";
+          proxyPass = "http://localhost:8080";
           proxyWebsockets = true;
           extraConfig = ''
             proxy_set_header Host $host;
@@ -96,6 +96,19 @@ in
             proxy_set_header X-Forwarded-Proto $scheme;
           '';
         };
+      };
+
+      "jellyseerr.minerales.network" = withSSL "jellyseerr" {
+        locations."/" = standardProxy 5055;
+      };
+
+      "tdarr.minerales.network" = withSSL "tdarr" {
+        locations."/" = standardProxy 8265;
+      };
+
+      "aria2.minerales.network" = withSSL "aria2" {
+        locations."/" = standardProxy 6800;
+        locations."/jsonrpc" = standardProxy 6800;
       };
 
       "prowlarr.minerales.network" = withSSL "prowlarr" {

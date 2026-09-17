@@ -51,9 +51,15 @@
     ../common/optional/media/calibre.nix
     ../common/optional/media/lazylibrarian.nix
     ../common/optional/media/bazarr.nix
-    ../common/optional/media/transmission.nix
+    ../common/optional/media/qbittorrent.nix
 
     ../common/optional/media/jellyfin.nix
+
+    ../common/optional/media/tdarr.nix
+    ../common/optional/media/jellyseerr.nix
+    ../common/optional/media/recyclarr.nix
+    ../common/optional/media/aria2.nix
+    ../common/optional/media/media-user.nix
 
     ../common/optional/media/snapcast.nix
 
@@ -116,9 +122,11 @@
     firewall.allowedTCPPorts = [
       21063
       1984 8554 8555 8557
+      51413
     ];
     firewall.allowedUDPPorts = [
       50000 50001 50002 50003 50004 50005
+      51413
     ];
     firewall.trustedInterfaces = [ "tailscale0" ];
     nameservers = [
@@ -187,7 +195,7 @@
 
   services.zennotes = {
     enable = true;
-    vaultPath = "/mnt/media/Obsidian/obsidiana";
+    vaultPath = "/srv/media/Obsidian/obsidiana";
   };
 
   services.po-token-server.enable = true;
