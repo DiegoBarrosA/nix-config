@@ -62,13 +62,20 @@ in
       };
     };
 
+    icons = {
+      enable = true;
+      package = pkgs.papirus-icon-theme;
+      dark = "Papirus-Dark";
+      light = "Papirus-Light";
+    };
+
     opacity.terminal = 1.0;
 
     polarity = config.colorscheme.mode;
 
     targets = {
-      gtk.enable = false;
-      qt.enable = false;
+      gtk.enable = true;
+      qt.enable = true;
       alacritty.enable = false;
       mako.enable = false;
       swaylock.enable = false;

@@ -8,14 +8,30 @@ let
 
   enableKanshi = lib.attrByPath [ "rubi" "desktop" "manageKanshi" ] true config;
 
+  profiles = [
+    {
+      name = "single";
+      label = "Single (Laptop)";
+    }
+    {
+      name = "docked";
+      label = "Docked (Samsung)";
+    }
+    {
+      name = "triple";
+      label = "Triple (All Monitors)";
+    }
+  ];
+  profileNames = map (p: p.name) profiles;
+
   kanshiSwitch = pkgs.writeShellScriptBin "kanshi-switch" ''
     PROFILE="$1"
     case "$PROFILE" in
-      single|docked|triple)
+      ${lib.concatStringsSep "|" profileNames})
         kanshictl switch "$PROFILE"
         ;;
       *)
-        echo "Usage: kanshi-switch <single|docked|triple>"
+        echo "Usage: kanshi-switch <${lib.concatStringsSep "|" profileNames}>"
         echo ""
         echo "Connected outputs:"
         swaymsg -t get_outputs | ${pkgs.jq}/bin/jq -r '.[] | .name + "  " + .make + " " + .model'
@@ -26,21 +42,14 @@ let
 
   displayModeUI = pkgs.writeShellScriptBin "display-mode-selector" ''
     #!/usr/bin/env bash
-    CHOICE=$(printf "Single (Laptop)\nDocked (Samsung)\nTriple (All Monitors)" | ${config.launcher.dmenu} --prompt-text "display")
+    CHOICE=$(printf '${lib.concatMapStringsSep "\\n" (p: p.label) profiles}\n' | ${config.launcher.dmenu} --prompt-text "display")
     [ -z "$CHOICE" ] && exit
     case "$CHOICE" in
-      "Single (Laptop)")
-        kanshi-switch single
-        notify-send "Display" "Single monitor mode"
-        ;;
-      "Docked (Samsung)")
-        kanshi-switch docked
-        notify-send "Display" "Docked mode (Samsung)"
-        ;;
-      "Triple (All Monitors)")
-        kanshi-switch triple
-        notify-send "Display" "Triple monitor mode"
-        ;;
+      ${lib.concatMapStringsSep "\n      " (p: ''
+        "${p.label}")
+          kanshi-switch ${p.name}
+          notify-send "Display" "${p.label}"
+          ;;'') profiles}
     esac
   '';
 in

@@ -50,7 +50,7 @@ let
     fi
   '';
 
-  helix-launcher = pkgs.writeShellScriptBin "helix-launcher" ''
+  zellij-agents-launcher = pkgs.writeShellScriptBin "zellij-agents-launcher" ''
     #!/usr/bin/env bash
     WORKSPACE="9"
 
@@ -65,7 +65,7 @@ let
     if [ "$HAS_WINDOWS" -gt 0 ]; then
       swaymsg "workspace number $WORKSPACE"
     else
-      swaymsg "workspace number $WORKSPACE; exec alacritty -e hx"
+      swaymsg "workspace number $WORKSPACE; exec alacritty --class zellij-agents -e zellij attach --create agents"
     fi
   '';
 
@@ -147,6 +147,31 @@ let
       Reboot)   systemctl reboot ;;
       Shutdown) systemctl poweroff ;;
     esac
+  '';
+
+  keybindings-help = pkgs.writeShellScriptBin "keybindings-help" ''
+    #!/usr/bin/env bash
+    printf '%s\n' \
+      "Mod4+Return          terminal" \
+      "Mod4+space           app launcher" \
+      "Mod4+w                kill focused window" \
+      "Mod4+grave            swayr: switch window (fuzzy)" \
+      "Mod4+v                clipboard history" \
+      "Mod4+Shift+r          rename workspace" \
+      "Mod4+Shift+d          display mode picker" \
+      "Mod4+Ctrl+1/2/3       display mode: single/docked/triple" \
+      "Mod4+Ctrl+Left/Right  move workspace to adjacent output" \
+      "Mod4+Shift+p          toggle sunshine phone stream" \
+      "Mod4+Shift+o          toggle scrcpy android mirror" \
+      "Mod4+minus            show scratchpad" \
+      "Mod4+Shift+minus      send to scratchpad" \
+      "Mod4+Shift+s          screenshot (region, gui)" \
+      "Mod4+Shift+x          screenshot (full, to clipboard)" \
+      "Mod4+Shift+e          power menu" \
+      "Mod4+Escape           lock" \
+      "Mod4+1..0             go to workspace" \
+      "Mod4+f/g/e/n/c        launch or focus: firefox/thunderbird/yazi/obsidian/opencode (agents)" \
+      | ${config.launcher.dmenu} --require-match false --prompt-text "keys"
   '';
 
   sunshine-stream = pkgs.writeShellScriptBin "sunshine-stream" ''
@@ -627,6 +652,12 @@ let
   '';
 in
 {
+  options.desktop.borderWidth = lib.mkOption {
+    type = lib.types.int;
+    default = 2;
+    description = "Sway window border width (px). Other UI chrome (fuzzel, etc.) matches this.";
+  };
+
   imports = [
     ./waybar.nix
     ./kanshi.nix
@@ -636,353 +667,390 @@ in
     ./bluetooth.nix
   ];
 
-  services.cliphist = {
-    enable = true;
-    allowImages = true;
-  };
+  config = {
 
-  home.packages = with pkgs; [
-
-    wdisplays
-    j
-    nice-dcv-client
-    swayr
-    jq
-    autotiling-rs
-    polkit_gnome
-
-    flameshot
-    grim
-    slurp
-    wl-clipboard
-    xdg-utils
-    wifitui
-
-    launch-or-focus
-    yazi-launcher
-    helix-launcher
-    opencode-launcher
-    session-apps
-    power-menu
-    rename-workspace
-
-    sunshine-stream
-    swap-workspace-output
-    scrcpy-stream
-    volume-notify
-    brightness-notify
-    screencast-idle-inhibit
-
-    scrcpy
-  ];
-
-  xdg.configFile."environment.d/xdg.conf".text = ''
-    XDG_SESSION_TYPE=wayland
-    XDG_CURRENT_DESKTOP=sway
-  '';
-
-  wayland.windowManager.sway = {
-    enable = true;
-    package = pkgs.sway;
-    checkConfig = false;
-
-    config = {
-      modifier = "Mod4";
-      left = "h";
-      down = "j";
-      up = "k";
-      right = "l";
-      terminal = "alacritty";
-      menu = config.launcher.drun;
-
-      bars = [ ];
-
-      fonts = {
-        names = [ "Fantasque Sans Mono" ];
-        size = lib.mkForce 17.0;
-      };
-
-      window = {
-        border = 4;
-        hideEdgeBorders = "none";
-      };
-
-      floating = {
-        border = 4;
-        modifier = "Mod4";
-      };
-
-      gaps = {
-        inner = 15;
-        outer = 15;
-        smartGaps = "off";
-        smartBorders = "off";
-      };
-
-      colors = lib.mkForce {
-        focused = {
-          border = "#${colors.base0D}";
-          background = "#${colors.base0D}";
-          text = "#${colors.base00}";
-          indicator = "#${colors.base04}";
-          childBorder = "#${colors.base0D}";
-        };
-        focusedInactive = {
-          border = "#${colors.base02}";
-          background = "#${colors.base0D}";
-          text = "#${colors.base00}";
-          indicator = "#${colors.base03}";
-          childBorder = "#${colors.base01}";
-        };
-        unfocused = {
-          border = "#${colors.base01}";
-          background = "#${colors.base01}";
-          text = "#${colors.base06}";
-          indicator = "#${colors.base01}";
-          childBorder = "#${colors.base01}";
-        };
-        urgent = {
-          border = "#${colors.base08}";
-          background = "#${colors.base01}";
-          text = "#${colors.base08}";
-          indicator = "#${colors.base08}";
-          childBorder = "#${colors.base08}";
-        };
-        placeholder = {
-          border = "#${colors.base01}";
-          background = "#${colors.base01}";
-          text = "#${colors.base03}";
-          indicator = "#${colors.base01}";
-          childBorder = "#${colors.base01}";
-        };
-        background = "#${colors.base01}";
-      };
-
-      assigns = lib.mapAttrs (_: v: [ { app_id = v.app; } ]) (lib.filterAttrs (_: v: v ? app) workspaces);
-
-      window.commands = [
-        {
-          criteria = {
-            app_id = "flameshot";
-          };
-          command = "floating enable";
-        }
-
-      ];
-
-      input = {
-        "type:keyboard" = {
-          xkb_layout = "us,es";
-          xkb_options = "caps:ctrl_modifier,grp:alt_space_toggle";
-        };
-        "type:touchpad" = {
-          natural_scroll = "enabled";
-          tap = "enabled";
-          dwt = "enabled";
-        };
-      };
-
-      seat = {
-        seat0 = {
-          xcursor_theme = "${cursorName} ${cursorSize}";
-        };
-      };
-
-      bindswitches = {
-        "lid:on" = {
-          action = "exec swaylock -f && systemctl suspend";
-          reload = true;
-          locked = true;
-        };
-      };
-
-      startup = [
-
-        {
-          command = "swayidle -w timeout 300 'swaylock -f' timeout 600 'swaymsg \"output * power off\"' resume 'swaymsg \"output * power on\"' before-sleep 'swaylock -f'";
-        }
-
-        {
-          command = "${screencast-idle-inhibit}/bin/screencast-idle-inhibit";
-        }
-
-        {
-          command = "export XCURSOR_THEME=${cursorName}";
-          always = true;
-        }
-        {
-          command = "export XCURSOR_SIZE=${cursorSize}";
-          always = true;
-        }
-
-        { command = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"; }
-
-        { command = "swayr daemon"; }
-
-        { command = "autotiling-rs"; }
-
-        {
-          command = "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway XCURSOR_THEME XCURSOR_SIZE";
-        }
-        {
-          command = "systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XCURSOR_THEME XCURSOR_SIZE";
-        }
-        {
-          command = "systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP";
-        }
-        {
-          command = "hash dbus-update-activation-environment 2>/dev/null && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP";
-        }
-
-        {
-          command = "gsettings set org.gnome.desktop.interface cursor-theme '${cursorName}'";
-          always = true;
-        }
-        {
-          command = "gsettings set org.gnome.desktop.interface cursor-size ${cursorSize}";
-          always = true;
-        }
-
-        { command = "${session-apps}/bin/session-apps"; }
-      ];
-
-      keybindings = {
-
-        "Mod4+Return" = "exec alacritty";
-        "Mod4+w" = "kill";
-
-        "Mod4+p" = "floating enable, sticky enable";
-        "Mod4+space" = "exec ${config.launcher.drun}";
-        "Mod4+Shift+c" = "reload";
-        "Mod4+Shift+e" = "exec power-menu";
-        "Mod4+Escape" = "exec swaylock -f";
-
-        "XF86MonBrightnessUp" = "exec brightness-notify up";
-        "XF86MonBrightnessDown" = "exec brightness-notify down";
-
-        "XF86AudioRaiseVolume" = "exec volume-notify up";
-        "XF86AudioLowerVolume" = "exec volume-notify down";
-        "XF86AudioMute" = "exec volume-notify mute";
-        "XF86AudioMicMute" = "exec volume-notify mic";
-
-        "Mod4+Shift+s" = "exec flameshot gui";
-        "Mod4+Shift+x" = "exec grim - | wl-copy";
-        "Mod4+Shift+a" = "exec grim -g \"$(slurp)\" ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png";
-
-        "Mod4+v" =
-          "exec sh -c 'cliphist list | ${config.launcher.dmenu} --prompt-text \"clip\" | cliphist decode | wl-copy'";
-
-        "Mod4+h" = "focus left";
-        "Mod4+j" = "focus down";
-        "Mod4+k" = "focus up";
-        "Mod4+l" = "focus right";
-        "Mod4+Left" = "focus left";
-        "Mod4+Down" = "focus down";
-        "Mod4+Up" = "focus up";
-        "Mod4+Right" = "focus right";
-
-        "Mod4+Shift+h" = "move left";
-        "Mod4+Shift+j" = "move down";
-        "Mod4+Shift+k" = "move up";
-        "Mod4+Shift+l" = "move right";
-        "Mod4+Shift+Left" = "move left";
-        "Mod4+Shift+Down" = "move down";
-        "Mod4+Shift+Up" = "move up";
-        "Mod4+Shift+Right" = "move right";
-
-        "Mod4+Tab" = "workspace next";
-        "Mod4+Shift+Tab" = "workspace prev";
-
-        "Mod4+Shift+b" = "splith";
-        "Mod4+Shift+v" = "splitv";
-        "Mod4+u" = "layout stacking";
-        "Mod4+i" = "layout tabbed";
-        "Mod4+o" = "layout toggle split";
-        "Mod4+Shift+f" = "fullscreen";
-        "Mod4+Shift+space" = "floating toggle";
-        "Mod4+a" = "focus parent";
-
-        "Mod4+Shift+minus" = "move scratchpad";
-        "Mod4+minus" = "scratchpad show";
-
-        "Mod4+Shift+r" = "exec rename-workspace";
-
-        "Mod4+Shift+d" = "exec display-mode-selector";
-        "Mod4+Ctrl+1" = "exec kanshi-switch single";
-        "Mod4+Ctrl+2" = "exec kanshi-switch docked";
-        "Mod4+Ctrl+3" = "exec kanshi-switch triple";
-
-        "Mod4+Shift+p" = "exec sunshine-stream toggle";
-        "Mod4+Ctrl+p" =
-          "exec sunshine-stream status && notify-send 'Sunshine' \"$(sunshine-stream status)\"";
-
-        "Mod4+Shift+o" = "exec scrcpy-stream toggle";
-        "Mod4+Ctrl+o" = "exec scrcpy-stream status && notify-send 'scrcpy' \"$(scrcpy-stream status)\"";
-
-        "Mod4+Ctrl+Left" = "exec swap-workspace-output left";
-        "Mod4+Ctrl+Right" = "exec swap-workspace-output right";
-
-        "Mod4+Ctrl+equal" = "gaps inner current plus 4";
-        "Mod4+Ctrl+minus" = "gaps inner current minus 4";
-        "Mod4+Ctrl+Shift+equal" = "gaps outer current plus 4";
-        "Mod4+Ctrl+Shift+minus" = "gaps outer current minus 4";
-        "Mod4+Ctrl+0" = "gaps inner current set 0, gaps outer current set 0";
-        "Mod4+Ctrl+9" = "gaps inner current set 8, gaps outer current set 4";
-
-        "Mod4+F1" = "exec systemctl --user kill --kill-whom=main -s SIGUSR1 waybar.service";
-
-        "Mod4+r" = "mode resize";
-      }
-
-      // lib.listToAttrs (
-        lib.concatMap (
-          n:
-          let
-            key = if n == "10" then "0" else n;
-            target = wsTarget n;
-          in
-          [
-            (lib.nameValuePair "Mod4+${key}" "workspace number ${target}")
-            (lib.nameValuePair "Mod4+Shift+${key}" "move container to workspace number ${target}")
-          ]
-        ) (map toString (lib.range 1 10))
-      )
-      // lib.mapAttrs' (
-        n: v: lib.nameValuePair "Mod4+${v.key}" "exec launch-or-focus ${v.app} ${n} ${v.launch}"
-      ) (lib.filterAttrs (_: v: (v ? app) && (v ? key)) workspaces)
-      // lib.mapAttrs' (_: v: lib.nameValuePair "Mod4+${v.key}" "exec ${v.launcher}") (
-        lib.filterAttrs (_: v: (v ? launcher) && (v ? key)) workspaces
-      );
-
-      modes = {
-        resize = {
-          h = "resize shrink width 10px";
-          j = "resize grow height 10px";
-          k = "resize shrink height 10px";
-          l = "resize grow width 10px";
-          Left = "resize shrink width 10px";
-          Down = "resize grow height 10px";
-          Up = "resize shrink height 10px";
-          Right = "resize grow width 10px";
-          Return = "mode default";
-          Escape = "mode default";
-        };
-      };
+    services.cliphist = {
+      enable = true;
+      allowImages = true;
     };
 
-    extraConfig = ''
-      default_border pixel 2
+    home.packages = with pkgs; [
 
-      titlebar_border_thickness 0
-      titlebar_padding 8 4
+      wdisplays
+      j
+      nice-dcv-client
+      swayr
+      jq
+      autotiling-rs
+      lxqt.lxqt-policykit
 
-      output * bg  #${colors.base00} solid_color
+      flameshot
+      grim
+      slurp
+      wl-clipboard
+      xdg-utils
+      wifitui
 
-      bindgesture swipe:4:left workspace prev
-      bindgesture swipe:4:right workspace next
+      launch-or-focus
+      yazi-launcher
+      opencode-launcher
+      zellij-agents-launcher
+      session-apps
+      power-menu
+      rename-workspace
+      keybindings-help
 
-      include /etc/sway/config-vars.d/*
-      include /etc/sway/config.d/*
+      sunshine-stream
+      swap-workspace-output
+      scrcpy-stream
+      volume-notify
+      brightness-notify
+      screencast-idle-inhibit
+
+      scrcpy
+    ];
+
+    xdg.configFile."environment.d/xdg.conf".text = ''
+      XDG_SESSION_TYPE=wayland
+      XDG_CURRENT_DESKTOP=sway
     '';
+
+    # swayr's picker menu, pointed at fuzzel instead of its wofi default.
+    # See https://git.sr.ht/~tsdh/swayr#the-menu-section
+    xdg.configFile."swayr/config.toml".text = ''
+      [menu]
+      executable = '${lib.getExe pkgs.fuzzel}'
+      args = [
+          '--dmenu',
+          '--prompt={prompt}',
+      ]
+
+      [format]
+      output_format = '{indent}Output {name}    ({id})'
+      workspace_format = '{indent}Workspace {name} [{layout}]    ({id})'
+      container_format = '{indent}Container [{layout}] on workspace {workspace_name} {marks}    ({id})'
+      window_format = '{indent}{app_name} — {urgency_start}"{title}"{urgency_end} on workspace {workspace_name} {marks}    ({id})'
+      indent = '    '
+      urgency_start = '''
+      urgency_end = '''
+      html_escape = false
+    '';
+
+    wayland.windowManager.sway = {
+      enable = true;
+      package = pkgs.sway;
+      checkConfig = false;
+
+      config = {
+        modifier = "Mod4";
+        left = "h";
+        down = "j";
+        up = "k";
+        right = "l";
+        terminal = "alacritty";
+        menu = config.launcher.drun;
+
+        bars = [ ];
+
+        fonts = {
+          names = [ "Fantasque Sans Mono" ];
+          # Sway has no separate "titlebar font" option, and default_border is
+          # pixel (no titlebar) except for floating windows. Shrinking the
+          # global font to near-zero is the standard workaround to hide their
+          # title text without reintroducing a visible titlebar.
+          # https://github.com/swaywm/sway/issues/7350
+          size = lib.mkForce 1.0;
+        };
+
+        window = {
+          border = 4;
+          hideEdgeBorders = "none";
+        };
+
+        floating = {
+          border = 4;
+          modifier = "Mod4";
+        };
+
+        gaps = {
+          inner = 15;
+          outer = 15;
+          smartGaps = "off";
+          smartBorders = "off";
+        };
+
+        colors = lib.mkForce {
+          focused = {
+            border = "#${colors.base0D}";
+            background = "#${colors.base0D}";
+            text = "#${colors.base00}";
+            indicator = "#${colors.base04}";
+            childBorder = "#${colors.base0D}";
+          };
+          focusedInactive = {
+            border = "#${colors.base02}";
+            background = "#${colors.base0D}";
+            text = "#${colors.base00}";
+            indicator = "#${colors.base03}";
+            childBorder = "#${colors.base01}";
+          };
+          unfocused = {
+            border = "#${colors.base01}";
+            background = "#${colors.base01}";
+            text = "#${colors.base06}";
+            indicator = "#${colors.base01}";
+            childBorder = "#${colors.base01}";
+          };
+          urgent = {
+            border = "#${colors.base08}";
+            background = "#${colors.base01}";
+            text = "#${colors.base08}";
+            indicator = "#${colors.base08}";
+            childBorder = "#${colors.base08}";
+          };
+          placeholder = {
+            border = "#${colors.base01}";
+            background = "#${colors.base01}";
+            text = "#${colors.base03}";
+            indicator = "#${colors.base01}";
+            childBorder = "#${colors.base01}";
+          };
+          background = "#${colors.base01}";
+        };
+
+        assigns = lib.mapAttrs (_: v: [ { app_id = v.app; } ]) (lib.filterAttrs (_: v: v ? app) workspaces);
+
+        window.commands = [
+          {
+            criteria = {
+              app_id = "flameshot";
+            };
+            command = "floating enable";
+          }
+
+        ];
+
+        input = {
+          "type:keyboard" = {
+            xkb_layout = "us,es";
+            xkb_options = "caps:ctrl_modifier,grp:alt_space_toggle";
+          };
+          "type:touchpad" = {
+            natural_scroll = "enabled";
+            tap = "enabled";
+            dwt = "enabled";
+          };
+        };
+
+        seat = {
+          seat0 = {
+            xcursor_theme = "${cursorName} ${cursorSize}";
+          };
+        };
+
+        bindswitches = {
+          "lid:on" = {
+            action = "exec swaylock -f && systemctl suspend";
+            reload = true;
+            locked = true;
+          };
+        };
+
+        startup = [
+
+          {
+            command = "swayidle -w timeout 300 'swaylock -f' timeout 600 'swaymsg \"output * power off\"' resume 'swaymsg \"output * power on\"' before-sleep 'swaylock -f'";
+          }
+
+          {
+            command = "${screencast-idle-inhibit}/bin/screencast-idle-inhibit";
+          }
+
+          {
+            command = "export XCURSOR_THEME=${cursorName}";
+            always = true;
+          }
+          {
+            command = "export XCURSOR_SIZE=${cursorSize}";
+            always = true;
+          }
+
+          { command = "${pkgs.lxqt.lxqt-policykit}/bin/lxqt-policykit-agent"; }
+
+          { command = "${pkgs.swayr}/bin/swayrd"; }
+
+          { command = "autotiling-rs"; }
+
+          {
+            command = "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway XCURSOR_THEME XCURSOR_SIZE";
+          }
+          {
+            command = "systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XCURSOR_THEME XCURSOR_SIZE";
+          }
+          {
+            command = "systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP";
+          }
+          {
+            command = "hash dbus-update-activation-environment 2>/dev/null && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP";
+          }
+
+          {
+            command = "gsettings set org.gnome.desktop.interface cursor-theme '${cursorName}'";
+            always = true;
+          }
+          {
+            command = "gsettings set org.gnome.desktop.interface cursor-size ${cursorSize}";
+            always = true;
+          }
+
+          { command = "${session-apps}/bin/session-apps"; }
+        ];
+
+        # Mod4          = act / navigate / launch
+        # Mod4+Shift     = move / secondary variant of the bare action
+        # Mod4+Ctrl      = system & hardware (displays, gaps, streaming)
+        keybindings = {
+
+          "Mod4+Return" = "exec alacritty";
+          "Mod4+w" = "kill";
+
+          "Mod4+p" = "floating enable, sticky enable";
+          "Mod4+space" = "exec ${config.launcher.drun}";
+          "Mod4+Shift+c" = "reload";
+          "Mod4+Shift+e" = "exec power-menu";
+          "Mod4+Escape" = "exec swaylock -f";
+
+          "XF86MonBrightnessUp" = "exec brightness-notify up";
+          "XF86MonBrightnessDown" = "exec brightness-notify down";
+
+          "XF86AudioRaiseVolume" = "exec volume-notify up";
+          "XF86AudioLowerVolume" = "exec volume-notify down";
+          "XF86AudioMute" = "exec volume-notify mute";
+          "XF86AudioMicMute" = "exec volume-notify mic";
+
+          "Mod4+Shift+s" = "exec flameshot gui";
+          "Mod4+Shift+x" = "exec grim - | wl-copy";
+          "Mod4+Shift+a" = "exec grim -g \"$(slurp)\" ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png";
+
+          "Mod4+v" =
+            "exec sh -c 'cliphist list | ${config.launcher.dmenu} --prompt-text \"clip\" | cliphist decode | wl-copy'";
+
+          "Mod4+h" = "focus left";
+          "Mod4+j" = "focus down";
+          "Mod4+k" = "focus up";
+          "Mod4+l" = "focus right";
+          "Mod4+Left" = "focus left";
+          "Mod4+Down" = "focus down";
+          "Mod4+Up" = "focus up";
+          "Mod4+Right" = "focus right";
+
+          "Mod4+Shift+h" = "move left";
+          "Mod4+Shift+j" = "move down";
+          "Mod4+Shift+k" = "move up";
+          "Mod4+Shift+l" = "move right";
+          "Mod4+Shift+Left" = "move left";
+          "Mod4+Shift+Down" = "move down";
+          "Mod4+Shift+Up" = "move up";
+          "Mod4+Shift+Right" = "move right";
+
+          "Mod4+Tab" = "workspace next";
+          "Mod4+Shift+Tab" = "workspace prev";
+
+          "Mod4+Shift+b" = "splith";
+          "Mod4+Shift+v" = "splitv";
+          "Mod4+u" = "layout stacking";
+          "Mod4+i" = "layout tabbed";
+          "Mod4+o" = "layout toggle split";
+          "Mod4+Shift+f" = "fullscreen";
+          "Mod4+Shift+space" = "floating toggle";
+          "Mod4+a" = "focus parent";
+
+          "Mod4+Shift+minus" = "move scratchpad";
+          "Mod4+minus" = "scratchpad show";
+
+          "Mod4+Shift+r" = "exec rename-workspace";
+
+          "Mod4+Shift+d" = "exec display-mode-selector";
+          "Mod4+Ctrl+1" = "exec kanshi-switch single";
+          "Mod4+Ctrl+2" = "exec kanshi-switch docked";
+          "Mod4+Ctrl+3" = "exec kanshi-switch triple";
+
+          "Mod4+Shift+p" = "exec sunshine-stream toggle";
+          "Mod4+Ctrl+p" =
+            "exec sunshine-stream status && notify-send 'Sunshine' \"$(sunshine-stream status)\"";
+
+          "Mod4+Shift+o" = "exec scrcpy-stream toggle";
+          "Mod4+Ctrl+o" = "exec scrcpy-stream status && notify-send 'scrcpy' \"$(scrcpy-stream status)\"";
+
+          "Mod4+Ctrl+Left" = "exec swap-workspace-output left";
+          "Mod4+Ctrl+Right" = "exec swap-workspace-output right";
+
+          "Mod4+Ctrl+equal" = "gaps inner current plus 4";
+          "Mod4+Ctrl+minus" = "gaps inner current minus 4";
+          "Mod4+Ctrl+Shift+equal" = "gaps outer current plus 4";
+          "Mod4+Ctrl+Shift+minus" = "gaps outer current minus 4";
+          "Mod4+Ctrl+0" = "gaps inner current set 0, gaps outer current set 0";
+          "Mod4+Ctrl+9" = "gaps inner current set 8, gaps outer current set 4";
+
+          "Mod4+F1" = "exec systemctl --user kill --kill-whom=main -s SIGUSR1 waybar.service";
+
+          "Mod4+r" = "mode resize";
+
+          "Mod4+grave" = "exec ${pkgs.swayr}/bin/swayr switch-window";
+          "Mod4+Shift+slash" = "exec keybindings-help";
+        }
+
+        // lib.listToAttrs (
+          lib.concatMap (
+            n:
+            let
+              key = if n == "10" then "0" else n;
+              target = wsTarget n;
+            in
+            [
+              (lib.nameValuePair "Mod4+${key}" "workspace number ${target}")
+              (lib.nameValuePair "Mod4+Shift+${key}" "move container to workspace number ${target}")
+            ]
+          ) (map toString (lib.range 1 10))
+        )
+        // lib.mapAttrs' (
+          n: v: lib.nameValuePair "Mod4+${v.key}" "exec launch-or-focus ${v.app} ${n} ${v.launch}"
+        ) (lib.filterAttrs (_: v: (v ? app) && (v ? key)) workspaces)
+        // lib.mapAttrs' (_: v: lib.nameValuePair "Mod4+${v.key}" "exec ${v.launcher}") (
+          lib.filterAttrs (_: v: (v ? launcher) && (v ? key)) workspaces
+        );
+
+        modes = {
+          resize = {
+            h = "resize shrink width 10px";
+            j = "resize grow height 10px";
+            k = "resize shrink height 10px";
+            l = "resize grow width 10px";
+            Left = "resize shrink width 10px";
+            Down = "resize grow height 10px";
+            Up = "resize shrink height 10px";
+            Right = "resize grow width 10px";
+            Return = "mode default";
+            Escape = "mode default";
+          };
+        };
+      };
+
+      extraConfig = ''
+        titlebar_border_thickness 0
+        titlebar_padding 0 0
+
+        output * bg  /home/diego/Pictures/Wallpapers/General/wallhaven-83pko1.png fill
+
+        default_border pixel ${toString config.desktop.borderWidth}
+
+        bindgesture swipe:4:left workspace prev
+        bindgesture swipe:4:right workspace next
+
+        include /etc/sway/config-vars.d/*
+        include /etc/sway/config.d/*
+      '';
+    };
+
   };
 }

@@ -60,10 +60,17 @@ let
       persistent = true;
       autostart = 3;
     };
-    "9" = {
-      icon = "f1c9";
-      launcher = "helix-launcher";
-      key = "d";
+"9" = {
+      icon = "e699";
+      launcher = "zellij-agents-launcher";
+      key = "z";
+      persistent = true;
+      autostart = 6;
+    };
+    "10" = {
+      icon = "f544";
+      launcher = "opencode-launcher";
+      key = "c";
     };
   };
 in
