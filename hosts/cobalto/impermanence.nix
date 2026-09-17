@@ -41,8 +41,11 @@
       "/var/lib/private/open-webui"
       "/var/lib/pihole"
 
-      "/nix/storage/servarr"
-      "/nix/storage/nextcloud"
+      # servarr/nextcloud deliberately NOT persisted through impermanence: they
+      # live directly on the /nix/storage disk. Binding them from /nix/persist
+      # made /nix/storage ephemeral-backing, which forces neededForBoot=true and
+      # therefore an initrd unlock - incompatible with unlocking that disk from a
+      # keyfile after boot. Their prior contents were migrated off /nix/persist.
 
       {
         directory = "/home/diego";
@@ -125,6 +128,9 @@
     neededForBoot = lib.mkForce true;
   };
 
+  # Deliberately NOT neededForBoot: this disk is unlocked in the real system
+  # from a keyfile on root (see hardware-configuration.nix crypttab), so initrd
+  # cannot mount it - and marking it boot-critical deadlocks the boot.
   fileSystems."/nix/storage" = {
     device = "/dev/mapper/cobalto-storage";
     fsType = "btrfs";
@@ -132,7 +138,7 @@
       "compress=zstd"
       "noatime"
     ];
-    neededForBoot = lib.mkForce true;
+    neededForBoot = lib.mkForce false;
   };
 
   boot.initrd.systemd.services.wipe-root = {
