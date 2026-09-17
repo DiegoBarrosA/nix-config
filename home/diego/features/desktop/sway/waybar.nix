@@ -24,12 +24,16 @@ let
   iconSync = u "f021";
   iconShare = u "f1e0";
   iconCamera = u "f030";
+  # State glyphs shared by the cb/tailscale/cobalto/syncthing modules so a
+  # down/warning state is readable by shape, not just by waybar's color class.
+  iconStateError = u "f057";
+  iconStateWarning = u "f071";
 
   waybar-cb = pkgs.writeShellScriptBin "waybar-cb" ''
     if systemctl is-active --quiet cbagentd; then
       printf '{"text":"%s","class":"ok","tooltip":"CB agent running"}\n' "${iconCb}"
     else
-      printf '{"text":"%s","class":"error","tooltip":"CB agent not running"}\n' "${iconCb}"
+      printf '{"text":"%s","class":"error","tooltip":"CB agent not running"}\n' "${iconStateError}"
     fi
   '';
 
@@ -37,7 +41,7 @@ let
     DATA=$(${lib.getExe pkgs.tailscale} status --json 2>/dev/null) || DATA=""
 
     if [ -z "$DATA" ]; then
-      printf '{"text":"%s","class":"error","tooltip":"tailscale unavailable"}\n' "${iconLock}"
+      printf '{"text":"%s","class":"error","tooltip":"tailscale unavailable"}\n' "${iconStateError}"
       exit 0
     fi
 
@@ -49,13 +53,13 @@ let
         printf '{"text":"%s","class":"ok","tooltip":"Tailscale up — %s peer(s) online"}\n' "${iconLock}" "$PEERS"
         ;;
       Stopped)
-        printf '{"text":"%s","class":"off","tooltip":"Tailscale stopped"}\n' "${iconLock}"
+        printf '{"text":"%s","class":"off","tooltip":"Tailscale stopped"}\n' "${iconStateError}"
         ;;
       NeedsLogin|NoState)
-        printf '{"text":"%s","class":"warning","tooltip":"Tailscale: %s"}\n' "${iconLock}" "$STATE"
+        printf '{"text":"%s","class":"warning","tooltip":"Tailscale: %s"}\n' "${iconStateWarning}" "$STATE"
         ;;
       *)
-        printf '{"text":"%s","class":"warning","tooltip":"Tailscale: %s"}\n' "${iconLock}" "$STATE"
+        printf '{"text":"%s","class":"warning","tooltip":"Tailscale: %s"}\n' "${iconStateWarning}" "$STATE"
         ;;
     esac
   '';
@@ -66,7 +70,7 @@ let
       LATENCY=$(echo "$RESULT" | grep -oP 'time=\K[0-9.]+')
       printf '{"text":"%s","class":"ok","tooltip":"cobalto: %s ms"}\n' "${iconServer}" "$LATENCY"
     else
-      printf '{"text":"%s","class":"error","tooltip":"cobalto unreachable"}\n' "${iconServer}"
+      printf '{"text":"%s","class":"error","tooltip":"cobalto unreachable"}\n' "${iconStateError}"
     fi
   '';
 
@@ -81,14 +85,14 @@ let
     fi
 
     if [ -z "''${APIKEY:-}" ]; then
-      printf '{"text":"%s","class":"error","tooltip":"Syncthing: API key not found"}\n' "${iconSync}"
+      printf '{"text":"%s","class":"error","tooltip":"Syncthing: API key not found"}\n' "${iconStateError}"
       exit 0
     fi
 
     DATA=$(${lib.getExe pkgs.curl} -sf -H "X-API-Key: $APIKEY" http://127.0.0.1:8384/rest/system/connections 2>/dev/null) || DATA=""
 
     if [ -z "$DATA" ]; then
-      printf '{"text":"%s","class":"error","tooltip":"Syncthing: not reachable"}\n' "${iconSync}"
+      printf '{"text":"%s","class":"error","tooltip":"Syncthing: not reachable"}\n' "${iconStateError}"
       exit 0
     fi
 
@@ -98,10 +102,6 @@ let
 
   waybar-jocalsend-icon = pkgs.writeShellScriptBin "waybar-jocalsend-icon" ''
     printf '{"text":"%s","tooltip":"jocalsend"}\n' "${iconShare}"
-  '';
-
-  waybar-sys-icon = pkgs.writeShellScriptBin "waybar-sys-icon" ''
-    printf '{"text":"%s","tooltip":"cpu / memory"}\n' "${u "f2db"}"
   '';
 
   waybar-jocalsend = pkgs.writeShellScriptBin "waybar-jocalsend" ''
@@ -147,28 +147,28 @@ let
   worldClocks = [
     {
       name = "palo-alto";
-      label = "LA";
+      label = "Palo Alto";
       tz = "America/Los_Angeles";
     }
     {
       name = "london";
-      label = "LDN";
+      label = "London";
       tz = "Europe/London";
     }
     {
       name = "paris";
-      label = "PAR";
+      label = "Paris";
       tz = "Europe/Paris";
     }
     {
       name = "australia";
-      label = "SYD";
+      label = "Sydney";
       tz = "Australia/Sydney";
     }
 
     {
       name = "santiago";
-      label = "STGO";
+      label = "Santiago";
       tz = "America/Santiago";
     }
   ];
@@ -278,6 +278,274 @@ let
       --arg tooltip "$VOL_INFO" \
       '{text: $text, class: $class, tooltip: $tooltip}'
   '';
+
+  waybar-scratchpad = pkgs.writeShellScriptBin "waybar-scratchpad" ''
+    set -eu
+
+    COUNT=$(${lib.getExe pkgs.jq} '[.. | objects | select(.type == "con" and .scratchpad_state? and .scratchpad_state != "none")] | length' < <(swaymsg -t get_tree))
+
+    if [ "$COUNT" -gt 0 ]; then
+      printf '{"text":"%s %s","class":"has-items","tooltip":"%s window(s) in scratchpad"}\n' "${u "f2d2"}" "$COUNT" "$COUNT"
+    else
+      printf '{"text":"%s","class":"empty","tooltip":"Scratchpad empty"}\n' "${u "f2d2"}"
+    fi
+  '';
+
+  # Shared module defs so the external-monitor bars can show real state
+  # instead of an empty modules-right, without redefining each module per bar.
+  locationClockModule = {
+    exec = "${lib.getExe waybar-location-clock}";
+    interval = 1;
+    return-type = "json";
+  };
+
+  audioModule = {
+    exec = "${lib.getExe waybar-audio}";
+    return-type = "json";
+    on-click = "alacritty -e wiremix";
+  };
+
+  networkModule = {
+    format-wifi = "${u "f1eb"}";
+    format-ethernet = "${u "f796"}";
+    format-disconnected = "${u "f071"} Disconnected";
+    tooltip-format-wifi = "{essid} ({signalStrength}%)";
+    tooltip-format-ethernet = "{ifname}";
+    on-click = "alacritty -e wifitui";
+  };
+
+  externalMonitorBar =
+    { output }:
+    {
+      layer = "top";
+      position = "top";
+      height = 36;
+      spacing = 4;
+      output = [ output ];
+      modules-left = [
+        "sway/workspaces"
+        "sway/mode"
+      ];
+      modules-center = [
+        "custom/location-clock"
+      ];
+      modules-right = [
+        "bluetooth"
+        "custom/audio"
+        "network"
+      ];
+
+      "sway/workspaces" = workspaces.waybarWorkspaces;
+
+      "sway/mode" = {
+        format = "<span style=\"italic\">{}</span>";
+      };
+
+      "sway/window" = {
+        max-length = 50;
+      };
+
+      "custom/location-clock" = locationClockModule;
+      "custom/audio" = audioModule;
+      network = networkModule;
+    }
+    // sharedModules;
+
+  # Second, bottom bar for DP-1 — system/session status modules that don't
+  # need to compete with window title / workspaces for space.
+  externalMonitorStatusBar =
+    output:
+    {
+      layer = "top";
+      position = "bottom";
+      height = 36;
+      spacing = 4;
+      output = [ output ];
+      modules-left = [
+        "mpris"
+        "custom/scratchpad"
+        "privacy"
+        "idle_inhibitor"
+      ];
+      modules-center = [ ];
+      modules-right = [
+        "power-profiles-daemon"
+        "temperature"
+        "disk"
+        "cpu"
+        "memory"
+      ];
+
+      mpris = {
+        format = "{player_icon} {dynamic}";
+        format-paused = "{status_icon} {dynamic}";
+        player-icons = {
+          default = "${u "f001"}";
+        };
+        status-icons = {
+          paused = "${u "f04c"}";
+        };
+      };
+
+      idle_inhibitor = {
+        format = "{icon}";
+        format-icons = {
+          activated = "${u "f06e"}";
+          deactivated = "${u "f070"}";
+        };
+      };
+
+      "power-profiles-daemon" = {
+        format = "{icon}";
+        tooltip-format = "Power profile: {profile}";
+        format-icons = {
+          default = "${u "f011"}";
+          performance = "${u "f0e7"}";
+          balanced = "${u "f24e"}";
+          power-saver = "${u "f2ca"}";
+        };
+      };
+
+      temperature = {
+        critical-threshold = 80;
+        format = "${u "f2c9"} {temperatureC}°C";
+        tooltip = true;
+      };
+
+      disk = {
+        path = "/";
+        format = "${u "f0a0"} {percentage_used}%";
+        tooltip-format = "{used} used / {total} ({percentage_used}%)";
+        interval = 30;
+      };
+
+      privacy = {
+        icon-spacing = 4;
+        icon-size = 14;
+        transition-duration = 250;
+      };
+    }
+    // sharedModules;
+
+  # Module defs shared by the top and bottom bars on eDP-1.
+  sharedModules = {
+    "sway/workspaces" = workspaces.waybarWorkspaces;
+
+    "sway/mode" = {
+      format = "<span style=\"italic\">{}</span>";
+    };
+
+    "custom/scratchpad" = {
+      exec = "${lib.getExe waybar-scratchpad}";
+      interval = 5;
+      return-type = "json";
+      on-click = "swaymsg scratchpad show";
+    };
+
+    tray = {
+      icon-size = trayIconSize;
+      spacing = 10;
+    };
+
+    "custom/location-clock" = locationClockModule;
+
+    "custom/cb" = {
+      exec = "${lib.getExe waybar-cb}";
+      interval = 30;
+      return-type = "json";
+    };
+
+    "custom/tailscale" = {
+      exec = "${lib.getExe waybar-tailscale}";
+      interval = 15;
+      return-type = "json";
+    };
+
+    "custom/cobalto" = {
+      exec = "${lib.getExe waybar-cobalto}";
+      interval = 60;
+      return-type = "json";
+    };
+
+    "custom/syncthing" = {
+      exec = "${lib.getExe waybar-syncthing}";
+      interval = 30;
+      return-type = "json";
+      on-click = "xdg-open http://127.0.0.1:8384";
+    };
+
+    "custom/jocalsend-icon" = {
+      exec = "${lib.getExe waybar-jocalsend-icon}";
+      interval = "once";
+      return-type = "json";
+      on-click = "${lib.getExe waybar-jocalsend}";
+    };
+
+    "custom/droidcam-icon" = {
+      exec = "${lib.getExe waybar-droidcam-icon}";
+      interval = "once";
+      return-type = "json";
+      on-click = "${lib.getExe waybar-droidcam}";
+    };
+
+    cpu = {
+      format = "${u "f2db"} {usage}%";
+      format-alt = "${u "f2db"} {avg_frequency} GHz";
+      tooltip = true;
+      interval = 5;
+      on-click = "alacritty -e ${pkgs.bottom}/bin/btm";
+    };
+
+    memory = {
+      format = "${u "f538"} {}%";
+      format-alt = "${u "f538"} {used:0.1f}GiB/{total:0.1f}GiB";
+      tooltip-format = "{used:0.1f}G / {total:0.1f}G";
+      interval = 5;
+      on-click = "alacritty -e ${pkgs.bottom}/bin/btm";
+    };
+
+    backlight = {
+      format = "{icon} {percent}%";
+      format-icons = [ "${u "f185"}" ];
+    };
+
+    battery = {
+      states = {
+        warning = 30;
+        critical = 15;
+      };
+      format = "{icon}";
+      format-charging = "${u "e55b"}";
+      format-plugged = "${u "f1e6"}";
+      format-icons = [
+        "${u "f244"}"
+        "${u "f243"}"
+        "${u "f242"}"
+        "${u "f241"}"
+        "${u "f240"}"
+      ];
+    };
+
+    network = networkModule;
+
+    "custom/audio" = audioModule;
+
+    bluetooth = {
+      format = "${u "f294"}";
+      format-on = "${u "f294"}";
+      format-off = "";
+      format-disabled = "";
+      format-connected = "${u "f294"}";
+      format-connected-battery = "${u "f294"} {device_battery_percentage}%";
+      format-no-controller = "";
+      tooltip-format = "{controller_alias}\t{controller_address}\n\n{status}";
+      tooltip-format-connected = "{controller_alias}\t{controller_address}\n\n{num_connections} connected\n\n{device_enumerate}";
+      tooltip-format-enumerate-connected = "{device_alias}\t{device_address}";
+      tooltip-format-enumerate-connected-battery = "{device_alias}\t{device_address}\t{device_battery_percentage}%";
+      on-click = "alacritty -e bluetuith";
+    };
+  }
+  // worldClockModules;
 in
 {
   programs.waybar = {
@@ -294,13 +562,15 @@ in
           layer = "top";
           position = "top";
           height = 36;
-          spacing = 0;
+          spacing = 4;
+          output = [ "eDP-1" ];
           modules-left = [
             "sway/workspaces"
             "sway/mode"
+            "custom/scratchpad"
           ];
           modules-center = [
-            "sway/window"
+            "custom/location-clock"
           ];
           modules-right = [
             "tray"
@@ -309,190 +579,37 @@ in
             "bluetooth"
             "network"
             "battery"
-            "group/resources"
-            "group/status"
-            "group/clocks"
           ];
-
-          "group/clocks" = {
-            orientation = "horizontal";
-            drawer = {
-              transition-duration = 300;
-              transition-left-to-right = false;
-              children-class = "clocks-child";
-            };
-            modules = [
-              "custom/location-clock"
-            ]
-            ++ (map (c: "custom/worldclock-${c.name}") worldClocks);
-          };
-
-          "group/status" = {
-            orientation = "horizontal";
-            drawer = {
-              transition-duration = 300;
-              children-class = "status-child";
-            };
-            modules = [
-              "custom/cb"
-              "custom/tailscale"
-              "custom/cobalto"
-              "custom/syncthing"
-              "custom/jocalsend-icon"
-              "custom/droidcam-icon"
-            ];
-          };
-
-          "group/resources" = {
-            orientation = "horizontal";
-            drawer = {
-              transition-duration = 300;
-              children-class = "resources-child";
-            };
-            modules = [
-              "custom/sys-icon"
-              "cpu"
-              "memory"
-            ];
-          };
-
-          "sway/workspaces" = workspaces.waybarWorkspaces;
-
-          "sway/mode" = {
-            format = "<span style=\"italic\">{}</span>";
-          };
-
-          "sway/window" = {
-            max-length = 50;
-          };
-
-          tray = {
-            icon-size = trayIconSize;
-            spacing = 10;
-          };
-
-          "custom/location-clock" = {
-            exec = "${lib.getExe waybar-location-clock}";
-            interval = 1;
-            return-type = "json";
-          };
-
-          "custom/cb" = {
-            exec = "${lib.getExe waybar-cb}";
-            interval = 30;
-            return-type = "json";
-          };
-
-          "custom/tailscale" = {
-            exec = "${lib.getExe waybar-tailscale}";
-            interval = 15;
-            return-type = "json";
-          };
-
-          "custom/cobalto" = {
-            exec = "${lib.getExe waybar-cobalto}";
-            interval = 60;
-            return-type = "json";
-          };
-
-          "custom/syncthing" = {
-            exec = "${lib.getExe waybar-syncthing}";
-            interval = 30;
-            return-type = "json";
-            on-click = "xdg-open http://127.0.0.1:8384";
-          };
-
-          "custom/jocalsend-icon" = {
-            exec = "${lib.getExe waybar-jocalsend-icon}";
-            interval = "once";
-            return-type = "json";
-            on-click = "${lib.getExe waybar-jocalsend}";
-          };
-
-          "custom/droidcam-icon" = {
-            exec = "${lib.getExe waybar-droidcam-icon}";
-            interval = "once";
-            return-type = "json";
-            on-click = "${lib.getExe waybar-droidcam}";
-          };
-
-          "custom/sys-icon" = {
-            exec = "${lib.getExe waybar-sys-icon}";
-            interval = "once";
-            return-type = "json";
-          };
-
-          cpu = {
-            format = "${u "f2db"} {usage}%";
-            format-alt = "${u "f2db"} {avg_frequency} GHz";
-            tooltip = true;
-            interval = 5;
-            on-click = "alacritty -e ${pkgs.bottom}/bin/btm";
-          };
-
-          memory = {
-            format = "${u "f538"} {}%";
-            format-alt = "${u "f538"} {used:0.1f}GiB/{total:0.1f}GiB";
-            tooltip-format = "{used:0.1f}G / {total:0.1f}G";
-            interval = 5;
-            on-click = "alacritty -e ${pkgs.bottom}/bin/btm";
-          };
-
-          backlight = {
-            format = "{icon} {percent}%";
-            format-icons = [ "${u "f185"}" ];
-          };
-
-          battery = {
-            states = {
-              warning = 30;
-              critical = 15;
-            };
-            format = "{icon}";
-            format-charging = "${u "e55b"}";
-            format-plugged = "${u "f1e6"}";
-            format-icons = [
-              "${u "f244"}"
-              "${u "f243"}"
-              "${u "f242"}"
-              "${u "f241"}"
-              "${u "f240"}"
-            ];
-          };
-
-          network = {
-            format-wifi = "${u "f1eb"}";
-            format-ethernet = "${u "f796"}";
-            format-disconnected = "${u "f071"} Disconnected";
-            tooltip-format-wifi = "{essid} ({signalStrength}%)";
-            tooltip-format-ethernet = "{ifname}";
-            on-click = "alacritty -e wifitui";
-          };
-
-          "custom/audio" = {
-            exec = "${lib.getExe waybar-audio}";
-            return-type = "json";
-            on-click = "alacritty -e wiremix";
-          };
-
-          bluetooth = {
-
-            format = "${u "f294"}";
-            format-on = "${u "f294"}";
-            format-off = "";
-            format-disabled = "";
-            format-connected = "${u "f294"}";
-            format-connected-battery = "${u "f294"} {device_battery_percentage}%";
-            format-no-controller = "";
-            tooltip-format = "{controller_alias}\t{controller_address}\n\n{status}";
-            tooltip-format-connected = "{controller_alias}\t{controller_address}\n\n{num_connections} connected\n\n{device_enumerate}";
-            tooltip-format-enumerate-connected = "{device_alias}\t{device_address}";
-            tooltip-format-enumerate-connected-battery = "{device_alias}\t{device_address}\t{device_battery_percentage}%";
-            on-click = "alacritty -e bluetuith";
-          };
         }
-        // worldClockModules
+        // sharedModules
       )
+      (
+        {
+          layer = "top";
+          position = "bottom";
+          height = 36;
+          spacing = 4;
+          output = [ "eDP-1" ];
+          modules-left = map (c: "custom/worldclock-${c.name}") worldClocks;
+          modules-center = [ ];
+          modules-right = [
+            "cpu"
+            "memory"
+            "custom/cb"
+            "custom/tailscale"
+            "custom/cobalto"
+            "custom/syncthing"
+            "custom/jocalsend-icon"
+            "custom/droidcam-icon"
+          ];
+        }
+        // sharedModules
+      )
+    ]
+    ++ [
+      (externalMonitorBar { output = "DP-1"; })
+      (externalMonitorStatusBar "DP-1")
+      (externalMonitorBar { output = "DP-9"; })
     ];
 
     style = ''
@@ -505,7 +622,7 @@ in
       }
 
       window#waybar {
-        background-color: #${colors.base00};
+        background-color: transparent;
         color: #${colors.base05};
         border: none;
         border-radius: 0;
@@ -571,7 +688,6 @@ in
 
       window#waybar #workspaces button.focused,
       window#waybar #workspaces button.active {
-        background-color: #${colors.base01};
         background-image: none;
         box-shadow: none;
         border-radius: 0px;
@@ -688,13 +804,21 @@ in
       #custom-syncthing,
       #custom-jocalsend-icon,
       #custom-droidcam-icon,
-      #custom-sys-icon,
+      #custom-scratchpad,
       #custom-worldclock-palo-alto,
       #custom-worldclock-london,
       #custom-worldclock-paris,
       #custom-worldclock-australia {
         padding: 0 12px;
         color: #${colors.base05};
+      }
+
+      #custom-scratchpad.empty {
+        color: #${colors.base03};
+      }
+
+      #custom-scratchpad.has-items {
+        color: #${colors.base0D};
       }
 
       #custom-cb.ok,
@@ -724,6 +848,44 @@ in
       #custom-syncthing.syncing {
         color: #${colors.base0D};
       }
+
+      #mpris,
+      #idle_inhibitor,
+      #power-profiles-daemon,
+      #temperature,
+      #disk,
+      #privacy {
+        padding: 0 12px;
+        color: #${colors.base05};
+      }
+
+      #mpris.playing {
+        color: #${colors.base0D};
+      }
+
+      #mpris.paused {
+        color: #${colors.base03};
+      }
+
+      #idle_inhibitor.activated {
+        color: #${colors.base0A};
+      }
+
+      #power-profiles-daemon.performance {
+        color: #${colors.base0D};
+      }
+
+      #power-profiles-daemon.power-saver {
+        color: #${colors.base0C};
+      }
+
+      #temperature.critical {
+        color: #${colors.base08};
+      }
+
+      .privacy-item {
+        color: #${colors.base08};
+      }
     '';
   };
 
@@ -738,8 +900,8 @@ in
     waybar-jocalsend
     waybar-droidcam-icon
     waybar-droidcam
-    waybar-sys-icon
     waybar-location-clock
+    waybar-scratchpad
   ]
   ++ (map worldClock worldClocks);
 

@@ -5,6 +5,8 @@
   ...
 }:
 let
+  inherit (config.stylix) fonts;
+
   fuzzel-dmenu = pkgs.writeShellScriptBin "fuzzel-dmenu" ''
     args=()
     while [ $# -gt 0 ]; do
@@ -62,7 +64,7 @@ in
 
           lines = 12;
 
-          prompt = "> ";
+          prompt = "/ㅤ";
 
           horizontal-pad = 16;
           vertical-pad = 16;
@@ -70,14 +72,21 @@ in
 
           match-mode = "fuzzy";
 
+          # Sway already applies output scale via wayland; fuzzel's own DPI
+          # detection double-scales on HiDPI outputs and renders everything huge.
+          dpi-aware = "no";
+
           terminal = "alacritty -e";
+
+          font = lib.mkForce "${fonts.monospace.name}:size=${toString fonts.sizes.terminal}";
+          icons-enabled = false;
         };
 
-        # Rounded corners, translucent-ish frame.
+        # Squared corners, border width matches sway's window border.
         border = {
-          width = 2;
-          radius = 18;
-          selection-radius = 10;
+          width = lib.mkForce config.desktop.borderWidth;
+          radius = lib.mkForce 0;
+          selection-radius = lib.mkForce 0;
         };
       };
     };

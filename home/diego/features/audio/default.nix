@@ -51,6 +51,8 @@ in
   ]
   ++ (with pkgs; [
 
+    ardour
+
     carla
     qpwgraph
     xjadeo
@@ -83,6 +85,23 @@ in
     x42-avldrums
     sfizz
   ]);
+
+  # pkgs.mixbus ships its own .desktop entry, but it's never installed: only the
+  # GDK-scaled mixbus-scaled wrapper (same bin name, mixbus12) goes into
+  # home.packages to avoid a profile collision. Declare the entry explicitly so
+  # it still launches the scaled wrapper, reusing the icon from the real package.
+  xdg.desktopEntries.mixbus12 = {
+    name = "Mixbus 12";
+    genericName = "Digital Audio Workstation";
+    comment = "Harrison Mixbus DAW";
+    exec = "mixbus12";
+    icon = "${pkgs.mixbus}/share/icons/hicolor/256x256/apps/mixbus.png";
+    categories = [
+      "AudioVideo"
+      "Audio"
+      "Recorder"
+    ];
+  };
 
   home.activation.pluginLinks = lib.hm.dag.entryAfter [ "writeBoundary" ] linkPlugins;
 
