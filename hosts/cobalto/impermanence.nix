@@ -39,7 +39,6 @@
       "/var/lib/couchdb"
       "/var/lib/bazarr"
       "/var/lib/private/open-webui"
-      "/var/lib/transmission"
       "/var/lib/pihole"
 
       "/nix/storage/servarr"
@@ -215,31 +214,33 @@
     "d /nix/storage/servarr/bazarr 0755 root root -"
     "d /nix/storage/lazylibrarian 0755 root root -"
 
-    "d /mnt/media 0755 root media -"
-    "d /mnt/media/Movies 0755 diego media -"
-    "d /mnt/media/Tv 0755 diego media -"
-    "d /mnt/media/Music 0755 diego media -"
-    "d /mnt/media/Books 0755 diego media -"
-    "d /mnt/media/Audiobooks 0755 diego media -"
-    "d /mnt/media/Documents 0755 diego media -"
-    "d /mnt/media/Obsidian 0755 diego media -"
-    "d /mnt/media/Repos 0755 diego media -"
-    "d /mnt/media/Archive 0755 diego media -"
-    "d /mnt/media/Pictures 0755 diego media -"
-    "d /mnt/media/Pictures/Wallpapers 0755 diego media -"
-    "d /mnt/media/Pictures/Photos 0755 diego media -"
-    "d /mnt/media/Pictures/Screenshots 0755 diego media -"
-    "d /mnt/media/Incoming 0755 diego media -"
-    "d /mnt/media/Transmission 0775 diego media -"
-    "d /mnt/media/Transmission/Downloads 0775 diego media -"
-    "d /mnt/media/Transmission/Downloads/complete 0775 diego media -"
-    "d /mnt/media/Transmission/Downloads/complete/radarr 0775 diego media -"
-    "d /mnt/media/Transmission/Downloads/complete/sonarr 0775 diego media -"
-    "d /mnt/media/Transmission/Downloads/complete/lidarr 0775 diego media -"
-    "d /mnt/media/Transmission/Downloads/complete/lazylibrarian 0775 diego media -"
-    "d /mnt/media/Transmission/Downloads/complete/bazarr 0775 diego media -"
-    "d /mnt/media/Transmission/Watch 0775 diego media -"
-    "d /mnt/media/Transmission/Incomplete 0775 diego media -"
+    "d /srv/media 0755 root media -"
+    "d /srv/media/library 0750 media media -"
+    "d /srv/media/library/movies 0750 media media -"
+    "d /srv/media/library/series 0750 media media -"
+    "d /srv/media/library/music 0750 media media -"
+    "d /srv/media/library/books 0750 media media -"
+    "d /srv/media/library/audiobooks 0750 media media -"
+    "d /srv/media/downloads 0775 media media -"
+    "d /srv/media/downloads/complete 0775 media media -"
+    "d /srv/media/downloads/complete/movies 0750 media media -"
+    "d /srv/media/downloads/complete/series 0750 media media -"
+    "d /srv/media/downloads/complete/lidarr 0750 media media -"
+    "d /srv/media/downloads/complete/lazylibrarian 0750 media media -"
+    "d /srv/media/downloads/complete/bazarr 0750 media media -"
+    "d /srv/media/downloads/incomplete 0775 media media -"
+    "d /srv/media/Incoming 0750 media media -"
+    "d /srv/media/Documents 0750 media media -"
+    "d /srv/media/Obsidian 0750 media media -"
+    "d /srv/media/Repos 0750 media media -"
+    "d /srv/media/Archive 0750 media media -"
+    "d /srv/media/Pictures 0750 media media -"
+    "d /srv/media/Pictures/Wallpapers 0750 media media -"
+    "d /srv/media/Pictures/Photos 0750 media media -"
+    "d /srv/media/Pictures/Screenshots 0750 media media -"
+    "d /nix/storage/tdarr 0750 media media -"
+    "d /nix/storage/qbittorrent 0750 media media -"
+    "d /nix/storage/jellyseerr 0770 media media -"
   ];
 
   services.openssh = {
@@ -361,35 +362,38 @@
         TimeoutStartSec = "5min";
       };
       script = ''
-        mkdir -p /nix/storage/{run/secrets,secrets,llm,syncthing,transmission,jellyfin,homepage,nextcloud}
+        mkdir -p /nix/storage/{run/secrets,secrets,llm,syncthing,tdarr,qbittorrent,jellyseerr,jellyfin,homepage,nextcloud}
         mkdir -p /nix/storage/var/lib/vols/{portainer,watchtower}
         mkdir -p /nix/storage/vaultwarden/backups
         chown -R vaultwarden:vaultwarden /nix/storage/vaultwarden 2>/dev/null || true
         chmod 700 /nix/storage/vaultwarden 2>/dev/null || true
-        mkdir -p /mnt/media/{Movies,Tv,Music,Books,Audiobooks,Incoming,Documents,Obsidian,Repos,Archive,Pictures}
-        mkdir -p /mnt/media/Pictures/{Wallpapers,Photos,Screenshots}
-        mkdir -p /mnt/media/Transmission/{Downloads,Watch,Incomplete}
+        mkdir -p /srv/media/library/{movies,series,music,books,audiobooks}
+        mkdir -p /srv/media/Pictures/{Wallpapers,Photos,Screenshots}
+        mkdir -p /srv/media/downloads/complete/{movies,series,lidarr,lazylibrarian,bazarr}
+        mkdir -p /srv/media/downloads/incomplete
+        mkdir -p /srv/media/{Incoming,Documents,Obsidian,Repos,Archive,Pictures}
 
-        mkdir -p /mnt/media/Transmission/Downloads/complete/{radarr,sonarr,lidarr,lazylibrarian,bazarr}
-        mkdir -p /mnt/media/Transmission/Incomplete/{radarr,sonarr,lidarr,lazylibrarian,bazarr}        # Servarr suite directories
         mkdir -p /nix/storage/servarr/{prowlarr,sonarr,radarr,lidarr,bazarr}
+        mkdir -p /nix/storage/{tdarr,qbittorrent,jellyseerr}
         mkdir -p /nix/storage/lazylibrarian
 
         mkdir -p /nix/storage/llm-services/text-generation-webui
 
-        chown -R diego:media /nix/storage/servarr 2>/dev/null || true
+        chown -R media:media /nix/storage/servarr 2>/dev/null || true
+        chown -R media:media /nix/storage/{tdarr,qbittorrent,jellyseerr} 2>/dev/null || true
         chmod -R 750 /nix/storage/servarr 2>/dev/null || true
+        chmod -R 750 /nix/storage/{tdarr,qbittorrent,jellyseerr} 2>/dev/null || true
         chmod -R 755 /nix/storage/llm-services 2>/dev/null || true
 
-        chown diego:media /mnt/media 2>/dev/null || true
-        chmod 0755 /mnt/media 2>/dev/null || true
-        find /mnt/media -mindepth 1 -maxdepth 1 -exec chown diego:media {} + 2>/dev/null || true
-        find /mnt/media -mindepth 1 -maxdepth 1 -exec chmod 0755 {} + 2>/dev/null || true
+        chown media:media /srv/media 2>/dev/null || true
+        chmod 0755 /srv/media 2>/dev/null || true
+        find /srv/media -mindepth 1 -maxdepth 1 -exec chown media:media {} + 2>/dev/null || true
+        find /srv/media -mindepth 1 -maxdepth 1 -exec chmod 0755 {} + 2>/dev/null || true
 
         if command -v setfacl &> /dev/null; then
           setfacl -R -m u:1000:rwx /nix/storage/servarr 2>/dev/null || true
-          setfacl -m u:1000:rwx /mnt/media 2>/dev/null || true
-          find /mnt/media -mindepth 1 -maxdepth 1 -exec setfacl -m u:1000:rwx {} + 2>/dev/null || true
+          setfacl -m u:1000:rwx /srv/media 2>/dev/null || true
+          find /srv/media -mindepth 1 -maxdepth 1 -exec setfacl -m u:1000:rwx {} + 2>/dev/null || true
         fi
 
       '';

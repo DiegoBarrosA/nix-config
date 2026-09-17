@@ -97,15 +97,57 @@
               };
             };
           }
+          {
+            "Jellyseerr" = {
+              icon = "mdi-movie-open";
+              href = "http://jellyseerr.minerales.network";
+              description = "Media request portal";
+              widget = {
+                type = "jellyseerr";
+                url = "http://localhost:5055";
+                key = "{{HOMEPAGE_VAR_JELLYSEERR_API_KEY}}";
+              };
+            };
+          }
         ];
       }
       {
         "Downloads & Automation" = [
           {
-            "Transmission" = {
+            "qBittorrent" = {
               icon = "mdi-arrow-down-circle";
               href = "http://transmission.minerales.network";
               description = "Native BitTorrent client";
+              widget = {
+                type = "qbittorrent";
+                url = "http://localhost:8080";
+                user = "admin";
+                password = "{{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}";
+              };
+            };
+          }
+          {
+            "Aria2" = {
+              icon = "mdi-download";
+              href = "http://aria2.minerales.network";
+              description = "Download server";
+              widget = {
+                type = "aria2";
+                url = "http://localhost:6800";
+                secret = "{{HOMEPAGE_VAR_ARIA2_RPC_SECRET}}";
+              };
+            };
+          }
+          {
+            "Tdarr" = {
+              icon = "mdi-cog-refresh";
+              href = "http://tdarr.minerales.network";
+              description = "Transcoding automation";
+              widget = {
+                type = "tdarr";
+                url = "http://localhost:8265";
+                key = "{{HOMEPAGE_VAR_TDARR_API_KEY}}";
+              };
             };
           }
           {
@@ -260,7 +302,7 @@
       {
         resources = {
           label = "Storage";
-          disk = "/mnt/media";
+          disk = "/srv/media";
         };
       }
     ];

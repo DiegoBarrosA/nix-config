@@ -123,6 +123,24 @@ with lib;
       mode = "0400";
     };
 
+    secrets."aria2-rpc-secret" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
+    secrets."tdarr-server-env" = {
+      owner = "media";
+      group = "media";
+      mode = "0400";
+    };
+
+    secrets."tdarr-node-env" = {
+      owner = "media";
+      group = "media";
+      mode = "0400";
+    };
+
     secrets."resend-api-key" = {
       owner = "root";
       group = "root";

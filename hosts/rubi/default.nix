@@ -155,6 +155,7 @@
   };
 
   security.polkit.enable = true;
+  security.polkit.enablePkexecWrapper = true;
   services.dbus.enable = true;
   security.sudo.wheelNeedsPassword = false;
 

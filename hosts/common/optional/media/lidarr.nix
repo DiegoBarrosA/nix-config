@@ -1,18 +1,13 @@
 { config, lib, pkgs, ... }:
 
 {
-
-  networking.firewall.interfaces."enp6s0".allowedTCPPorts = [ 8686 ];
-
   services.lidarr = {
     enable = true;
-    openFirewall = true;
-    user = "diego";
+    openFirewall = false;
+    user = "media";
     group = "media";
-  dataDir = "/nix/storage/servarr/lidarr";
+    dataDir = "/nix/storage/servarr/lidarr";
   };
-
-  users.groups.media = {};
 
   backups.restic.sources = [ config.services.lidarr.dataDir ];
 }

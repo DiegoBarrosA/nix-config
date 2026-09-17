@@ -1,21 +1,16 @@
 { config, lib, pkgs, ... }:
 
 {
-
-  networking.firewall.interfaces."enp6s0".allowedTCPPorts = [ 8989 ];
-
   services.sonarr = {
     enable = true;
-    openFirewall = true;
-    user = "diego";
+    openFirewall = false;
+    user = "media";
     group = "media";
-  dataDir = "/nix/storage/servarr/sonarr";
+    dataDir = "/nix/storage/servarr/sonarr";
   };
 
-  users.groups.media = {};
-
   systemd.tmpfiles.settings."10-sonarr".${config.services.sonarr.dataDir}.d = {
-    user = "diego";
+    user = "media";
     group = "media";
     mode = "0700";
   };

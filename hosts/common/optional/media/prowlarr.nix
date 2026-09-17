@@ -6,23 +6,18 @@
 }:
 
 {
-
-  networking.firewall.interfaces."enp6s0".allowedTCPPorts = [ 9696 ];
-
   services.prowlarr = {
     enable = true;
-    openFirewall = true;
+    openFirewall = false;
     dataDir = "/nix/storage/servarr/prowlarr";
   };
-
-  users.groups.media = { };
 
   systemd.services.prowlarr = lib.mkIf config.services.prowlarr.enable {
     after = [ "nix-storage.mount" ];
     requires = [ "nix-storage.mount" ];
     serviceConfig = {
       DynamicUser = lib.mkForce false;
-      User = "diego";
+      User = "media";
       Group = "media";
 
       ExecStart = lib.mkForce "${pkgs.prowlarr}/bin/Prowlarr -nobrowser -data=${config.services.prowlarr.dataDir}";
@@ -39,7 +34,7 @@
   systemd.tmpfiles.settings = lib.mkIf config.services.prowlarr.enable {
     "10-prowlarr" = lib.mkForce {
       ${config.services.prowlarr.dataDir}.d = {
-        user = "diego";
+        user = "media";
         group = "media";
         mode = "0700";
       };

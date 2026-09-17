@@ -26,7 +26,7 @@ in
         "video"
       ]
         ++ ifTheyExist [
-          "transmission"
+          "media"
           "syncthing"
           "network"
           "networkmanager"

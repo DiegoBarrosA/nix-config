@@ -55,12 +55,12 @@
 
       folders = {
         "media-projects" = {
-          path = "/mnt/media/Projects";
+          path = "/srv/media/Repos";
           devices = [ "rubi" ];
         };
 
         "media-documents" = {
-          path = "/mnt/media/Documents";
+          path = "/srv/media/Documents";
           devices = [
             "grafito"
             "jade"
@@ -69,7 +69,7 @@
         };
 
         "media-obsidian" = {
-          path = "/mnt/media/Obsidian/obsidiana";
+          path = "/srv/media/Obsidian/obsidiana";
           devices = [
             "grafito"
             "jade"
@@ -78,7 +78,7 @@
         };
 
         "media-music" = {
-          path = "/mnt/media/Music";
+          path = "/srv/media/library/music";
           devices = [
             "agata"
             "rubi"
@@ -86,7 +86,7 @@
         };
 
         "media-pictures" = {
-          path = "/mnt/media/Pictures";
+          path = "/srv/media/Pictures";
           devices = [
             "grafito"
             "jade"
@@ -95,12 +95,12 @@
         };
 
         "media-books" = {
-          path = "/mnt/media/Books";
+          path = "/srv/media/library/books";
           devices = [ "rubi" ];
         };
 
         "media-audiobooks" = {
-          path = "/mnt/media/Audiobooks";
+          path = "/srv/media/library/audiobooks";
           devices = [ "rubi" ];
         };
 
@@ -109,22 +109,22 @@
   };
 
   systemd.services.syncthing = lib.mkIf config.services.syncthing.enable {
-    after = [ "mnt-media.mount" ];
-    requires = [ "mnt-media.mount" ];
+    after = [ "srv-media.mount" ];
+    requires = [ "srv-media.mount" ];
   };
 
   systemd.tmpfiles.rules = [
-    "d /mnt/media/Music 0755 diego diego -"
-    "d /mnt/media/Books 0755 diego diego -"
-    "d /mnt/media/Audiobooks 0755 diego diego -"
-    "d /mnt/media/Documents 0755 diego diego -"
-    "d /mnt/media/Obsidian 0755 diego diego -"
-    "d /mnt/media/Projects 0755 diego diego -"
-    "d /mnt/media/Archive 0755 diego diego -"
-    "d /mnt/media/Pictures 0755 diego diego -"
-    "d /mnt/media/Pictures/Wallpapers 0755 diego diego -"
-    "d /mnt/media/Pictures/Photos 0755 diego diego -"
-    "d /mnt/media/Pictures/Screenshots 0755 diego diego -"
+    "d /srv/media/library/music 0750 media media -"
+    "d /srv/media/library/books 0750 media media -"
+    "d /srv/media/library/audiobooks 0750 media media -"
+    "d /srv/media/Documents 0750 media media -"
+    "d /srv/media/Obsidian 0750 media media -"
+    "d /srv/media/Repos 0750 media media -"
+    "d /srv/media/Archive 0750 media media -"
+    "d /srv/media/Pictures 0750 media media -"
+    "d /srv/media/Pictures/Wallpapers 0750 media media -"
+    "d /srv/media/Pictures/Photos 0750 media media -"
+    "d /srv/media/Pictures/Screenshots 0750 media media -"
   ];
 
   networking.firewall = {
