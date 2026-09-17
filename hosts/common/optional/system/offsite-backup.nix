@@ -118,7 +118,12 @@ in
     localRepo = lib.mkOption {
       type = lib.types.str;
       default = "/nix/storage/restic";
-      description = "Local restic repository. Lives on the persistent storage subvolume.";
+      description = ''
+        Local restic repository. Point this at a different physical disk than
+        the sources: the default sits on /nix/storage, so a failure of that
+        disk destroys the data and its local backups together. Offsite is the
+        only protection against losing the whole machine either way.
+      '';
     };
 
     remote = lib.mkOption {
