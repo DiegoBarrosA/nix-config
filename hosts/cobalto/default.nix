@@ -24,6 +24,7 @@
     ../common/optional/system/sops-secrets.nix
     ../common/optional/system/automated-storage.nix
     ../common/optional/system/offsite-backup.nix
+    ../common/optional/system/postgres-backup.nix
     ./impermanence.nix
 
     ../common/optional/system/webtheming.nix
@@ -209,6 +210,10 @@
 
   backups.restic = {
     enable = true;
+    # Keep the repo off /nix/storage: the module default put it on the very
+    # disk it backs up, so a single disk failure took out the data and its
+    # local backups together. /srv/media is a separate physical disk.
+    localRepo = "/srv/media/restic";
     remote = {
       bucket = "bitwarden-backup";
       envFile = config.sops.templates."restic.env".path;

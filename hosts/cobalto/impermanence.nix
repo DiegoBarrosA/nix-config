@@ -43,6 +43,9 @@
       # Without this the wildcard cert is destroyed on every boot and has to be
       # re-issued, which burns Let's Encrypt's duplicate-certificate quota.
       "/var/lib/acme"
+      # postgres dumps, otherwise wiped on every boot and absent from any
+      # backup taken before the next nightly dump runs.
+      "/var/backup/postgresql"
 
       # servarr/nextcloud deliberately NOT persisted through impermanence: they
       # live directly on the /nix/storage disk. Binding them from /nix/persist
