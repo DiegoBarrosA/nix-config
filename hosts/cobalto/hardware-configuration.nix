@@ -85,32 +85,24 @@ content = {
           };
         };
       };
+      # Both data disks are whole-disk LUKS (no partition table) - that is how
+      # they were actually provisioned after the disk swap, so keep disko
+      # matching reality or a future disko run would repartition them.
       storage = {
         type = "disk";
         # WD5000LPVX (500G) died and was replaced; this is the ST1000LM024 (931G)
         # that took its bay. Previously held unrelated "onedrive" btrfs data - wiped.
         device = "/dev/disk/by-id/ata-ST1000LM024_HN-M101MBB_S31QJ9DH116618";
         content = {
-          type = "gpt";
-          partitions = {
-            storage = {
-              size = "100%";
-              content = {
-                type = "luks";
-                name = "cobalto-storage";
-                passwordFile = "/run/secrets/luks_passphrase";
-                settings = {
-                  allowDiscards = true;
-                  crypttabExtraOpts = [ "fido2-device=auto" "tpm2-device=auto" ];
-                };
-                content = {
-                  type = "btrfs";
-                  extraArgs = [ "-f" ];
-                  mountpoint = "/nix/storage";
-                  mountOptions = [ "compress=zstd" "nofail" "x-systemd.device-timeout=10" ];
-                };
-              };
-            };
+          type = "luks";
+          name = "cobalto-storage";
+          passwordFile = "/run/secrets/luks_passphrase";
+          settings.allowDiscards = true;
+          content = {
+            type = "btrfs";
+            extraArgs = [ "-f" ];
+            mountpoint = "/nix/storage";
+            mountOptions = [ "compress=zstd" "nofail" "x-systemd.device-timeout=15" ];
           };
         };
       };
@@ -119,26 +111,15 @@ content = {
         # ST3000DM001 (3TB) failed and was replaced with this WD20EARX (1.8T).
         device = "/dev/disk/by-id/ata-WDC_WD20EARX-00PASB0_WD-WCAZAF362077";
         content = {
-          type = "gpt";
-          partitions = {
-            media = {
-              size = "100%";
-              content = {
-                type = "luks";
-                name = "cobalto-media";
-                passwordFile = "/run/secrets/luks_passphrase";
-                settings = {
-                  allowDiscards = true;
-                  crypttabExtraOpts = [ "fido2-device=auto" "tpm2-device=auto" ];
-                };
-                content = {
-                  type = "btrfs";
-                  extraArgs = [ "-f" ];
-                  mountpoint = "/srv/media";
-                  mountOptions = [ "compress=zstd" "nofail" "x-systemd.device-timeout=10" ];
-                };
-              };
-            };
+          type = "luks";
+          name = "cobalto-media";
+          passwordFile = "/run/secrets/luks_passphrase";
+          settings.allowDiscards = true;
+          content = {
+            type = "btrfs";
+            extraArgs = [ "-f" ];
+            mountpoint = "/srv/media";
+            mountOptions = [ "compress=zstd" "nofail" "x-systemd.device-timeout=15" ];
           };
         };
       };
@@ -179,19 +160,36 @@ content = {
     };
   };
 
-  # Only root needs to unlock before switch-root. Storage/media are data disks,
-  # unlocked in normal (non-initrd) boot via regular crypttab; with "nofail" a
-  # missing/dead data disk can no longer block the whole machine from booting
-  # (this is what caused the 2026-09-17 outage).
-  boot.initrd.luks.devices = {
-    "cobalto-root".allowDiscards = true;
+  # Only root may gate switch-root. disko otherwise registers every luks device
+  # here, which is what dropped the box into emergency mode after the disk swap:
+  # initrd had no way to unlock the data disks, so their device units timed out
+  # and took "Local File Systems" (and the whole boot) down with them.
+  boot.initrd.luks.devices = lib.mkForce {
+    "cobalto-root" = {
+      device = "/dev/disk/by-id/nvme-WDC_PC_SN520_SDAPNUW-256G-1002_183457800691-part2";
+      allowDiscards = true;
+      crypttabExtraOpts = [ "fido2-device=auto" "tpm2-device=auto" ];
+    };
   };
+
+  # Data disks unlock in the real system instead, from a keyfile that lives on
+  # the already-unlocked root filesystem. "nofail" keeps a dead or absent data
+  # disk from blocking boot; the machine comes up with those mounts missing.
+  # Keyfile is provisioned out of band:
+  #   install -Dm400 <(head -c32 /dev/urandom) /nix/persist/luks/data.key
+  #   cryptsetup luksAddKey <device> /nix/persist/luks/data.key
+  environment.etc."crypttab".text = ''
+    cobalto-storage /dev/disk/by-id/ata-ST1000LM024_HN-M101MBB_S31QJ9DH116618 /nix/persist/luks/data.key nofail,discard,x-systemd.device-timeout=15s
+    cobalto-media   /dev/disk/by-id/ata-WDC_WD20EARX-00PASB0_WD-WCAZAF362077  /nix/persist/luks/data.key nofail,discard,x-systemd.device-timeout=15s
+  '';
 
   # Legacy path kept during the /mnt/media -> /srv/media migration.
   # Remove once every consumer has been re-pointed.
   fileSystems."/mnt/media" = {
     device = "/srv/media";
     fsType = "none";
-    options = [ "bind" ];
+    # nofail: without it this bind inherits a hard dependency on /srv/media and
+    # drags "Local File Systems" down whenever the media disk is unavailable.
+    options = [ "bind" "nofail" ];
   };
 }
