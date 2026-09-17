@@ -4,7 +4,10 @@
   services.open-webui = {
     enable = true;
     host = "0.0.0.0";
-    port = 8080;
+    # 8080 is qbittorrent's webui and 8081 is calibre-server; open-webui lost
+    # the race for 8080 and failed to start. 8082/8083/8086 are also taken
+    # (homepage, calibre-web, miniflux).
+    port = 8088;
     openFirewall = true;
 
     environment = {

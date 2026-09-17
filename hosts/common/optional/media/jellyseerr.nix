@@ -5,7 +5,9 @@
   virtualisation.oci-containers = {
     backend = "podman";
     containers.jellyseerr = {
-      image = "fallenbagel/jellyseerr:latest";
+      # Fully qualified: podman has no unqualified-search registries configured,
+      # so a bare "fallenbagel/..." short name fails to resolve on pull.
+      image = "docker.io/fallenbagel/jellyseerr:latest";
       autoStart = true;
       extraOptions = [ "--network=host" ];
       volumes = [
