@@ -129,6 +129,12 @@ with lib;
       mode = "0400";
     };
 
+    secrets."transmission-password" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
     secrets."tdarr-server-env" = {
       owner = "media";
       group = "media";
@@ -172,6 +178,50 @@ with lib;
     };
 
     secrets."r2-account-id" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
+    secrets."protondrive-username" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
+    # rclone-obscured (`rclone obscure '<password>'`), not plaintext.
+    secrets."protondrive-password" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
+    # rclone-obscured TOTP secret (`rclone obscure '<base32-secret>'`); leave
+    # the entry blank in secrets.yaml if the account has no 2FA.
+    secrets."protondrive-otp-secret" = {
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
+    templates."rclone-proton.conf" = {
+      content = ''
+        [proton]
+        type = protondrive
+        username = ${config.sops.placeholder."protondrive-username"}
+        password = ${config.sops.placeholder."protondrive-password"}
+        otp_secret_key = ${config.sops.placeholder."protondrive-otp-secret"}
+      '';
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
+    templates."restic-proton.env" = {
+      content = ''
+        RESTIC_EXTRA_PASSWORD_PROTON=${config.sops.placeholder."restic-remote-password"}
+        RCLONE_CONFIG_PROTON=${config.sops.templates."rclone-proton.conf".path}
+      '';
       owner = "root";
       group = "root";
       mode = "0400";

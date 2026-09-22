@@ -64,7 +64,7 @@ in
 
           lines = 12;
 
-          prompt = "/ㅤ";
+          prompt = "search:";
 
           horizontal-pad = 16;
           vertical-pad = 16;

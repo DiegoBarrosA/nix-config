@@ -83,6 +83,42 @@ let
     else
       echo "backups-restic: remote not configured yet (R2 creds pending); local-only run"
     fi
+
+    declare -A extra_repos=(
+      ${lib.concatStringsSep "\n      " (
+        lib.mapAttrsToList (name: remote: "[${name}]=${lib.escapeShellArg remote.repo}") cfg.extraRemotes
+      )}
+    )
+    for name in "''${!extra_repos[@]}"; do
+      repo="''${extra_repos[$name]}"
+      upper=$(echo "$name" | tr '[:lower:]' '[:upper:]')
+      pwvar="RESTIC_EXTRA_PASSWORD_''${upper}"
+      pw="''${!pwvar:-}"
+      if [ -z "$pw" ]; then
+        echo "backups-restic: skipping extra remote $name, no password set ($pwvar)"
+        continue
+      fi
+      printf '%s' "$pw" > "$PW_DIR/$name"
+      chmod 600 "$PW_DIR/$name"
+
+      confvar="RCLONE_CONFIG_''${upper}"
+      export RCLONE_CONFIG="''${!confvar:-}"
+
+      echo "backups-restic: initializing extra repo $name if needed"
+      if ! restic -r "$repo" --password-file "$PW_DIR/$name" snapshots >/dev/null 2>&1; then
+        restic -r "$repo" --password-file "$PW_DIR/$name" init
+      fi
+
+      echo "backups-restic: copying snapshots to $name ($repo)"
+      restic copy \
+        --from-repo "$LOCAL_REPO" --from-password-file "$PW_DIR/local" \
+        -r "$repo" --password-file "$PW_DIR/$name"
+
+      echo "backups-restic: pruning $name"
+      restic -r "$repo" --password-file "$PW_DIR/$name" forget "''${RETENTION[@]}"
+
+      unset RCLONE_CONFIG
+    done
   '';
 in
 {
@@ -146,6 +182,30 @@ in
       default = [ ];
       description = "Directories to back up. Only non-empty directories are snapshotted.";
     };
+
+    extraRemotes = lib.mkOption {
+      type = lib.types.attrsOf (
+        lib.types.submodule {
+          options = {
+            repo = lib.mkOption {
+              type = lib.types.str;
+              description = "Restic repository URL, e.g. \"rclone:proton:cobalto-backups\".";
+            };
+            envFile = lib.mkOption {
+              type = lib.types.str;
+              description = ''
+                sops-generated env file providing RESTIC_EXTRA_PASSWORD_<NAME> (repo
+                encryption password) and, for rclone-backed repos,
+                RCLONE_CONFIG_<NAME> (path to the rclone config file), where <NAME>
+                is the attribute name upper-cased.
+              '';
+            };
+          };
+        }
+      );
+      default = { };
+      description = "Additional restic repositories the local repo is copied and pruned to, alongside the primary S3 remote.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -169,11 +229,12 @@ in
         pkgs.findutils
         pkgs.gnugrep
         pkgs.gnused
+        pkgs.rclone
       ];
 
       serviceConfig = {
         Type = "oneshot";
-        EnvironmentFile = cfg.remote.envFile;
+        EnvironmentFile = [ cfg.remote.envFile ] ++ (lib.mapAttrsToList (_: remote: remote.envFile) cfg.extraRemotes);
         Environment = [
           "BACKUPS_RESTIC_LOCAL_REPO=${cfg.localRepo}"
           "BACKUPS_RESTIC_REMOTE_BUCKET=${cfg.remote.bucket}"

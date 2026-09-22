@@ -7,6 +7,8 @@
   ...
 }:
 {
+  boot.kernelPackages = pkgs.linuxPackages_zen;
+
   imports = [
 
     ../common/global
@@ -29,14 +31,11 @@
 
     ../common/optional/desktop/devices.nix
 
+    # opencode-server option definitions only (enable left at its default
+    # false here); the private work module below sets secretEnv on this
+    # option, so the module must stay imported even though rubi doesn't
+    # run the server itself.
     ../common/optional/ai/opencode-server.nix
-
-    ../common/optional/ai/ollama-vulkan.nix
-
-    ../common/optional/desktop/virtualization.nix
-    inputs.nixvirt.nixosModules.default
-
-    ../common/optional/desktop/sunshine.nix
 
     inputs.private-config.nixosModules.work
   ];
@@ -69,9 +68,32 @@
     settings = {
       experimental-features = "nix-command flakes";
       auto-optimise-store = true;
+      max-jobs = 8;
+      cores = 2;
     };
 
     extraOptions = "!include /etc/nix/github-access-token.conf";
+  };
+
+  # ponytail: nix-daemon builds were eating all RAM and taking sway down with
+  # them (OOM). Cap the cgroup so a build storm can't starve the desktop.
+  systemd.services.nix-daemon.serviceConfig = {
+    MemoryHigh = "20G";
+    MemoryMax = "24G";
+  };
+
+  zramSwap = {
+    enable = true;
+    algorithm = "zstd";
+    memoryPercent = 50;
+    priority = 100;
+  };
+
+  # ponytail: userspace OOM killer, kills memory hogs before kernel OOM
+  # stalls the desktop under pressure.
+  systemd.oomd = {
+    enable = true;
+    enableUserServices = true;
   };
 
   environment.systemPackages = with pkgs; [
@@ -125,34 +147,7 @@
     };
   };
 
-  services.upower.enable = true;
-
   automount.blacklistAppleNet = true;
-
-  services.opencode-server = {
-    enable = true;
-    host = "0.0.0.0";
-    port = 4096;
-    passwordFile = config.sops.secrets."opencode-server-password".path;
-    secretEnv = {
-      OPENCODE_API_KEY = config.sops.secrets."opencode-api-key".path;
-      GITHUB_TOKEN = config.sops.secrets."github-token".path;
-    };
-  };
-
-  services.ollama-vulkan = {
-    enable = true;
-    host = "127.0.0.1";
-    port = 11434;
-    loadModels = [
-      "qwen3:4b"
-      "qwen2.5:14b"
-      "qwen2.5-coder:7b"
-      "qwen2.5-coder:14b"
-      "deepseek-coder-v2:16b"
-      "deepseek-r1:8b"
-    ];
-  };
 
   security.polkit.enable = true;
   security.polkit.enablePkexecWrapper = true;
@@ -203,8 +198,9 @@
     powerOnBoot = true;
   };
 
-  services.geoclue2.enable = true;
-  services.localtimed.enable = true;
+  # geoclue2 disabled: only consumer was localtimed (auto timezone-by-location),
+  # which is useless without it. Waybar's location-clock module reads
+  # /etc/localtime directly, not geoclue.
 
   services.logind.settings.Login = {
     HandleLidSwitch = "ignore";
@@ -283,5 +279,5 @@
 
   boot.blacklistedKernelModules = [ "8250" ];
 
-  users.users.diego.extraGroups = [ "docker" "libvirtd" ];
+  users.users.diego.extraGroups = [ "docker" ];
 }
