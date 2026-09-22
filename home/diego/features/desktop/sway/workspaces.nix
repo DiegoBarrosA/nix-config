@@ -31,9 +31,9 @@ let
     };
     "5" = {
       icon = "f0ac";
-      app = "firefox-devedition";
+      app = "firefox";
       key = "f";
-      launch = "firefox-devedition";
+      launch = "firefox-esr";
       persistent = true;
       autostart = 2;
     };
@@ -60,7 +60,7 @@ let
       persistent = true;
       autostart = 3;
     };
-"9" = {
+    "9" = {
       icon = "e699";
       launcher = "zellij-agents-launcher";
       key = "z";

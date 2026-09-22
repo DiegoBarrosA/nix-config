@@ -1040,7 +1040,7 @@ in
         titlebar_border_thickness 0
         titlebar_padding 0 0
 
-        output * bg  /home/diego/Pictures/Wallpapers/General/wallhaven-83pko1.png fill
+        output * bg  #${colors.base00} solid_color
 
         default_border pixel ${toString config.desktop.borderWidth}
 
