@@ -64,8 +64,6 @@
 
     ../common/optional/media/snapcast.nix
 
-    ../common/optional/apps/matrix-synapse.nix
-
     ../common/optional/media/media-directories.nix
 
     ../common/optional/network/samba.nix

@@ -100,6 +100,8 @@ in
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Transmission-Session-Id $http_x_transmission_session_id;
+            proxy_pass_header X-Transmission-Session-Id;
           '';
         };
       };
@@ -214,56 +216,6 @@ in
 
       "jupyter.minerales.network" = withSSL "jupyter" {
         locations."/" = standardProxy 8888;
-      };
-
-      "matrix.minerales.network" = withSSL "matrix" {
-        locations = {
-
-          "~* ^(/_matrix|/_synapse/client)" = {
-            proxyPass = "http://localhost:8008";
-            proxyWebsockets = true;
-            extraConfig = ''
-              proxy_buffering off;
-              proxy_set_header X-Forwarded-Proto $scheme;
-              proxy_set_header X-Forwarded-Host $host;
-              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-              proxy_read_timeout 600s;
-              client_max_body_size 100M;
-            '';
-          };
-
-          "= /.well-known/matrix/client" = {
-            extraConfig = ''
-              default_type application/json;
-              add_header Access-Control-Allow-Origin *;
-              return 200 '{"m.homeserver": {"base_url": "https://matrix.minerales.network"}}';
-            '';
-          };
-
-          "= /.well-known/matrix/server" = {
-            extraConfig = ''
-              default_type application/json;
-              return 200 '{"m.server": "matrix.minerales.network:443"}';
-            '';
-          };
-
-          "/" = {
-            extraConfig = ''
-              default_type text/html;
-              return 200 '<html><body><h1>Matrix Homeserver</h1><p>Use a Matrix client like Element to connect.</p></body></html>';
-            '';
-          };
-        };
-      };
-
-      "element.minerales.network" = withSSL "element" {
-        root = "/var/www/element";
-        locations = {
-          "/" = {
-            index = "index.html";
-            tryFiles = "$uri $uri/ /index.html";
-          };
-        };
       };
 
       "sync.minerales.network" = withSSL "sync" {

@@ -9,6 +9,7 @@ in
 
   services.transmission = {
     enable = true;
+    package = pkgs.transmission_4;
     user = "media";
     group = "media";
 
@@ -16,7 +17,8 @@ in
       rpc-bind-address = "0.0.0.0";
       rpc-port = 8080;
       rpc-whitelist-enabled = false;
-      rpc-username = "admin";
+      rpc-host-whitelist-enabled = false;
+      rpc-authentication-required = false;
       download-dir = "${mediaRoot}/downloads/complete";
       incomplete-dir = "${mediaRoot}/downloads/incomplete";
       incomplete-dir-enabled = true;
@@ -24,19 +26,6 @@ in
       port-forwarding-enabled = false;
       encryption = 1;
     };
-
-    credentialsFile = config.sops.templates."transmission-credentials.json".path;
-  };
-
-  sops.templates."transmission-credentials.json" = {
-    content = ''
-      {
-        "rpc-password": "${config.sops.placeholder."transmission-password"}"
-      }
-    '';
-    owner = "media";
-    group = "media";
-    mode = "0400";
   };
 
   systemd.services.transmission-setup = {
