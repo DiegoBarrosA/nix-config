@@ -125,6 +125,15 @@
     "d /srv/media/Pictures/Wallpapers 0750 media media -"
     "d /srv/media/Pictures/Photos 0750 media media -"
     "d /srv/media/Pictures/Screenshots 0750 media media -"
+
+    # media-audiobooks was empty on disk but Syncthing still refused to run
+    # it ("folder marker missing") rather than silently treating the
+    # emptiness as authoritative. Do NOT copy this pattern to the other
+    # folders: recreating a marker tells Syncthing "trust what's on disk
+    # now," and if a folder actually lost data (not just its marker), that
+    # blindly propagates the loss to every other device. Only add this for
+    # a folder you've confirmed is *supposed* to be empty.
+    "f /srv/media/library/audiobooks/.stfolder 0750 media media -"
   ];
 
   networking.firewall = {

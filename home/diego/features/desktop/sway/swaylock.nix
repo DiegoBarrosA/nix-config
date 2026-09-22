@@ -17,9 +17,9 @@ in
       timestr = "%H:%M:%S";
       datestr = "%A, %B %d";
 
-      "text-clear" = "!";
-      "text-wrong" = "x";
-      "text-ver" = "...";
+      # "text-clear" = "!";
+      # "text-wrong" = "x";
+      # "text-ver" = "...";
 
       font = "${config.stylix.fonts.sansSerif.name}";
       "font-size" = 64;

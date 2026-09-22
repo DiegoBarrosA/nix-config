@@ -114,15 +114,15 @@
       {
         "Downloads & Automation" = [
           {
-            "qBittorrent" = {
+            "Transmission" = {
               icon = "mdi-arrow-down-circle";
               href = "http://transmission.minerales.network";
               description = "Native BitTorrent client";
               widget = {
-                type = "qbittorrent";
+                type = "transmission";
                 url = "http://localhost:8080";
-                user = "admin";
-                password = "{{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}";
+                username = "admin";
+                password = "{{HOMEPAGE_VAR_TRANSMISSION_PASSWORD}}";
               };
             };
           }
@@ -358,7 +358,7 @@
       mkdir -p /etc/homepage-dashboard
       {
         echo "# Homepage Dashboard API Keys - generated at service start"
-        for secret_name in jellyfin-api-key prowlarr-api-key sonarr-api-key radarr-api-key lidarr-api-key bazarr-api-key; do
+        for secret_name in jellyfin-api-key prowlarr-api-key sonarr-api-key radarr-api-key lidarr-api-key bazarr-api-key transmission-password; do
           env_name="HOMEPAGE_VAR_$(echo "$secret_name" | tr '[:lower:]-' '[:upper:]_')"
           secret_file="/run/secrets/$secret_name"
           if [ -f "$secret_file" ] && [ -s "$secret_file" ]; then

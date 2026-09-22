@@ -52,7 +52,7 @@
     ../common/optional/media/calibre.nix
     ../common/optional/media/lazylibrarian.nix
     ../common/optional/media/bazarr.nix
-    ../common/optional/media/qbittorrent.nix
+    ../common/optional/media/transmission.nix
 
     ../common/optional/media/jellyfin.nix
 
@@ -217,6 +217,17 @@
     remote = {
       bucket = "bitwarden-backup";
       envFile = config.sops.templates."restic.env".path;
+    };
+    # Syncthing only replicates these, it doesn't version them: a bad sync
+    # propagates deletions/corruption to every device. restic gives them
+    # real history.
+    sources = [
+      "/srv/media/Obsidian/obsidiana"
+      "/srv/media/Repos"
+    ];
+    extraRemotes.proton = {
+      repo = "rclone:proton:cobalto-backups";
+      envFile = config.sops.templates."restic-proton.env".path;
     };
   };
 

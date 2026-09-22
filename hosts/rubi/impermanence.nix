@@ -32,20 +32,9 @@
 
       "/var/lib/pipewire"
 
-      "/var/lib/sunshine"
-
       "/var/lib/lockdown"
 
       "/var/lib/flatpak"
-
-      "/var/lib/libvirt"
-
-      {
-        directory = "/var/lib/ollama";
-        user = "ollama";
-        group = "ollama";
-        mode = "0755";
-      }
 
       {
         directory = "/home/diego";
