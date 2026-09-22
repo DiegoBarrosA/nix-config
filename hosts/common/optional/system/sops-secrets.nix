@@ -51,12 +51,6 @@ with lib;
       mode = "0400";
     };
 
-    secrets."turn-shared-secret" = {
-      owner = "root";
-      group = "root";
-      mode = "0400";
-    };
-
     secrets."jellyfin-api-key" = {
       owner = "root";
       group = "root";
@@ -124,12 +118,6 @@ with lib;
     };
 
     secrets."aria2-rpc-secret" = {
-      owner = "root";
-      group = "root";
-      mode = "0400";
-    };
-
-    secrets."transmission-password" = {
       owner = "root";
       group = "root";
       mode = "0400";
