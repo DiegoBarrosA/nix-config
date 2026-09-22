@@ -107,9 +107,9 @@ in
     daemon.enable = true;
 
     providers = {
-      claude.enable = true;
-      opencode.enable = true;
-      jcode.enable = true;
+      claude.enable = false;
+      opencode.enable = false;
+      jcode.enable = false;
       codex.enable = false;
       gemini.enable = false;
     };
