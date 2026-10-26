@@ -5,7 +5,8 @@
   usbutils,
   libimobiledevice,
   ifuse,
-  simple-mtpfs,
+  go-mtpfs,
+  libmtp,
   fuse3,
   util-linux
 }:
@@ -18,7 +19,8 @@ let
       usbutils
       libimobiledevice
       ifuse
-      simple-mtpfs
+      go-mtpfs
+      libmtp
       fuse3
       util-linux
     ];
@@ -31,7 +33,8 @@ let
       UMOUNT=${util-linux}/bin/umount
       IDEVICEPAIR=${libimobiledevice}/bin/idevicepair
       IFUSE=${ifuse}/bin/ifuse
-      SIMPLE_MTPFS=${simple-mtpfs}/bin/simple-mtpfs
+      GO_MTPFS=${go-mtpfs}/bin/go-mtpfs
+      MTP_DETECT=${libmtp}/bin/mtp-detect
       if [ -x /run/wrappers/bin/fusermount3 ]; then
         FUSERMOUNT=/run/wrappers/bin/fusermount3
       elif [ -x ${fuse3}/bin/fusermount3 ]; then
@@ -89,7 +92,7 @@ let
       wait_mtp() {
         local _
         for _ in {1..15}; do
-          if "$SIMPLE_MTPFS" -l 2>/dev/null | grep -qi .; then
+          if "$MTP_DETECT" 2>&1 | grep -q "Found [1-9]"; then
             return 0
           fi
           sleep 2
@@ -145,8 +148,17 @@ let
           echo "No MTP device available. Set the phone to 'File transfer' (MTP) mode." >&2
           exit 1
         fi
-        "$SIMPLE_MTPFS" "$target"
-        echo "Device mounted at $target"
+        "$GO_MTPFS" "$target" >/dev/null 2>&1 &
+        local _
+        for _ in {1..10}; do
+          if "$MOUNTPOINT" -q "$target" 2>/dev/null; then
+            echo "Device mounted at $target"
+            return 0
+          fi
+          sleep 1
+        done
+        echo "go-mtpfs did not mount $target" >&2
+        exit 1
       }
 
       unmount_iphone() {
