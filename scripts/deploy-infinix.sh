@@ -12,11 +12,10 @@ mkdir -p "$staging"
 for f in \
   flake.nix \
   flake.lock \
-  lib/default.nix \
+  parts \
+  overlays \
+  pkgs \
   hosts/infinix/nix-on-droid.nix \
-  home/diego/global/default.nix \
-  home/diego/features/cli \
-  modules/home-manager/colors.nix \
   modules/home-manager/colorschemes; do
   cp -r --parents "$f" "$staging/"
 done

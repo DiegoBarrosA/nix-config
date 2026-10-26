@@ -2,6 +2,8 @@
   pkgs,
   lib,
   inputs,
+  homeModules,
+  customPkgs,
   ...
 }:
 {
@@ -23,11 +25,12 @@
 
   home-manager.sharedModules = [
 
-    ../../modules/home-manager/colors.nix
+    homeModules.colors
   ];
 
   home-manager.extraSpecialArgs = {
     inherit inputs;
+    inherit customPkgs;
     isNixOnDroid = true;
   };
 
@@ -80,8 +83,8 @@
     in
     {
       imports = [
-        ../../home/diego/global
-        ../../home/diego/features/cli
+        homeModules.global
+        homeModules.cli
       ];
 
       home.packages = [ serverScript sshdScript ];
