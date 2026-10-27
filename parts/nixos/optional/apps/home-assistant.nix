@@ -7,6 +7,29 @@
   pkgs,
   ...
 }:
+let
+  # TCL Google TV "cuarzo" (admin console name; was bedroom-tv, 100.64.82.96).
+  # Reached over Tailscale. If cobalto does not resolve MagicDNS, use the IP.
+  tvHost = "cuarzo.tailnet.ts.net";
+
+  # Power, volume, apps and keys go through the Android TV Remote integration
+  # (UI-only, no YAML: add it with host ${tvHost}, enter the code the TV shows,
+  # name the device "cuarzo" so the entities are media_player.cuarzo and
+  # remote.cuarzo). ADB is used only for the backlight, which the remote
+  # protocol cannot set. Do not also add the androidtv (ADB) integration:
+  # two media players for one TV give duplicate entities and conflicting state.
+  # One-time step that cannot be declared: accept "Allow USB debugging?" on
+  # the TV (tick "always allow") for the hass user's adb key.
+  tvctl = pkgs.writeShellScript "tvctl" ''
+    set -eu
+    export HOME=${config.services.home-assistant.configDir}
+    export ANDROID_ADB_SERVER_PORT=5038
+    adb=${pkgs.android-tools}/bin/adb
+    tv=${tvHost}:5555
+    ${pkgs.coreutils}/bin/timeout 8 "$adb" connect "$tv" >/dev/null
+    exec ${pkgs.coreutils}/bin/timeout 10 "$adb" -s "$tv" shell "$@"
+  '';
+in
 {
 
   services.avahi = {
@@ -28,6 +51,8 @@
       "default_config"
       "met"
       "esphome"
+      "androidtv_remote"
+      "cast"
     ];
     extraPackages = ps: with ps; [
 
@@ -193,6 +218,53 @@
 
       tailscale = {};
 
+      # TCL Google TV "cuarzo": backlight only, with adb over Tailscale (see
+      # tvctl). UNVERIFIED on the live panel: that writing picture_backlight
+      # changes the picture immediately. The TV has no usable Android
+      # screen_brightness.
+      shell_command = {
+        tv_backlight = "${tvctl} settings put global picture_backlight {{ level }}";
+      };
+
+      # State read-back, polled every 60 s. An unreachable TV reads as 0.
+      command_line = [
+        {
+          sensor = {
+            name = "TV Backlight Level";
+            unique_id = "cuarzo_backlight_level";
+            command = "${tvctl} settings get global picture_backlight | ${pkgs.coreutils}/bin/tr -dc 0-9";
+            unit_of_measurement = "%";
+            scan_interval = 60;
+            command_timeout = 25;
+          };
+        }
+      ];
+
+      # Backlight as a dimmable light so HomeKit and Alexa get a slider (they
+      # have none for media_player). Off sets the backlight to 0: the screen
+      # goes dark while the TV keeps playing.
+      template = [{
+        light = [{
+          name = "TV Backlight";
+          unique_id = "cuarzo_backlight";
+          icon = "mdi:television-ambient-light";
+          state = "{{ states('sensor.tv_backlight_level') | int(0) > 0 }}";
+          level = "{{ (states('sensor.tv_backlight_level') | int(0) * 255 / 100) | round(0) | int }}";
+          turn_on = [{
+            action = "shell_command.tv_backlight";
+            data.level = 100;
+          }];
+          turn_off = [{
+            action = "shell_command.tv_backlight";
+            data.level = 0;
+          }];
+          set_level = [{
+            action = "shell_command.tv_backlight";
+            data.level = "{{ (brightness / 255 * 100) | round(0) | int }}";
+          }];
+        }];
+      }];
+
       alexa = {
         smart_home = {
           endpoint = "https://alexa-homeassistant.minerales.network/api/alexa/smart_home";
@@ -275,6 +347,57 @@
           {
             type = "media-control";
             entity = "media_player.living_room";
+          }
+          # media_player.cuarzo and remote.cuarzo come from the Android TV
+          # Remote integration (paired in the UI, see tvHost note above).
+          {
+            type = "media-control";
+            entity = "media_player.cuarzo";
+          }
+          {
+            type = "horizontal-stack";
+            cards = [
+              {
+                type = "button";
+                name = "TV On";
+                icon = "mdi:television";
+                show_state = false;
+                tap_action = { action = "perform-action"; perform_action = "media_player.turn_on"; target.entity_id = "media_player.cuarzo"; };
+              }
+              {
+                type = "button";
+                name = "TV Off";
+                icon = "mdi:power";
+                show_state = false;
+                tap_action = { action = "perform-action"; perform_action = "media_player.turn_off"; target.entity_id = "media_player.cuarzo"; };
+              }
+              {
+                type = "button";
+                name = "Vol -";
+                icon = "mdi:volume-minus";
+                show_state = false;
+                tap_action = { action = "perform-action"; perform_action = "media_player.volume_down"; target.entity_id = "media_player.cuarzo"; };
+              }
+              {
+                type = "button";
+                name = "Vol +";
+                icon = "mdi:volume-plus";
+                show_state = false;
+                tap_action = { action = "perform-action"; perform_action = "media_player.volume_up"; target.entity_id = "media_player.cuarzo"; };
+              }
+              {
+                type = "button";
+                name = "Home";
+                icon = "mdi:home";
+                show_state = false;
+                tap_action = { action = "perform-action"; perform_action = "remote.send_command"; target.entity_id = "remote.cuarzo"; data.command = "HOME"; };
+              }
+            ];
+          }
+          {
+            type = "light";
+            entity = "light.tv_backlight";
+            name = "TV Backlight";
           }
         ];
       }
