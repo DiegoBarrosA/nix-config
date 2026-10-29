@@ -59,6 +59,67 @@ let
       ${exportMcpEnv}
       exec ${exe} ${extraArgs} "$@"
     '';
+  # Git access for the agents' shell tools (git push, gh pr create) on GitHub,
+  # GitLab and Bitbucket. Personal: the existing hermes-github-token. Work:
+  # private-config workGit, by platform and customer, one token per entry
+  # (Contents + Pull requests write only; "branches and PRs only" is a ruleset
+  # on each repo, not something the token enforces). The token is picked by
+  # host and repo owner. An owner that is in neither list gets no credentials.
+  # No token enters an environment variable of the agent's shell: git reads
+  # it through a credential helper, and gh gets it inside its own wrapper.
+  gitAccess = lib.recursiveUpdate {
+    github.personal = {
+      host = "github.com";
+      user = "x-access-token";
+      owners = [ "diegobarrosa" ];
+      tokenFile = "/run/secrets/hermes-github-token";
+    };
+  } (inputs.private-config.workGit or { });
+  gitEntries = lib.concatMap lib.attrValues (lib.attrValues gitAccess);
+  gitHosts = lib.unique (map (a: a.host) gitEntries);
+  gitTable = lib.concatStringsSep "\n" (
+    lib.concatMap (a: map (o: "${a.host} ${o} ${a.user} ${a.tokenFile}") a.owners) gitEntries
+  );
+  # Prints "<user> <token>" for a host and owner, or exits 1.
+  gitToken = pkgs.writeShellScript "hermes-git-token" ''
+    host="$1" owner="''${2,,}"
+    while read -r h o u f; do
+      [ "$h" = "$host" ] && [ "$o" = "$owner" ] || continue
+      # A missing or empty token file means no credential, not a blank password.
+      token="$(${pkgs.coreutils}/bin/tr -d '[:space:]' < "$f" 2>/dev/null)" || exit 1
+      [ -n "$token" ] || exit 1
+      printf '%s %s' "$u" "$token"
+      exit 0
+    done <<'MAP'
+    ${gitTable}
+    MAP
+    exit 1
+  '';
+  gitCredential = pkgs.writeShellScript "git-credential-hermes" ''
+    [ "''${1:-}" = get ] || exit 0
+    host="" path=""
+    while IFS='=' read -r k v; do
+      case "$k" in host) host=$v ;; path) path=$v ;; esac
+    done
+    out="$(${gitToken} "$host" "''${path%%/*}")" || exit 0
+    printf 'username=%s\npassword=%s\n' "''${out%% *}" "''${out#* }"
+  '';
+  ghWrapper = pkgs.writeShellScriptBin "gh" ''
+    repo="" prev=""
+    for a in "$@"; do
+      case "$prev" in -R|--repo) repo=$a ;; esac
+      case "$a" in --repo=*) repo=''${a#--repo=} ;; esac
+      prev=$a
+    done
+    if [ -z "$repo" ]; then
+      repo="$(${pkgs.git}/bin/git remote get-url origin 2>/dev/null || true)"
+      repo=''${repo#*github.com[:/]}
+    fi
+    if out="$(${gitToken} github.com "''${repo%%/*}")"; then
+      export GH_TOKEN="''${out#* }"
+    fi
+    exec ${pkgs.gh}/bin/gh "$@"
+  '';
   claudeWrapper = name: claudeBin "hermes-claude-${name}" "${claudeCfg.acpPackage}/bin/claude-agent-acp" "" name;
   claudeCliArgs = "--settings ${claudeSettings} --mcp-config ${claudeMcp}";
   claudeCli = name: claudeBin "claude-${name}" "${pkgs.claude-code}/bin/claude" claudeCliArgs name;
@@ -142,6 +203,7 @@ in
       exec ${cfg.package}/bin/hermes --tui "$@"
     '')
   ]
+  ++ [ ghWrapper ]
   ++ lib.mapAttrsToList claudeWrapper claudeAccounts
   ++ lib.mapAttrsToList claudeCli claudeAccounts
   # Hermes skills look for `claude` and `opencode` on PATH. Bare opencode exports
@@ -199,6 +261,14 @@ in
         Use the paid `opencode-go/...` models. Free `opencode/...` models
         can hit the free-tier cap and hang.
 
+      ## Git access
+      - `git push` and `gh` work without any login step. Credentials depend on the repo owner.
+      - Personal repos (DiegoBarrosA): full access.
+      - Work repos: create branches and open PRs only. Never push to the default branch,
+        never merge. Open a PR and leave the merge to Diego.
+      - A repo owner that is not configured has no credentials, so a push fails. Do not look
+        for tokens elsewhere. Tell Diego.
+
       ## Not installed
       - Codex CLI.
     '';
@@ -223,7 +293,13 @@ in
   # The MCP secrets are owned by diego (group users, 0400). Hermes's wrappers
   # read them, so give group hermes read access. Names come from the same
   # secretEnv map as diego's shell, so the two stay in step.
-  sops.secrets = lib.mapAttrs' (
+  sops.secrets = {
+    # Personal git token, also read by the credential helper and gh wrapper.
+    hermes-github-token = {
+      group = "hermes";
+      mode = "0440";
+    };
+  } // lib.mapAttrs' (
     _: path:
     lib.nameValuePair (baseNameOf path) {
       group = lib.mkForce "hermes";
@@ -232,13 +308,22 @@ in
   ) mcpEnv;
 
   # System git config, applied because the service HOME is /var/lib/hermes
-  # (no ~/.gitconfig). Identity only: git in the shell has no GitHub
-  # credentials (see the MCP server above), so it clones public repos.
+  # (no ~/.gitconfig). The helper (see gitAccess above) hands out the personal
+  # or work token by host and repo owner. useHttpPath makes git pass the
+  # owner/repo path, which the helper needs.
   programs.git = {
     enable = true;
-    config.user = {
-      name = "Hermes";
-      email = "hermes@minerales.network";
+    config = {
+      user = {
+        name = "Hermes";
+        email = "hermes@minerales.network";
+      };
+      credential = lib.listToAttrs (
+        map (h: lib.nameValuePair "https://${h}" {
+          useHttpPath = true;
+          helper = "${gitCredential}";
+        }) gitHosts
+      );
     };
   };
 
