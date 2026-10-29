@@ -5,13 +5,13 @@ let
   commonModules = with config.flake.modules.homeManager; [
     inputs.ai-tooling.homeManagerModules.ai-skills
     inputs.ai-tooling.homeManagerModules.ai-system-prompt
+    inputs.ai-tooling.homeManagerModules.agent-accounts
     inputs.ai-tooling.homeManagerModules.antigravity-config
     bar
     inputs.ai-tooling.homeManagerModules.claude-code-config
     inputs.ai-tooling.homeManagerModules.claude-desktop-config
     colors
     inputs.ai-tooling.homeManagerModules.cursor-config
-    inputs.ai-tooling.homeManagerModules.happier-config
     inputs.ai-tooling.homeManagerModules.jcode-config
     inputs.ai-tooling.homeManagerModules.mcp-config
     monitors
@@ -19,7 +19,6 @@ let
   ]
   ++ [
     inputs.stylix.homeModules.stylix
-    inputs.plasma-manager.homeModules.plasma-manager
     inputs.private-config.homeManagerModules.workMcpConfig
   ];
 
@@ -54,7 +53,7 @@ in
     "diego@rubi" = mkHome {
       entrypoint = config.flake.modules.homeManager.rubi;
       extraModules = [ inputs.private-config.homeManagerModules.workExtras ];
-      desktop = "kde";
+      desktop = "sway";
     };
   };
 }

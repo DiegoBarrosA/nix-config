@@ -81,6 +81,7 @@
     apps-bookorbit
 
     ai-opencode-server
+    ai-hermes-agent
 
     apps-zennotes
 
@@ -232,6 +233,43 @@
       envFile = config.sops.templates."restic-proton.env".path;
     };
   };
+
+  home-manager = {
+    backupFileExtension = "backup";
+    extraSpecialArgs = {
+      inherit inputs;
+      customPkgs = inputs.self.packages."x86_64-linux";
+      privateConfig = inputs.private-config or { };
+      desktop = null;
+      theme = { scheme = "material-darker"; mode = "dark"; };
+      isNixOnDroid = false;
+    };
+    users.diego = {
+      imports = with top.config.flake.modules.homeManager; [
+        inputs.stylix.homeModules.stylix
+        colors
+        monitors
+        bar
+        inputs.ai-tooling.homeManagerModules.opencode-config
+        inputs.ai-tooling.homeManagerModules.mcp-config
+        inputs.ai-tooling.homeManagerModules.jcode-config
+        inputs.ai-tooling.homeManagerModules.antigravity-config
+        inputs.ai-tooling.homeManagerModules.claude-code-config
+        inputs.ai-tooling.homeManagerModules.agent-accounts
+        inputs.ai-tooling.homeManagerModules.claude-desktop-config
+        inputs.ai-tooling.homeManagerModules.cursor-config
+        inputs.ai-tooling.homeManagerModules.ai-skills
+        inputs.ai-tooling.homeManagerModules.ai-system-prompt
+        inputs.private-config.homeManagerModules.workMcpConfig
+        cobalto
+      ];
+    };
+  };
+
+  # Re-run home-manager on every switch, same as rubi.
+  system.activationScripts.home-manager-reapply = lib.mkAfter ''
+    ${config.systemd.package}/bin/systemctl restart home-manager-diego.service
+  '';
 
   system.stateVersion = "22.11";
 
