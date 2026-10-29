@@ -52,6 +52,12 @@
         group = "media";
         mode = "0750";
       }
+      {
+        directory = "/var/lib/zennotes";
+        user = "diego";
+        group = "users";
+        mode = "0755";
+      }
       # postgres dumps, otherwise wiped on every boot and absent from any
       # backup taken before the next nightly dump runs. Needs explicit
       # ownership: impermanence would otherwise create it root:root and
