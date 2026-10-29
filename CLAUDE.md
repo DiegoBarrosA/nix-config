@@ -7,6 +7,8 @@ with the dendritic pattern. This file is the source of truth for coding agents. 
 
 - `flake.nix`: inputs. `parts/*.nix`: flake-parts modules (`hosts/`, `homes.nix`, `deploy.nix`, `packages.nix`, `overlays.nix`).
 - `parts/hosts/<host>.nix`: builds `nixosConfigurations.<host>` from `flake.modules.nixos.*`.
+- `hosts/<host>/`: per-host sops files (`.sops.yaml`, encrypted `secrets.yaml`, examples), `cobalto/deploy_key.pub` and
+  `infinix/nix-on-droid.nix`. It is not a NixOS module tree: NixOS host config lives in `parts/`.
 - `parts/nixos/global/`: modules every NixOS host gets.
 - `parts/nixos/optional/<area>/<name>.nix`: opt-in modules. Each file defines `flake.modules.nixos.<area>-<name>`.
   A host turns one on by listing its name in `parts/nixos/hosts/<host>/default.nix`.
