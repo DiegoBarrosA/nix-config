@@ -289,6 +289,24 @@ in
         locations."/" = standardProxy 4096;
       };
 
+      # Agent with shell access: LAN and tailnet only, on top of the dashboard
+      # login. Ports 80/443 are open on the firewall, so do not rely on DNS.
+      "hermes.minerales.network" = withSSL "hermes" {
+        locations."/" = (standardProxy 9119) // {
+          extraConfig = ''
+            allow 192.168.0.0/16;
+            allow 10.0.0.0/8;
+            allow 100.64.0.0/10;
+            allow 127.0.0.1;
+            deny all;
+            proxy_buffering off;
+            proxy_read_timeout 3600s;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+          '';
+        };
+      };
+
       "notes.minerales.network" = withSSL "notes" {
         locations."/" = standardProxy 7879;
       };

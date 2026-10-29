@@ -25,7 +25,9 @@
 
 
     network-tailscale
+    network-cloudflare-warp
     rubi-sops
+    rubi-cobalto-shares
 
     rubi-impermanence
 
@@ -47,9 +49,9 @@
     # the old /run/current-system/sw store path.
     { imports = [ { imports = [ inputs.private-config.nixosModules.work ]; } ]; }
 
-    # replaces hosts/common/optional/desktop/select.nix for desktop = "kde";
+    # replaces hosts/common/optional/desktop/select.nix for desktop = "sway";
     # kept last so its definitions merge in the same order as before.
-    desktop-environments-kde
+    desktop-environments-sway
   ];
 
   console = {
@@ -263,7 +265,6 @@
     users.diego = {
       imports = with top.config.flake.modules.homeManager; [
         inputs.stylix.homeModules.stylix
-        inputs.plasma-manager.homeModules.plasma-manager
         colors
         kanshi
         monitors

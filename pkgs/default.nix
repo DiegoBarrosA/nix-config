@@ -12,7 +12,6 @@ in
   claude-desktop = pkgs.callPackage ./claude-desktop { };
   jcode = pkgs.callPackage ./jcode { };
   windows-overview = pkgs.callPackage ./windows-overview { };
-  happier = pkgs.callPackage ./happier { };
   spacedrive-v2 = pkgs.callPackage ./spacedrive-v2 { };
   inherit (pkgs.callPackage ./device-mount.nix { }) device-mount device-umount;
 } // privatePackages

@@ -110,16 +110,27 @@
   systemd.services.syncthing = lib.mkIf config.services.syncthing.enable {
     after = [ "srv-media.mount" ];
     requires = [ "srv-media.mount" ];
+    # It once reached 17 GB RSS retrying an unwritable folder. Cap it so it
+    # cannot starve the rest of the host again. GOMEMLIMIT is a soft target
+    # for the Go GC, MemoryHigh throttles, MemoryMax kills (then it restarts).
+    environment.GOMEMLIMIT = "3GiB";
+    serviceConfig = {
+      MemoryHigh = "4G";
+      MemoryMax = "6G";
+    };
   };
 
   systemd.tmpfiles.rules = [
-    "d /srv/media/library/music 0750 media media -"
-    "d /srv/media/library/books 0750 media media -"
-    "d /srv/media/Documents 0750 media media -"
+    # Synced folders: Syncthing runs as diego, who is in group media. Group
+    # needs write (setgid keeps new files in group media) or mkdir fails with
+    # "permission denied" and the folder retries forever.
+    "d /srv/media/library/music 2770 media media -"
+    "d /srv/media/library/books 2770 media media -"
+    "d /srv/media/Documents 2770 media media -"
     "d /srv/media/Obsidian 0750 media media -"
-    "d /srv/media/Repos 0750 media media -"
+    "d /srv/media/Repos 2770 media media -"
     "d /srv/media/Archive 0750 media media -"
-    "d /srv/media/Pictures 0750 media media -"
+    "d /srv/media/Pictures 2770 media media -"
     "d /srv/media/Pictures/Wallpapers 0750 media media -"
     "d /srv/media/Pictures/Photos 0750 media media -"
     "d /srv/media/Pictures/Screenshots 0750 media media -"

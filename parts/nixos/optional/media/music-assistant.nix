@@ -67,6 +67,7 @@ in
     7000
     8095
     8097
+    8927 # sendspin server, native clients
   ];
   networking.firewall.allowedUDPPortRanges = [
     {

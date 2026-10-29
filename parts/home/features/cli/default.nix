@@ -16,7 +16,7 @@ let
   isDesktop = isLinux && !isAndroid;
 in
 {
-  imports = with config.flake.modules.homeManager; [ cli-zoxide cli-helix cli-pfetch cli-git cli-xdg cli-starship cli-fzf cli-bat cli-zellij cli-nushell cli-herdr cli-ssh cli-bottom cli-yazi cli-teams-calls-fetch ];
+  imports = with config.flake.modules.homeManager; [ cli-zoxide cli-helix cli-pfetch cli-git cli-xdg cli-starship cli-fzf cli-bat cli-zellij cli-nushell cli-herdr cli-ssh cli-bottom cli-superfile cli-teams-calls-fetch ];
 
   home.packages =
     with pkgs;

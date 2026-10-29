@@ -1,0 +1,78 @@
+{ inputs, ... }:
+{
+  flake.modules.homeManager.desktop-common-zen =
+    { ... }:
+    let
+      extension = shortId: guid: {
+        name = guid;
+        value = {
+          install_url = "https://addons.mozilla.org/en-US/firefox/downloads/latest/${shortId}/latest.xpi";
+          installation_mode = "normal_installed";
+        };
+      };
+    in
+    {
+      imports = [ inputs.zen-browser.homeModules.beta ];
+
+      home.sessionVariables.MOZ_ENABLE_WAYLAND = "1";
+
+      programs.zen-browser = {
+        enable = true;
+        setAsDefaultBrowser = true;
+
+        policies = {
+          DisableTelemetry = true;
+          DisableAppUpdate = true;
+          DisablePocket = true;
+
+          ExtensionSettings = builtins.listToAttrs [
+            (extension "ublock-origin" "uBlock0@raymondhill.net")
+          ];
+
+          SearchEngines = {
+            Default = "ddg";
+            Add = [
+              {
+                Name = "nixpkgs packages";
+                URLTemplate = "https://search.nixos.org/packages?query={searchTerms}";
+                IconURL = "https://wiki.nixos.org/favicon.ico";
+                Alias = "@np";
+              }
+              {
+                Name = "NixOS options";
+                URLTemplate = "https://search.nixos.org/options?query={searchTerms}";
+                IconURL = "https://wiki.nixos.org/favicon.ico";
+                Alias = "@no";
+              }
+              {
+                Name = "NixOS Wiki";
+                URLTemplate = "https://wiki.nixos.org/w/index.php?search={searchTerms}";
+                IconURL = "https://wiki.nixos.org/favicon.ico";
+                Alias = "@nw";
+              }
+              {
+                Name = "noogle";
+                URLTemplate = "https://noogle.dev/q?term={searchTerms}";
+                IconURL = "https://noogle.dev/favicon.ico";
+                Alias = "@ng";
+              }
+            ];
+          };
+        };
+
+        profiles.default.settings = {
+          "browser.startup.homepage" = "https://home.minerales.network/";
+          "browser.startup.page" = 1;
+          "browser.newtabpage.url" = "https://home.minerales.network/";
+
+          "media.peerconnection.video.min_bitrate" = 512;
+          "media.peerconnection.video.start_bitrate" = 1500;
+          "media.peerconnection.video.max_bitrate" = 8000;
+
+          "media.ffmpeg.vaapi.enabled" = true;
+        };
+      };
+
+      stylix.targets.zen-browser.profileNames = [ "default" ];
+    };
+}

@@ -28,6 +28,8 @@
 
        "/var/lib/tailscale"
 
+       "/var/lib/cloudflare-warp"
+
        "/var/lib/sbctl"
 
       "/var/lib/cups"

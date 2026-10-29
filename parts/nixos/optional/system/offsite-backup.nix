@@ -60,7 +60,11 @@ let
         && [[ "$AWS_SECRET_ACCESS_KEY" != *REPLACE* ]]
     }
 
+    # A run killed by a switch or reboot leaves a lock behind, and every later
+    # run then fails with exit 11 ("repository is already locked"). `unlock`
+    # without --remove-all only removes stale locks, never a live one.
     init_repo "$LOCAL_REPO"
+    restic -r "$LOCAL_REPO" --password-file "$PW_DIR/local" unlock || true
     for src in "''${valid[@]}"; do
       echo "backups-restic: backing up $src"
       restic -r "$LOCAL_REPO" --password-file "$PW_DIR/local" backup "$src"
@@ -74,6 +78,7 @@ let
       if ! restic -r "$REMOTE_REPO" --password-file "$PW_DIR/remote" snapshots >/dev/null 2>&1; then
         restic -r "$REMOTE_REPO" --password-file "$PW_DIR/remote" init
       fi
+      restic -r "$REMOTE_REPO" --password-file "$PW_DIR/remote" unlock || true
 
       echo "backups-restic: copying snapshots to $REMOTE_REPO"
       restic copy \
@@ -110,6 +115,7 @@ let
       if ! restic -r "$repo" --password-file "$PW_DIR/$name" snapshots >/dev/null 2>&1; then
         restic -r "$repo" --password-file "$PW_DIR/$name" init
       fi
+      restic -r "$repo" --password-file "$PW_DIR/$name" unlock || true
 
       echo "backups-restic: copying snapshots to $name ($repo)"
       restic copy \

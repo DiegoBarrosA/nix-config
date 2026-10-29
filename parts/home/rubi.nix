@@ -13,7 +13,7 @@
     }:
     {
       colorscheme.mode = "dark";
-      colorscheme.type = "standardized-light";
+      colorscheme.type = "material-darker";
       colorscheme.iconFolderColor = "black";
       colorscheme.specialisations = { };
 
@@ -21,8 +21,10 @@
         global
         cli
         cli-ekphos-theme
+        cli-rmpc
+        cli-zathura
         desktop-common
-        desktop-kde
+        desktop-sway
         desktop-zennotes-theme
         ai
       ];
@@ -32,6 +34,8 @@
         customPkgs.ekphos
         pkgs.nodejs_24
       ];
+
+      programs.nushell.shellAliases.hermes-cobalto = "ssh -t cobalto sudo -u hermes /run/current-system/sw/bin/hermes-tui";
 
       programs.obsidian = {
         enable = true;
@@ -43,6 +47,8 @@
         "file://${config.home.homeDirectory}/Downloads"
         "file://${config.home.homeDirectory}/Pictures"
         "file://${config.home.homeDirectory}/Projects"
+        "file:///mnt/cobalto/media Cobalto media"
+        "file:///mnt/cobalto/storage Cobalto storage"
       ];
 
       # ============================================================================
