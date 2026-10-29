@@ -217,6 +217,41 @@ with lib;
       mode = "0400";
     };
 
+    secrets."hermes-dashboard-password" = { };
+    secrets."hermes-dashboard-secret" = { };
+    secrets."hermes-nvidia-api-key" = { };
+    # Same value as rubi's opencode-api-key (Zen and Go share one key).
+    secrets."opencode-api-key" = { };
+    secrets."telegram-user-id" = { };
+    secrets."telegram-bot-token" = { };
+    secrets."hermes-github-token" = { };
+    # Personal Claude setup token (`claude setup-token`). diego runs the
+    # launcher, the hermes group runs the ACP wrapper.
+    secrets."claude-token-personal" = {
+      owner = "diego";
+      group = "hermes";
+      mode = "0440";
+    };
+
+    templates."hermes.env" = {
+      content = ''
+        HERMES_DASHBOARD_BASIC_AUTH_USERNAME=diego
+        HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=${config.sops.placeholder."hermes-dashboard-password"}
+        HERMES_DASHBOARD_BASIC_AUTH_SECRET=${config.sops.placeholder."hermes-dashboard-secret"}
+        NVIDIA_API_KEY=${config.sops.placeholder."hermes-nvidia-api-key"}
+        OPENCODE_ZEN_API_KEY=${config.sops.placeholder."opencode-api-key"}
+        OPENCODE_GO_API_KEY=${config.sops.placeholder."opencode-api-key"}
+        TELEGRAM_BOT_TOKEN=${config.sops.placeholder."telegram-bot-token"}
+        TELEGRAM_ALLOWED_USERS=${config.sops.placeholder."telegram-user-id"}
+        GH_TOKEN=${config.sops.placeholder."hermes-github-token"}
+      '';
+      owner = "root";
+      group = "root";
+      mode = "0400";
+      # Hermes reads .env only at process start.
+      restartUnits = [ "hermes-agent.service" "hermes-backend.service" ];
+    };
+
     templates."restic.env" = {
       content = ''
         RESTIC_LOCAL_PASSWORD=${config.sops.placeholder."restic-local-password"}
