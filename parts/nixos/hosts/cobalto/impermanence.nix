@@ -46,6 +46,12 @@
       # Without this the wildcard cert is destroyed on every boot and has to be
       # re-issued, which burns Let's Encrypt's duplicate-certificate quota.
       "/var/lib/acme"
+      {
+        directory = "/var/lib/transmission";
+        user = "media";
+        group = "media";
+        mode = "0750";
+      }
       # postgres dumps, otherwise wiped on every boot and absent from any
       # backup taken before the next nightly dump runs. Needs explicit
       # ownership: impermanence would otherwise create it root:root and
