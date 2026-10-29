@@ -6,6 +6,7 @@
   pkgs,
   lib,
   customPkgs,
+  inputs,
   theme ? null,
   privateConfig ? { },
   ...
@@ -17,11 +18,6 @@ let
     GITHUB_TOKEN = "/run/secrets/github-token";
   };
 
-  happySecretEnv = lib.removeAttrs aiSecretEnv [
-    "ANTHROPIC_API_KEY"
-    "NVIDIA_API_KEY"
-    "OPENCODE_API_KEY"
-  ];
 in
 {
   imports = with top.config.flake.modules.homeManager; [
@@ -97,28 +93,22 @@ in
 
   programs.claude-desktop-config.enable = lib.mkForce false;
 
-  programs.happier-config = {
-    enable = true;
-
-    package = customPkgs.happier;
-
-    server = {
-      name = "happier-cloud";
-      useByDefault = true;
-    };
-
-    daemon.enable = true;
-
-    providers = {
-      claude.enable = false;
-      opencode.enable = false;
-      jcode.enable = false;
-      codex.enable = false;
-      gemini.enable = false;
-    };
-
-    secretEnv = happySecretEnv;
+  # Token-based Claude accounts: personal here, work ones from the private repo.
+  # Hermes wrappers for these live in ai/hermes-agent.nix.
+  programs.claude-code-config = {
+    # claude-agent-acp pulls in claude-code, which is unfree.
+    acpPackage =
+      (import inputs.nixpkgs-acp {
+        system = pkgs.stdenv.hostPlatform.system;
+        config.allowUnfree = true;
+      }).claude-agent-acp;
+    profiles =
+      (privateConfig.workClaudeProfiles or { })
+      // {
+        personal.tokenFile = "/run/secrets/claude-token-personal";
+      };
   };
+
 
   home.packages = (with pkgs; [
     uv
@@ -164,6 +154,8 @@ in
       helix.enable = true;
     };
     overlays.enable = false;
+    # Headless server: no fonts, KDE or GNOME theming. Only enable CLI targets above.
+    autoEnable = false;
   };
 }
 

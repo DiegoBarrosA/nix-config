@@ -27,6 +27,12 @@
       flake = false;
     };
 
+    zen-browser = {
+      url = "github:0xc000022070/zen-browser-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
+
     nixvirt = {
       url = "github:AshleyYakeley/NixVirt";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -60,6 +66,9 @@
       flake = false;
     };
 
+    # Second nixpkgs, used only for claude-agent-acp so the main pin stays put.
+    nixpkgs-acp.url = "github:nixos/nixpkgs/nixos-unstable";
+
     ai-tooling = {
       url = "github:DiegoBarrosA/nix-ai-tooling";
     };
@@ -85,11 +94,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    plasma-manager = {
-      url = "github:nix-community/plasma-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.home-manager.follows = "home-manager";
-    };
+    hermes-agent.url = "github:NousResearch/hermes-agent";
 
     teams-calls-fetcher = {
       url = "github:DiegoBarrosA/teams-calls-fetcher";
