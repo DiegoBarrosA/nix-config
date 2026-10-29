@@ -66,6 +66,18 @@
       flake = false;
     };
 
+    # Claude Code plugins for the Hermes-driven coding agents. Loaded with
+    # --plugin-dir from the store (see ai/hermes-agent.nix), so no runtime install.
+    # superpowers is pinned to the official marketplace's sha.
+    superpowers = {
+      url = "github:obra/superpowers/bb92a77741419a4ab5f06e711a283343f1ada0c3";
+      flake = false;
+    };
+    ponytail = {
+      url = "github:DietrichGebert/ponytail/2961b52fc1fe6a5a87c7a959a79512e5c2f3ffe5";
+      flake = false;
+    };
+
     # Second nixpkgs, used only for claude-agent-acp so the main pin stays put.
     nixpkgs-acp.url = "github:nixos/nixpkgs/nixos-unstable";
 

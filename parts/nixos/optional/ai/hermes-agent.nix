@@ -23,9 +23,43 @@ let
   mcpServers = removeAttrs (
     hmDiego.programs.mcp-config.standardFormat.mcpServers // claudeCfg.extraMcpServers
   ) [ "github" ];
+  # Plugins come from the store with --plugin-dir (claudeCliArgs), so no
+  # enabledPlugins here: nothing is installed or fetched at run time. A headless
+  # run cannot answer a permission prompt, so the Bash commands a code task
+  # needs are allowed here and the ones that publish or destroy are denied.
+  # Edits are accepted with --permission-mode acceptEdits, passed by Hermes.
   claudeSettings = pkgs.writeText "hermes-claude-settings.json" (
-    builtins.toJSON { inherit (claudeCfg) enabledPlugins extraKnownMarketplaces; }
+    builtins.toJSON {
+      permissions = {
+        allow = [
+          "Bash(git:*)"
+          "Bash(gh:*)"
+          "Bash(nix flake check:*)"
+          "Bash(nix eval:*)"
+          "Bash(nix build:*)"
+          "Bash(nix develop:*)"
+          "Bash(nix fmt:*)"
+          "Bash(bash:*)"
+          "Bash(ls:*)"
+          "Bash(cat:*)"
+          "Bash(grep:*)"
+          "Bash(find:*)"
+          "Bash(mkdir:*)"
+          "Bash(chmod:*)"
+        ];
+        deny = [
+          "Bash(gh pr merge:*)"
+          "Bash(git push --force:*)"
+          "Bash(git push -f:*)"
+          "Bash(git push origin main:*)"
+          "Bash(git push origin master:*)"
+        ];
+      };
+    }
   );
+  # Superpowers and ponytail, pinned in flake.lock. The rules file is Diego's
+  # dev rules adapted for headless runs (docs/agents/dev-rules.md).
+  agentRules = ../../../../docs/agents/dev-rules.md;
   claudeMcp = pkgs.writeText "hermes-claude-mcp.json" (builtins.toJSON { inherit mcpServers; });
   # The MCP servers read their credentials from env vars, which diego's shell
   # fills from /run/secrets (cli/mcp.nix). The wrappers do the same here; the
@@ -121,7 +155,13 @@ let
     exec ${pkgs.gh}/bin/gh "$@"
   '';
   claudeWrapper = name: claudeBin "hermes-claude-${name}" "${claudeCfg.acpPackage}/bin/claude-agent-acp" "" name;
-  claudeCliArgs = "--settings ${claudeSettings} --mcp-config ${claudeMcp}";
+  claudeCliArgs = lib.concatStringsSep " " [
+    "--settings ${claudeSettings}"
+    "--mcp-config ${claudeMcp}"
+    "--plugin-dir ${inputs.superpowers}"
+    "--plugin-dir ${inputs.ponytail}"
+    "--append-system-prompt-file ${agentRules}"
+  ];
   claudeCli = name: claudeBin "claude-${name}" "${pkgs.claude-code}/bin/claude" claudeCliArgs name;
 in
 {
@@ -146,8 +186,12 @@ in
       default = "kimi-k3";
     };
 
-    # Chain: another Go model, then hosted NIM, then the local llama.cpp
-    # server (no quota). NIM: /v1/models lists models the key cannot call;
+    # One fallback only: hosted NIM. Two entries were removed on 2026-10-29:
+    # glm-5.3 shares the Go workspace's 5-hour limit with kimi-k3, so it was
+    # always exhausted when needed; the local Llama-3.2-3B has an 8K window, and
+    # Hermes needs 64K to compress, so the turn died with a ValueError. When
+    # both remaining providers are limited, Hermes should stop and say so.
+    # NIM: /v1/models lists models the key cannot call;
     # nemotron-3-super-120b-a12b, kimi-k2.6 and two others returned 404 "Function
     # not found for account", while nemotron-3-ultra-550b-a55b and
     # minimax-m3.1-flash returned 200 (2026-10-28), so re-test before changing
@@ -155,17 +199,8 @@ in
     # retry once capped.
     settings.fallback_providers = [
       {
-        provider = "opencode-go";
-        model = "glm-5.3";
-      }
-      {
         provider = "nvidia";
         model = "nvidia/nemotron-3-ultra-550b-a55b";
-      }
-      {
-        provider = "custom";
-        model = "Llama-3.2-3B-Instruct-Q8_0";
-        base_url = "http://127.0.0.1:11435/v1";
       }
     ];
 
@@ -242,7 +277,36 @@ in
     ''
       # Coding agents on this host
 
-      Run them from the terminal tool. Each account uses its own login and config.
+      ## Rules for code work (read first)
+
+      - You are the dispatcher. You do not write code. Never edit, create or delete files in a repo yourself.
+      - Never use delegate_task or execute_code to change code. Use a coding agent from the list below.
+      - Start every code task in a fresh session.
+      - If a command fails twice with the same error, stop and tell Diego. Do not retry it again.
+      - If every model you can use is rate limited, say so and stop. Do not go on with a weaker model.
+      - Never push to a default branch. Never merge. The coding agent opens a PR. Diego merges.
+
+      ## Code task flow
+
+      1. Pick the account by repo owner (see Git access). Personal repos use `claude-personal`.
+         Work repos use the account named for the client.
+      2. Make a worktree. Do not touch the main checkouts in /var/lib/hermes/workspace.
+         `git -C /var/lib/hermes/workspace/<repo> fetch origin`
+         `git -C /var/lib/hermes/workspace/<repo> worktree add /var/lib/hermes/workspace/wt/<repo>-<slug> -b hermes/<date>-<slug> origin/main`
+      3. Run the agent from inside the worktree, in the background, and save its JSON output in
+         /var/lib/hermes/workspace/runs/. Command shape:
+         `claude-<name> -p "<task>" --output-format json --permission-mode acceptEdits --max-budget-usd 3`
+         The agent already has superpowers, ponytail and Diego's dev rules. Do not repeat them.
+      4. Spec first. The first call asks for a spec only: "Use superpowers:brainstorming for this task: <task>."
+         Read the JSON `result` and `session_id`. Send Diego a short summary of the spec and any question.
+      5. Wait for Diego to approve. Then resume the same session:
+         `claude-<name> --resume <session_id> -p "The spec is approved. Write the plan, then build it." --output-format json --permission-mode acceptEdits --max-budget-usd 5`
+         If Diego asks for changes, resume with his changes and stay at the spec step.
+      6. The agent runs the checks, pushes the branch and opens the PR. Send Diego the PR link and the check output.
+      7. If a run ends with a question, send the question to Diego, then resume with his answer.
+      8. If a run fails or stops, report what the JSON says. Do not finish the work yourself.
+
+      ## Tools
 
       ## Claude Code (one command per account)
       - `claude -p "task"` is the personal account.
@@ -339,6 +403,22 @@ in
   # ProtectSystem=strict makes /srv read-only for the units. Open the
   # scratch folder only, for the gateway and for the dashboard's chat TUI.
   systemd.services.hermes-agent.serviceConfig.ReadWritePaths = [ scratch ];
+
+  # The gateway drains running agents for up to 1885 s on a restart. The
+  # default stop timeout is 90 s, which cut running tasks off on every deploy.
+  # A deploy now waits for a running task to finish, up to this long.
+  systemd.services.hermes-agent.serviceConfig.TimeoutStopSec = 1900;
+
+  # Deploy race (seen 2026-10-29): while hermes-agent was stopped, the dashboard
+  # found no gateway and started its own `gateway run --idle-exit`. That stray
+  # held the host lock, so the real unit exited 75 and looped, and the stray ran
+  # outside the unit's cgroup and drain timeout. Hermes looks for a supervising
+  # unit named hermes-gateway.service (hermes_cli/gateway_runtime_service.py
+  # _systemd) and starts a stray only when it finds none. This alias makes it
+  # find one. It cannot verify our unit's identity (EnvironmentFile, ExecStartPre),
+  # so it refuses to start a gateway itself and reports the gateway as
+  # unavailable until the unit is back, which is what we want.
+  systemd.services.hermes-agent.aliases = [ "hermes-gateway.service" ];
   systemd.services.hermes-backend.serviceConfig.ReadWritePaths = [ scratch ];
 
   # POSIX ACLs, because the vault belongs to diego (Syncthing) and the parents
