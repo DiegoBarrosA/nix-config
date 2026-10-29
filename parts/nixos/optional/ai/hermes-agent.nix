@@ -15,19 +15,53 @@ let
   # reads the token (group hermes, mode 0440) at start, so no token is in the store.
   claudeCfg = config.home-manager.users.diego.programs.claude-code-config;
   claudeAccounts = lib.filterAttrs (_: p: p.tokenFile != null) claudeCfg.profiles;
-  claudeWrapper =
-    name: p:
-    pkgs.writeShellScriptBin "hermes-claude-${name}" ''
+  # Same declared setup as diego's, reused from his evaluated home-manager
+  # config: plugins and MCP servers for Claude, opencode.json for opencode.
+  # The github server is left out: Hermes has its own read-only GitHub MCP and
+  # keeps GH_TOKEN out of every shell on purpose.
+  hmDiego = config.home-manager.users.diego;
+  mcpServers = removeAttrs (
+    hmDiego.programs.mcp-config.standardFormat.mcpServers // claudeCfg.extraMcpServers
+  ) [ "github" ];
+  claudeSettings = pkgs.writeText "hermes-claude-settings.json" (
+    builtins.toJSON { inherit (claudeCfg) enabledPlugins extraKnownMarketplaces; }
+  );
+  claudeMcp = pkgs.writeText "hermes-claude-mcp.json" (builtins.toJSON { inherit mcpServers; });
+  # The MCP servers read their credentials from env vars, which diego's shell
+  # fills from /run/secrets (cli/mcp.nix). The wrappers do the same here; the
+  # secrets are group-readable by hermes (see sops.secrets below).
+  mcpEnv = lib.filterAttrs (
+    n: _: lib.any (p: lib.hasPrefix p n) [ "WORK_" "JIRA_" "CONFLUENCE_" "JSM_" "TRELLO_" "TEMPO_" ]
+  ) (inputs.private-config.workSecretEnv or { });
+  exportMcpEnv = lib.concatStringsSep "\n" (
+    lib.mapAttrsToList (
+      n: path: ''[ -r ${path} ] && export ${n}="$(${pkgs.coreutils}/bin/tr -d '[:space:]' < ${path})"''
+    ) mcpEnv
+  );
+  agyPackage =
+    (import inputs.nixpkgs-acp {
+      system = pkgs.stdenv.hostPlatform.system;
+      config.allowUnfree = true;
+    }).antigravity-cli;
+  # bin is the command name, exe what it runs. The same token logic serves the
+  # ACP wrapper (delegate_task) and the plain CLI (Hermes's claude-code skill).
+  claudeBin =
+    bin: exe: extraArgs: name: p:
+    pkgs.writeShellScriptBin bin ''
       token="$(${pkgs.coreutils}/bin/tr -d '[:space:]' < ${lib.escapeShellArg p.tokenFile} 2>/dev/null || true)"
       if [ -z "$token" ]; then
-        echo "hermes-claude-${name}: token file ${p.tokenFile} missing, empty or unreadable by $(${pkgs.coreutils}/bin/id -un)" >&2
+        echo "${bin}: token file ${p.tokenFile} missing, empty or unreadable by $(${pkgs.coreutils}/bin/id -un)" >&2
         exit 1
       fi
       export CLAUDE_CODE_OAUTH_TOKEN="$token"
       export CLAUDE_CONFIG_DIR=${cfg.stateDir}/claude/${name}
       ${pkgs.coreutils}/bin/mkdir -p "$CLAUDE_CONFIG_DIR"
-      exec ${claudeCfg.acpPackage}/bin/claude-agent-acp "$@"
+      ${exportMcpEnv}
+      exec ${exe} ${extraArgs} "$@"
     '';
+  claudeWrapper = name: claudeBin "hermes-claude-${name}" "${claudeCfg.acpPackage}/bin/claude-agent-acp" "" name;
+  claudeCliArgs = "--settings ${claudeSettings} --mcp-config ${claudeMcp}";
+  claudeCli = name: claudeBin "claude-${name}" "${pkgs.claude-code}/bin/claude" claudeCliArgs name;
 in
 {
   imports = [ inputs.hermes-agent.nixosModules.default ];
@@ -108,19 +142,66 @@ in
       exec ${cfg.package}/bin/hermes --tui "$@"
     '')
   ]
-  ++ lib.mapAttrsToList claudeWrapper claudeAccounts;
+  ++ lib.mapAttrsToList claudeWrapper claudeAccounts
+  ++ lib.mapAttrsToList claudeCli claudeAccounts
+  # Hermes skills look for `claude` and `opencode` on PATH. Bare opencode exports
+  # OPENCODE_API_KEY from the shared opencode-api-key secret; bare claude is personal.
+  ++ [
+    (pkgs.writeShellScriptBin "opencode" ''
+      key="$(${pkgs.coreutils}/bin/tr -d '[:space:]' < /run/secrets/opencode-api-key 2>/dev/null || true)"
+      if [ -z "$key" ]; then
+        echo "opencode: /run/secrets/opencode-api-key missing, empty or unreadable by $(${pkgs.coreutils}/bin/id -un)" >&2
+        exit 1
+      fi
+      export OPENCODE_API_KEY="$key"
+      export OPENCODE_CONFIG=${hmDiego.xdg.configFile."opencode/opencode.json".source}
+      ${exportMcpEnv}
+      exec ${pkgs.opencode}/bin/opencode "$@"
+    '')
+  ]
+  ++ lib.optional (claudeAccounts ? personal) (claudeBin "claude" "${pkgs.claude-code}/bin/claude" claudeCliArgs "personal" claudeAccounts.personal)
+  ++ [
+    # Antigravity CLI for Hermes. The Google login is manual, done once as the
+    # hermes user (sudo -u hermes hermes-agy), and lives in agyHome, which sits
+    # under the persisted /var/lib/hermes. Hermes runs it as a shell command:
+    # hermes-agy -p "task" --output-format json
+    (pkgs.writeShellScriptBin "hermes-agy" ''
+      export HOME=${cfg.stateDir}/agy
+      ${pkgs.coreutils}/bin/mkdir -p "$HOME"
+      exec ${agyPackage}/bin/agy "$@"
+    '')
+  ];
 
-  # Names only, no secrets. Read by Hermes (or Diego) to pick an account.
-  environment.etc."hermes/claude-accounts.md".text =
+  # Tells Hermes which coding agents exist. The module installs this into the
+  # working directory, where Hermes reads it as project context. Names only, no secrets.
+  # workingDirectory is pinned to the module default so `documents` accepts it.
+  services.hermes-agent.workingDirectory = "/var/lib/hermes/workspace";
+  services.hermes-agent.documents."AGENTS.md" =
     ''
-      # Claude accounts for Hermes
+      # Coding agents on this host
 
-      To use account X, call delegate_task with acp_command set to its wrapper.
+      Run them from the terminal tool. Each account uses its own login and config.
 
+      ## Claude Code (one command per account)
+      - `claude -p "task"` is the personal account.
     ''
-    + lib.concatMapStrings (n: "- ${n}: /run/current-system/sw/bin/hermes-claude-${n}\n") (
-      lib.attrNames claudeAccounts
-    );
+    + lib.concatMapStrings (n: "- `claude-${n} -p \"task\"`\n") (lib.attrNames claudeAccounts)
+    + ''
+      - To delegate through ACP instead, call delegate_task with acp_command set to
+        `/run/current-system/sw/bin/hermes-claude-<name>`.
+      - Pick the account by name. The names are the client or purpose each account belongs to.
+
+      ## Antigravity (Google)
+      - `hermes-agy -p "task" --output-format json`
+
+      ## OpenCode
+      - `opencode run --model opencode-go/<model> "task"`. List models with `opencode models`.
+        Use the paid `opencode-go/...` models. Free `opencode/...` models
+        can hit the free-tier cap and hang.
+
+      ## Not installed
+      - Codex CLI.
+    '';
 
   security.sudo.extraRules = [
     {
@@ -131,9 +212,24 @@ in
           command = "/run/current-system/sw/bin/hermes-tui";
           options = [ "NOPASSWD" ];
         }
+        {
+          command = "/run/current-system/sw/bin/hermes-agy";
+          options = [ "NOPASSWD" ];
+        }
       ];
     }
   ];
+
+  # The MCP secrets are owned by diego (group users, 0400). Hermes's wrappers
+  # read them, so give group hermes read access. Names come from the same
+  # secretEnv map as diego's shell, so the two stay in step.
+  sops.secrets = lib.mapAttrs' (
+    _: path:
+    lib.nameValuePair (baseNameOf path) {
+      group = lib.mkForce "hermes";
+      mode = lib.mkForce "0440";
+    }
+  ) mcpEnv;
 
   # System git config, applied because the service HOME is /var/lib/hermes
   # (no ~/.gitconfig). Identity only: git in the shell has no GitHub

@@ -221,7 +221,11 @@ with lib;
     secrets."hermes-dashboard-secret" = { };
     secrets."hermes-nvidia-api-key" = { };
     # Same value as rubi's opencode-api-key (Zen and Go share one key).
-    secrets."opencode-api-key" = { };
+    # Group hermes can read it so the `opencode` wrapper in hermes-agent.nix can export it.
+    secrets."opencode-api-key" = {
+      group = "hermes";
+      mode = "0440";
+    };
     secrets."telegram-user-id" = { };
     secrets."telegram-bot-token" = { };
     secrets."hermes-github-token" = { };

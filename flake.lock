@@ -5,11 +5,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1793293484,
-        "narHash": "sha256-4aRmsWqXNKJ749J9lo5jYYbRj20twKYfKuhW2mB85aI=",
+        "lastModified": 1793298662,
+        "narHash": "sha256-dUBAN0K3uNbhOYrov8E3Pjyo0D8/xbkT8LTy8KK3Vow=",
         "owner": "DiegoBarrosA",
         "repo": "nix-ai-tooling",
-        "rev": "ebda979e50248c145a41496d2d99a18ae15997a4",
+        "rev": "bef47abb14f5b47e3d8d2bcfcb2523e0d8a38f3f",
         "type": "github"
       },
       "original": {
@@ -1070,11 +1070,11 @@
         "trello-cloud-mcp": "trello-cloud-mcp"
       },
       "locked": {
-        "lastModified": 1793297101,
-        "narHash": "sha256-3BCXjexxzvgdVC7eNhlfoTRd0n+qil5KHDH9n+bguUk=",
+        "lastModified": 1793298790,
+        "narHash": "sha256-hVEvELOcKzUaWcZvamJG/RsjyuEQ1VFImF3GV7tIMSY=",
         "ref": "employer-cleanup",
-        "rev": "4d9886a8da7e1b0248b837672598014b4b24bd6b",
-        "revCount": 128,
+        "rev": "16f358dc48aeb2365bc6cf90a3090a83df77301a",
+        "revCount": 130,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/nix-private-config.git"
       },

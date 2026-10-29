@@ -109,6 +109,26 @@ in
       };
   };
 
+  # opencode and Antigravity accounts from the private repo (none until declared).
+  # Hermes wrappers for them are not generated yet: Task 1 spikes pending.
+  programs.agent-accounts =
+    let
+      acp = import inputs.nixpkgs-acp {
+        system = pkgs.stdenv.hostPlatform.system;
+        config.allowUnfree = true;
+      };
+      accounts = privateConfig.workAccounts or { };
+    in
+    {
+      opencodePackage = pkgs.opencode;
+      antigravityCliPackage = acp.antigravity-cli;
+      antigravityAcpPackage = acp.antigravity-acp;
+      opencode = lib.mapAttrs (
+        _: a: { keyFile = a.tokenFile; } // lib.optionalAttrs (a.envVar != null) { envVar = a.envVar; }
+      ) (accounts.opencode or { });
+      antigravity = lib.mapAttrs (_: a: { keyFile = a.tokenFile; }) (accounts.antigravity or { });
+    };
+
 
   home.packages = (with pkgs; [
     uv
