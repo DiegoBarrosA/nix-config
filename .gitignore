@@ -147,7 +147,6 @@ node_modules/
 
 .claude/
 .cursor/
-docs/superpowers/
 
 home/diego/secrets/
 **/mcp-env.nu
