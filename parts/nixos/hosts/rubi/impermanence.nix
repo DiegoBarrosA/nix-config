@@ -34,6 +34,8 @@
 
       "/var/lib/cups"
 
+      "/var/lib/docker"
+
       "/var/lib/pipewire"
 
       "/var/lib/lockdown"
