@@ -5,7 +5,7 @@ It is written for the `cobalto` host.
 
 ---
 
-## Phase 0 — Pre-flight Checks
+## Phase 0: Pre-flight Checks
 
 ### 0.1 Library inventory
 
@@ -64,7 +64,7 @@ rm "$TEST_OUT"
 
 ---
 
-## Phase 1 — Physical Move (downtime window, ~15 minutes)
+## Phase 1: Physical Move (downtime window, ~15 minutes)
 
 Stop all media services first:
 
@@ -122,7 +122,7 @@ sudo chown -R media:media /nix/storage/{tdarr,qbittorrent,jellyseerr}
 
 ---
 
-## Phase 2 — NixOS Switch
+## Phase 2: NixOS Switch
 
 Deploy the new configuration (contains all new service modules, media user, /srv/media paths, nginx vhosts):
 
@@ -145,7 +145,7 @@ After switch:
 
 ---
 
-## Phase 3 — Post-switch Reconfiguration
+## Phase 3: Post-switch Reconfiguration
 
 ### 3.1 qBittorrent first login
 
@@ -227,7 +227,7 @@ Confirm quality profiles appear in Sonarr/Radarr.
 
 ---
 
-## Phase 4 — Tdarr Migration (Continuous Transcoding)
+## Phase 4: Tdarr Migration (Continuous Transcoding)
 
 ### 4.1 Configure migration plugin flow
 
