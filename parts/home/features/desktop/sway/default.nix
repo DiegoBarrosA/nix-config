@@ -12,25 +12,31 @@
       inherit (config) fontProfiles;
       cursorName = config.stylix.cursor.name;
       cursorSize = toString config.stylix.cursor.size;
-      # Fixed named workspaces on 1, 2 and 3 (Web, Files, Agents). The rest are plain numbers.
+      # Fixed named workspaces on 1 to 4 (Web, Files, Agents, Notes). The rest are plain numbers.
       workspaces = {
         "1" = {
           name = "Web";
-          app = "firefox";
+          app = "zen-beta";
           key = "f";
-          launch = "firefox-esr";
+          launch = "zen-beta";
         };
         "2" = {
           name = "Files";
           app = "files";
           key = "e";
-          launch = "alacritty --class files -e yazi";
+          launch = "alacritty --class files -e superfile";
         };
         "3" = {
           name = "Agents";
           app = "zellij-agents";
           key = "a";
           launch = "alacritty --class zellij-agents -e zellij attach --create agents";
+        };
+        "4" = {
+          name = "Notes";
+          app = "md.obsidian.Obsidian";
+          key = "n";
+          launch = "obsidian";
         };
       };
 
@@ -42,7 +48,8 @@
         shift 2
         LAUNCH_CMD="$@"
 
-        WINDOW_EXISTS=$(swaymsg -t get_tree | jq -r ".. | objects | select(.app_id == \"$APP_ID\" or .class == \"$APP_ID\") | .id" 2>/dev/null | head -1)
+        # APP_ID is a regex, same as sway criteria, so one entry can match several app_ids.
+        WINDOW_EXISTS=$(swaymsg -t get_tree | jq -r --arg id "$APP_ID" '.. | objects | select(((.app_id // "") | test("^(" + $id + ")$")) or ((.window_properties.class // "") | test("^(" + $id + ")$"))) | .id' 2>/dev/null | head -1)
 
         if [ -n "$WINDOW_EXISTS" ]; then
             swaymsg "[con_id=\"$WINDOW_EXISTS\"] focus"
@@ -59,7 +66,7 @@
         pkgs.writeShellScriptBin "session-apps" ''
           #!/usr/bin/env bash
           ${lib.concatMapStringsSep "\nsleep 1.5\n" (
-            e: "launch-or-focus ${e.value.app} ${e.value.name} ${e.value.launch}"
+            e: "launch-or-focus ${lib.escapeShellArg e.value.app} ${e.value.name} ${e.value.launch}"
           ) ordered}
 
           sleep 1.5
@@ -98,7 +105,7 @@
           "Mod4+Shift+e          power menu" \
           "Mod4+Escape           lock" \
           "Mod4+1..0             go to workspace number" \
-          "Mod4+f/e/a            launch or focus: Web (firefox)/Files (yazi)/Agents (zellij)" \
+          "Mod4+f/e/a/n          launch or focus: Web (zen)/Files (superfile)/Agents (zellij)/Notes (obsidian)" \
           | ${config.launcher.dmenu} --require-match false --prompt-text "keys"
       '';
 
@@ -259,7 +266,7 @@
       };
 
       imports = with top.config.flake.modules.homeManager; [
-        desktop-sway-i3status-rust
+        desktop-sway-waybar
         desktop-sway-overview
         desktop-sway-kanshi
         desktop-sway-mako
@@ -597,7 +604,7 @@
               ) (map toString (lib.range 1 10))
             )
             // lib.mapAttrs' (
-              _: v: lib.nameValuePair "Mod4+${v.key}" "exec launch-or-focus ${v.app} ${v.name} ${v.launch}"
+              _: v: lib.nameValuePair "Mod4+${v.key}" "exec launch-or-focus ${lib.escapeShellArg v.app} ${v.name} ${v.launch}"
             ) workspaces;
 
             modes = {
@@ -620,7 +627,7 @@
             titlebar_border_thickness 0
             titlebar_padding 0 0
 
-            output * bg /home/diego/Pictures/Wallpapers/ashish-kumar-senapati-uqHSe-zZN4A-unsplash.jpg fill
+            output * bg #${colors.base00} solid_color
             default_border pixel ${toString config.desktop.borderWidth}
 
             bindgesture swipe:4:left workspace prev

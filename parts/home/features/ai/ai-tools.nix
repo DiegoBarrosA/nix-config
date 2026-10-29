@@ -15,15 +15,6 @@
 
   home.packages = [ pkgs.pi-coding-agent ];
 
-  programs.claude-code-config.extraMcpServers."jira-dc" = {
-    command = "${customPkgs.jira-data-center-mcp}/bin/jira-data-center-mcp";
-    env = {
-      BASE_URL = "\${JIRA_DC_BASE_URL}";
-      EMAIL = "\${JIRA_DC_EMAIL}";
-      API_KEY = "\${JIRA_DC_API_KEY}";
-    };
-  };
-
   programs.claude-code-config = {
     # Impeccable agents
     extraAgentSources = [ "${inputs.impeccable}/.claude/agents" ];
@@ -48,6 +39,10 @@
   programs.claude-code-config.profiles = {
     personal = { };
     sr = {
+      # Same MCP set as the default profile (mirrors the module's own merge).
+      mcpServers =
+        config.programs.mcp-config.standardFormat.mcpServers
+        // config.programs.claude-code-config.extraMcpServers;
       enabledPlugins."obsidian@obsidian-skills" = true;
       extraKnownMarketplaces."obsidian-skills".source = {
         source = "github";

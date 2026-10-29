@@ -12,13 +12,13 @@
 }:
 let
   isGnome = desktop == "gnome";
-  isKde = desktop == "kde";
 in
 {
   imports = with top.config.flake.modules.homeManager; [
     desktop-common-font
+    desktop-common-alacritty
     desktop-common-stylix
-    desktop-common-firefox
+    desktop-common-zen
     desktop-common-playerctl
     desktop-common-mime
     desktop-common-syncthing
