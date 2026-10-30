@@ -48,10 +48,6 @@
     };
   };
 
-  # Off by default in every client (jira-dc, netsuite, trello are already
-  # disabled in the private config).
-  programs.mcp.servers.jsm-forms.enabled = false;
-
   # Work secrets for the Jira/Confluence/Tempo/JSM/Trello MCPs, sourced by
   # nushell (cli/nushell.nix). Generated from the private repo's secretEnv so
   # new instances/secrets appear here without hand-editing. Prefix filter keeps

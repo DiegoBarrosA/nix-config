@@ -604,22 +604,6 @@
         "url": "ssh://git@github.com/DiegoBarrosA/jira-data-center-mcp.git"
       }
     },
-    "jira-service-management-forms-mcp": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1783712036,
-        "narHash": "sha256-5l5jyfUJajVW29pHqErVxvtwT7ngwDvzdlxh6Sc8Y4M=",
-        "ref": "refs/heads/main",
-        "rev": "6f6d18ab59a6bdcece85af75b98487157d564042",
-        "revCount": 6,
-        "type": "git",
-        "url": "ssh://git@bitbucket.org/example-org/jira-service-management-forms-mcp.git"
-      },
-      "original": {
-        "type": "git",
-        "url": "ssh://git@bitbucket.org/example-org/jira-service-management-forms-mcp.git"
-      }
-    },
     "llm-agents": {
       "inputs": {
         "bun2nix": "bun2nix",
@@ -1080,18 +1064,17 @@
         "confluence-cloud-mcp": "confluence-cloud-mcp",
         "jira-cloud-mcp": "jira-cloud-mcp",
         "jira-data-center-mcp": "jira-data-center-mcp",
-        "jira-service-management-forms-mcp": "jira-service-management-forms-mcp",
         "netsuite-mcp": "netsuite-mcp",
         "nixpkgs": "nixpkgs_7",
         "tempo-mcp-server": "tempo-mcp-server",
         "trello-cloud-mcp": "trello-cloud-mcp"
       },
       "locked": {
-        "lastModified": 1793305483,
-        "narHash": "sha256-P4qx8MIPoDM21GI/tOvSAgcqFxB0qAL3eMMGyAtHo8w=",
+        "lastModified": 1793323039,
+        "narHash": "sha256-oi7DIlSvZWR1aSY4EEYP84iPHYba9vETBSizwncJTCE=",
         "ref": "employer-cleanup",
-        "rev": "fdf6c8f49d901310fb56bbd6617291fb819502da",
-        "revCount": 131,
+        "rev": "100ccedb7a43e61461a021cbdf8706e9dc484995",
+        "revCount": 132,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/nix-private-config.git"
       },
