@@ -27,7 +27,7 @@
         desktop-sway
         desktop-zennotes-theme
         ai
-      ];
+      ] ++ lib.optional (privateConfig.homeManagerModules.personalMcpConfig or null != null) privateConfig.homeManagerModules.personalMcpConfig;
 
       home.packages = [
         customPkgs.coderabbit-cli
