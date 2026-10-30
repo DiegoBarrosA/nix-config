@@ -41,7 +41,7 @@ with the dendritic pattern. This file is the source of truth for coding agents. 
 - A failed unit during activation rolls back the whole deploy, even if the unit is unrelated.
 - Do not move the `nixpkgs` pin on cobalto. It must match the Jellyfin database. Add a second pin for a newer package (see `nixpkgs-acp`).
 - This repo has no workflows: its Actions logs would be public. The CI deploy lives in the private repo (`nix-private-config`, workflow `deploy-cobalto`).
-  Diego starts it with `gh workflow run deploy-cobalto -R DiegoBarrosA/nix-private-config`, so a merge to `main` does not deploy by itself.
+  Diego starts it with `gh workflow run deploy-cobalto.yml -R DiegoBarrosA/nix-private-config`, so a merge to `main` does not deploy by itself.
   It does not wait for Hermes. A deploy restarts Hermes, so a task running at that moment loses its current step: resume it with `--resume`.
 - Do not add `.github/workflows/` here. If a check is needed, run it in the private repo.
 
