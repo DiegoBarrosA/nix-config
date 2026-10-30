@@ -52,8 +52,6 @@
     media-sonarr
     media-radarr
     media-lidarr
-    media-calibre
-    media-lazylibrarian
     media-bazarr
     media-transmission
 

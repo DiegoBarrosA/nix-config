@@ -7,7 +7,6 @@
   system.activationScripts.cobalto-storage = {
     text = ''
       mkdir -p /nix/storage/{run/secrets,secrets,llm,syncthing,tdarr,qbittorrent,jellyseerr,jellyfin,homepage}
-      mkdir -p /nix/storage/lazylibrarian
       mkdir -p /srv/media/library/{movies,series,music,books}
       mkdir -p /srv/media/downloads/{complete,incomplete}
       mkdir -p /srv/media/{Incoming,Documents,Obsidian,Repos,Archive,Pictures}
@@ -23,9 +22,6 @@
       chown -R media:media /nix/storage/jellyfin
       chown -R media:media /nix/storage/homepage
       chown -R media:media /nix/storage/llm
-      # lazylibrarian runs as media:media and refuses to start if its datadir
-      # is not writable.
-      chown -R media:media /nix/storage/lazylibrarian
 
       # zennotes serves this vault as uid 1000 (diego), but the blanket
       # "chown -R media:media /srv/media" above would otherwise lock it out.
