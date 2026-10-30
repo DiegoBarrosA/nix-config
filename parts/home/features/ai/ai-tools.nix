@@ -37,7 +37,10 @@
   # Extra profiles: ~/.config/claude-code-<name>, launched via claude-<name>.
   # They do not inherit the default profile's MCP servers.
   programs.claude-code-config.profiles = {
-    personal = { };
+    # Plugins are per profile too, so repeat the default set here.
+    personal = {
+      inherit (config.programs.claude-code-config) enabledPlugins extraKnownMarketplaces;
+    };
     sr = {
       # Same MCP set as the default profile (mirrors the module's own merge).
       mcpServers =
@@ -56,6 +59,12 @@
 
   # Antigravity
   programs.antigravity-config.enable = true;
+
+  # MCP servers
+  programs.mcp-config = {
+    enable = true;
+    xContext.enable = true;
+  };
 
   # Skills
   programs.ai-skills = {
