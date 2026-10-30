@@ -200,20 +200,6 @@
             };
           }
           {
-            "LazyLibrarian" = {
-              icon = "mdi-book-open";
-              href = "http://lazylibrarian.minerales.network";
-              description = "Book automation";
-            };
-          }
-          {
-            "Calibre-Web" = {
-              icon = "mdi-book-multiple";
-              href = "http://calibre.minerales.network";
-              description = "Ebook library & reader";
-            };
-          }
-          {
             "Bazarr" = {
               icon = "mdi-subtitles";
               href = "http://bazarr.minerales.network";

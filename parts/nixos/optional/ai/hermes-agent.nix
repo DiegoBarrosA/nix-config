@@ -204,6 +204,13 @@ in
       }
     ];
 
+    # Code work goes through the claude-<name> CLI, never through Hermes's own
+    # subagents. A free NIM model drove delegate_task into a failed handover on
+    # 2026-10-29. Lists in settings replace the live ones on deploy, so this is
+    # applied even though config.yaml is merged. Terminal and file tools stay:
+    # this does not stop a shell edit, only the AGENTS.md rules do that.
+    settings.agent.disabled_toolsets = [ "delegation" "code_execution" ];
+
     backend.mode = "dashboard";
 
 
@@ -251,7 +258,8 @@ in
         exit 1
       fi
       export OPENCODE_API_KEY="$key"
-      export OPENCODE_CONFIG=${hmDiego.xdg.configFile."opencode/opencode.json".source}
+      # The task runner passes its own config (models pinned to the task's model).
+      export OPENCODE_CONFIG="''${OPENCODE_CONFIG:-${hmDiego.xdg.configFile."opencode/opencode.json".source}}"
       ${exportMcpEnv}
       exec ${pkgs.opencode}/bin/opencode "$@"
     '')
@@ -281,7 +289,8 @@ in
 
       - You are the dispatcher. You do not write code. Never edit, create or delete files in a repo yourself.
       - Never use delegate_task or execute_code to change code. Use a coding agent from the list below.
-      - Start every code task in a fresh session.
+      - Start every code task in a fresh session. Send /new first. A /model switch is kept across
+        restarts and sticks to the session, and /new clears it.
       - If a command fails twice with the same error, stop and tell Diego. Do not retry it again.
       - If every model you can use is rate limited, say so and stop. Do not go on with a weaker model.
       - Never push to a default branch. Never merge. The coding agent opens a PR. Diego merges.
@@ -291,8 +300,11 @@ in
       1. Pick the account by repo owner (see Git access). Personal repos use `claude-personal`.
          Work repos use the account named for the client.
       2. Make a worktree. Do not touch the main checkouts in /var/lib/hermes/workspace.
+         The base is the branch Diego names. If he names none, use the default branch:
+         `git -C /var/lib/hermes/workspace/<repo> symbolic-ref --short refs/remotes/origin/HEAD`
+         Never assume origin/main.
          `git -C /var/lib/hermes/workspace/<repo> fetch origin`
-         `git -C /var/lib/hermes/workspace/<repo> worktree add /var/lib/hermes/workspace/wt/<repo>-<slug> -b hermes/<date>-<slug> origin/main`
+         `git -C /var/lib/hermes/workspace/<repo> worktree add /var/lib/hermes/workspace/wt/<repo>-<slug> -b hermes/<date>-<slug> <base>`
       3. Run the agent from inside the worktree, in the background, and save its JSON output in
          /var/lib/hermes/workspace/runs/. Command shape:
          `claude-<name> -p "<task>" --output-format json --permission-mode acceptEdits --max-budget-usd 3`
@@ -306,6 +318,37 @@ in
       7. If a run ends with a question, send the question to Diego, then resume with his answer.
       8. If a run fails or stops, report what the JSON says. Do not finish the work yourself.
 
+      ## Long jobs while Diego is away (task inbox)
+
+      For a long job on a public or personal repo, do not start an agent yourself. Write a task file to
+      /srv/media/Obsidian/obsidiana/Hermes/inbox/<slug>.md. A timer on this host starts it within 10 minutes
+      and runs it step by step with opencode. It survives a reboot. You only report. Read
+      /srv/media/Obsidian/obsidiana/Hermes/<slug>-status.md when Diego asks how it is going.
+      Work and customer repos do not use the inbox yet: use the code task flow above.
+
+      ```
+      ---
+      repo: owner/name           # a GitHub repo
+      base: feature-branch       # optional: omit it to use the default branch
+      sensitivity: public        # or personal
+      approved: true             # the runner refuses a task that is not approved
+      models: [opencode-go/kimi-k3]
+      max_attempts_per_step: 2
+      steps:
+        - id: build
+          prompt: "What to do in this step."
+          check: "nix flake check --no-build"   # the step is done only when this passes
+          timeout_min: 40
+      ---
+      Context for every step: goal, constraints, files to read first.
+      ```
+
+      - Take model names from `opencode models`. Models in one opencode-go list share one quota, so a
+        second opencode-go model does not help when the first is limited. Add a model from another
+        provider only if Diego names one.
+      - The slug and step ids use only a to z, 0 to 9 and hyphens.
+      - If the status file says blocked, limited or failed, tell Diego what it says. Do not retry it yourself.
+
       ## Tools
 
       ## Claude Code (one command per account)
@@ -313,8 +356,6 @@ in
     ''
     + lib.concatMapStrings (n: "- `claude-${n} -p \"task\"`\n") (lib.attrNames claudeAccounts)
     + ''
-      - To delegate through ACP instead, call delegate_task with acp_command set to
-        `/run/current-system/sw/bin/hermes-claude-<name>`.
       - Pick the account by name. The names are the client or purpose each account belongs to.
 
       ## Antigravity (Google)
@@ -441,7 +482,7 @@ in
     script = ''
       set -eu
       setfacl -m u:${cfg.user}:--x /srv/media /srv/media/Obsidian
-      install -d -o diego -g users -m 0775 ${scratch}
+      install -d -o diego -g users -m 0775 ${scratch} ${scratch}/inbox
       setfacl -R -m u:${cfg.user}:rX ${vault}
       find ${vault} -type d -exec setfacl -m d:u:${cfg.user}:rX {} +
       setfacl -R -m u:${cfg.user}:rwX,u:diego:rwX ${scratch}

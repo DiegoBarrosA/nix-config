@@ -233,7 +233,6 @@
     "d /nix/storage/servarr/radarr 0755 root root -"
     "d /nix/storage/servarr/lidarr 0755 root root -"
     "d /nix/storage/servarr/bazarr 0755 root root -"
-    "d /nix/storage/lazylibrarian 0755 root root -"
 
     "d /srv/media 0755 root media -"
     "d /srv/media/library 0750 media media -"
@@ -395,7 +394,6 @@
 
         mkdir -p /nix/storage/servarr/{prowlarr,sonarr,radarr,lidarr,bazarr}
         mkdir -p /nix/storage/{tdarr,qbittorrent,jellyseerr}
-        mkdir -p /nix/storage/lazylibrarian
 
         mkdir -p /nix/storage/llm-services/text-generation-webui
 

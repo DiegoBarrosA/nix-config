@@ -154,14 +154,6 @@ in
         locations."/" = standardProxy 8686;
       };
 
-      "lazylibrarian.minerales.network" = withSSL "lazylibrarian" {
-        locations."/" = standardProxy 5299;
-      };
-
-      "calibre.minerales.network" = withSSL "calibre" {
-        locations."/" = standardProxy 8083;
-      };
-
       "bazarr.minerales.network" = withSSL "bazarr" {
         locations."/" = standardProxy 6767;
       };

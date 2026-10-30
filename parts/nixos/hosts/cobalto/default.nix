@@ -52,8 +52,6 @@
     media-sonarr
     media-radarr
     media-lidarr
-    media-calibre
-    media-lazylibrarian
     media-bazarr
     media-transmission
 
@@ -82,6 +80,7 @@
 
     ai-opencode-server
     ai-hermes-agent
+    ai-hermes-tasks
 
     apps-zennotes
 
