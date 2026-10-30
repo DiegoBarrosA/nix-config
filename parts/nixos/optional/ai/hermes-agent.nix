@@ -326,17 +326,24 @@ in
       /srv/media/Obsidian/obsidiana/Hermes/<slug>-status.md when Diego asks how it is going.
       Work and customer repos do not use the inbox yet: use the code task flow above.
 
+      Approval: the first step runs by itself and must not change the repo. Make it the spec step and tell
+      it to write the spec to .hermes/SPEC.md. Every later step waits until Diego approves. You cannot approve:
+      approvals are files in the vault folder AI/Approvals, which you cannot write, and an approval holds only
+      for the exact task it names. Do not add an approved field and do not edit a task after Diego approves it.
+      When the status file says waiting, show Diego the spec and tell him to follow the steps in that file.
+
       ```
       ---
       repo: owner/name           # a GitHub repo
       base: feature-branch       # optional: omit it to use the default branch
       sensitivity: public        # or personal
-      approved: true             # the runner refuses a task that is not approved
       models: [opencode-go/kimi-k3]
       max_attempts_per_step: 2
       steps:
-        - id: build
-          prompt: "What to do in this step."
+        - id: spec
+          prompt: "Read the repo and write a spec for the goal to .hermes/SPEC.md. Change nothing else."
+        - id: build                # waits for Diego's approval
+          prompt: "Build what the approved spec says."
           check: "nix flake check --no-build"   # the step is done only when this passes
           timeout_min: 40
       ---
@@ -482,7 +489,7 @@ in
     script = ''
       set -eu
       setfacl -m u:${cfg.user}:--x /srv/media /srv/media/Obsidian
-      install -d -o diego -g users -m 0775 ${scratch} ${scratch}/inbox
+      install -d -o diego -g users -m 0775 ${scratch} ${scratch}/inbox ${vault}/AI/Approvals
       setfacl -R -m u:${cfg.user}:rX ${vault}
       find ${vault} -type d -exec setfacl -m d:u:${cfg.user}:rX {} +
       setfacl -R -m u:${cfg.user}:rwX,u:diego:rwX ${scratch}

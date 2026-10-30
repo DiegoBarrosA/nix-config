@@ -31,6 +31,8 @@ in
       HERMES_TASK_ROOT = cfg.workingDirectory;
       HERMES_TASK_INBOX = "${scratch}/inbox";
       HERMES_TASK_STATUS_DIR = scratch;
+      # Diego writes approvals here. Hermes can read the vault but writes only under Hermes/.
+      HERMES_TASK_APPROVALS = "${vault}/AI/Approvals";
       # Base for the per-run opencode config. The host config pins every agent to a free model.
       HERMES_OPENCODE_BASE_CONFIG = "${config.home-manager.users.diego.xdg.configFile."opencode/opencode.json".source}";
     };
@@ -60,7 +62,7 @@ in
 
   systemd.paths.hermes-tasks = {
     wantedBy = [ "multi-user.target" ];
-    pathConfig.PathChanged = "${scratch}/inbox";
+    pathConfig.PathChanged = [ "${scratch}/inbox" "${vault}/AI/Approvals" ];
   };
 
   systemd.timers.hermes-tasks = {

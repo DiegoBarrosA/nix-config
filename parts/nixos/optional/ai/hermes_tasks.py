@@ -7,6 +7,7 @@ goes into cooldown and the next model in the task's list takes over. Handoff bet
 files in <worktree>/.hermes/, because an opencode session cannot move to another provider.
 """
 
+import hashlib
 import json
 import os
 import re
@@ -35,6 +36,13 @@ WORKER_ENV = (
 )
 # Written for the worker, never passed through from the runner's own environment.
 BASE_CONFIG = "HERMES_OPENCODE_BASE_CONFIG"
+# A step that runs before approval must leave the repo untouched. Pushes to a default branch and
+# merges are denied for every step. The patterns catch the usual forms, the token's branch rules
+# are the real wall.
+READONLY = (
+    "This step runs before approval and must not change the repo. Do not edit, create or commit any "
+    "file outside .hermes/. Write your spec or findings to .hermes/SPEC.md."
+)
 HANDOFF = (
     "Handoff rules: read .hermes/PLAN.md and .hermes/PROGRESS.md first if they exist. Before you "
     "stop, append to .hermes/PROGRESS.md what you did, what is left, and the output of any failing "
@@ -79,16 +87,38 @@ def allowed(model, sensitivity):
     return None
 
 
+def task_hash(task):
+    """Identifies one version of a task. An approval holds only for the version it names."""
+    keep = {k: v for k, v in task.items() if k not in ("approved", "scope")}
+    return hashlib.sha256(json.dumps(keep, sort_keys=True, default=str).encode()).hexdigest()[:16]
+
+
+def read_approval(approvals_dir, task):
+    """(scope, why not). The approval is a file Hermes cannot write: <approvals_dir>/<slug>.md."""
+    path = Path(approvals_dir) / f"{task['slug']}.md" if approvals_dir else None
+    if not path or not path.exists():
+        return None, "no approval file yet"
+    try:
+        a = parse_task(path)
+    except (OSError, ValueError, yaml.YAMLError) as e:
+        return None, f"approval file unreadable: {e}"
+    if a.get("approved") is not True:
+        return None, "approval file does not say approved: true"
+    if not str(a.get("scope") or "").strip():
+        return None, "approval file has no scope"
+    if str(a.get("task")) != task_hash(task):
+        return None, "the approval is for a different version of the task"
+    return str(a["scope"]).strip(), ""
+
+
 def validate(task):
-    """First problem in a task file, or None. Approval modes and Claude tiers come later."""
+    """First problem in a task file, or None. Approval is not a field of the task: see read_approval."""
     if not SLUG.match(str(task["slug"])):
         return "slug must match [a-z0-9-], 41 characters at most"
     if not task.get("repo"):
         return "repo is missing"
     if task.get("sensitivity") not in PROVIDERS:
         return "sensitivity must be public or personal (work tasks are not supported yet)"
-    if task.get("approved") is not True:
-        return "approved is not true (the spec-first mode is not built yet)"
     models = task.get("models")
     if not isinstance(models, list) or not models:
         return "models must be a non-empty list"
@@ -162,7 +192,12 @@ def worker_env():
     return {k: os.environ[k] for k in WORKER_ENV if k in os.environ}
 
 
-def worker_config(base, model, dest):
+def deny_rules(protected):
+    rules = ["gh pr merge*", "git push --force*", "git push -f*", "git push* --force*", "git push* -f", "git push* -f *"]
+    return rules + [f"git push*{b}*" for b in sorted(protected) if b]
+
+
+def worker_config(base, model, dest, protected=()):
     """Write an opencode config that pins every model to this task's model.
 
     The host config sets model, small_model and every agent to a free Zen model, and -m only
@@ -172,11 +207,20 @@ def worker_config(base, model, dest):
     for agent in (cfg.get("agent") or {}).values():
         if isinstance(agent, dict):
             agent.pop("model", None)
+    # The last matching rule wins, so the deny rules go last. "ask" is not used: nobody answers it.
+    perm = cfg.get("permission") if isinstance(cfg.get("permission"), dict) else {}
+    bash = perm.get("bash")
+    rules = {"*": bash} if isinstance(bash, str) else dict(bash or {})
+    rules = {"*": "allow", **rules}
+    for pattern in deny_rules(protected):
+        rules.pop(pattern, None)
+        rules[pattern] = "deny"
+    cfg["permission"] = {**perm, "bash": rules}
     write_atomic(dest, json.dumps(cfg))
     return str(dest)
 
 
-def run_worker(model, prompt, cwd, runs_file, session, timeout, idle, on_session):
+def run_worker(model, prompt, cwd, runs_file, session, timeout, idle, on_session, protected=()):
     """Run one opencode call. Returns a dict: rc, session, cost, limited, auth, hang, error."""
     cmd = ["opencode", "run", "-m", model, "--format", "json", "--print-logs", "--log-level", "ERROR",
            "--dir", str(cwd)]
@@ -188,7 +232,7 @@ def run_worker(model, prompt, cwd, runs_file, session, timeout, idle, on_session
     runs_file.parent.mkdir(parents=True, exist_ok=True)
     env = worker_env()
     if os.environ.get(BASE_CONFIG):
-        env["OPENCODE_CONFIG"] = worker_config(os.environ[BASE_CONFIG], model, runs_file.with_suffix(".opencode.json"))
+        env["OPENCODE_CONFIG"] = worker_config(os.environ[BASE_CONFIG], model, runs_file.with_suffix(".opencode.json"), protected)
 
     def handle(line):
         try:
@@ -266,14 +310,21 @@ def ensure_worktree(root, task, state):
         url = task["repo"] if local else f"https://github.com/{task['repo']}.git"
         git("clone", url, str(repo))
     git("fetch", "origin", cwd=repo)
+    try:
+        default = git("symbolic-ref", "--short", "refs/remotes/origin/HEAD", cwd=repo)
+    except RuntimeError:
+        try:
+            git("remote", "set-head", "origin", "-a", cwd=repo)
+            default = git("symbolic-ref", "--short", "refs/remotes/origin/HEAD", cwd=repo)
+        except RuntimeError:
+            default = ""
+    state["default_branch"] = default.removeprefix("origin/")
     if task.get("base"):
         base = "origin/" + str(task["base"]).removeprefix("origin/")
+    elif default:
+        base = default
     else:
-        try:
-            base = git("symbolic-ref", "--short", "refs/remotes/origin/HEAD", cwd=repo)
-        except RuntimeError:
-            git("remote", "set-head", "origin", "-a", cwd=repo)
-            base = git("symbolic-ref", "--short", "refs/remotes/origin/HEAD", cwd=repo)
+        raise RuntimeError("the repo has no origin/HEAD and the task names no base")
     wt = root / "wt" / task["slug"]
     if not wt.exists():
         state.setdefault("branch", "hermes/%s-%s" % (time.strftime("%Y-%m-%d"), task["slug"]))
@@ -286,7 +337,20 @@ def ensure_worktree(root, task, state):
         with open(exclude, "a") as f:
             f.write(".hermes/\n")
     (wt / ".hermes").mkdir(exist_ok=True)
+    state.setdefault("head0", git("rev-parse", "HEAD", cwd=wt))
     return wt
+
+
+def repo_changes(wt, head0):
+    """What a read-only step changed in the worktree, or an empty string. .hermes/ is excluded by git."""
+    out = git("status", "--porcelain", cwd=wt)
+    if git("rev-parse", "HEAD", cwd=wt) != head0:
+        out += "\nnew commits since the worktree was made"
+    return out.strip()
+
+
+class Violation(Exception):
+    pass
 
 
 def notify(text):
@@ -309,8 +373,14 @@ class Task:
         except (OSError, ValueError):
             self.state = {"status": "new", "steps": {}}
 
+    def approval(self):
+        return read_approval(self.cfg.get("approvals"), self.t)
+
+    def protected(self):
+        return {"main", "master", self.state.get("default_branch", "")}
+
     def save(self, status=None, **extra):
-        if status in ("done", "failed", "limited") and status != self.state.get("notified"):
+        if status in ("done", "failed", "limited", "waiting") and status != self.state.get("notified"):
             notify(self.message(status, extra))
             self.state["notified"] = status
         if status:
@@ -320,6 +390,9 @@ class Task:
         self.write_status()
 
     def message(self, status, extra):
+        if status == "waiting":
+            return (f"Hermes task {self.t['slug']}: the first step is done and the next one needs your approval. "
+                    f"How to approve: {self.t['slug']}-status.md")
         s = f"Hermes task {self.t['slug']}: {status}."
         if extra.get("retry_after"):
             s += " Every model is cooling down until " + time.strftime("%H:%M UTC", time.gmtime(extra["retry_after"])) + "."
@@ -342,6 +415,16 @@ class Task:
             extra += "Retry after: %s UTC\n" % time.strftime("%Y-%m-%d %H:%M", time.gmtime(st["retry_after"]))
         if st.get("reason"):
             extra += "Reason: %s\n" % st["reason"]
+        if st["status"] == "waiting":
+            spec = self.cfg["root"] / "wt" / self.t["slug"] / ".hermes" / "SPEC.md"
+            excerpt = spec.read_text()[:3000] if spec.exists() else "(no .hermes/SPEC.md was written)"
+            nxt = next((s["id"] for s in self.t["steps"][1:] if st["steps"].get(s["id"], {}).get("status") != "done"), "")
+            extra += (
+                "\n## Waiting for your approval before step `%s`\n\n"
+                "Why: %s.\n\nTo approve, create `AI/Approvals/%s.md` in the vault. Hermes cannot write there.\n\n"
+                "```\n---\napproved: true\nscope: \"what you allow, in one sentence\"\ntask: %s\n---\n```\n\n"
+                "Editing the task file after you approve voids the approval.\n\n## Spec so far\n\n%s\n"
+            ) % (nxt, st.get("reason") or "no approval", self.t["slug"], task_hash(self.t), excerpt)
         text = (
             "---\ntype: task-status\ntitle: \"%s status\"\n"
             "description: \"Which steps of Hermes task %s are done, on which model, and what blocks it.\"\n"
@@ -361,18 +444,23 @@ class Task:
                 return m
         return None
 
-    def prompt(self, step, rec):
+    def prompt(self, step, rec, scope):
         parts = [self.t["body"], "## Step %s\n%s" % (step["id"], step["prompt"]), HANDOFF]
+        parts.append("Approved scope: %s\nDo only this. If the work needs more, write the question to .hermes/PROGRESS.md and stop." % scope
+                     if scope else READONLY)
         if rec.get("note"):
             parts.append("The last attempt did not pass. What it reported:\n" + rec["note"])
         return "\n\n".join(p for p in parts if p)
 
     def run(self):
         wt = ensure_worktree(self.cfg["root"], self.t, self.state)
+        scope, why = self.approval()
         self.save("running", reason="")
-        for step in self.t["steps"]:
+        for i, step in enumerate(self.t["steps"]):
             rec = self.state["steps"].setdefault(step["id"], {"status": "pending", "attempts": 0})
             while rec["status"] != "done":
+                if i >= 1 and scope is None:
+                    return self.save("waiting", reason=why)
                 if rec["attempts"] >= int(self.t.get("max_attempts_per_step", 2)):
                     rec["status"] = "failed"
                     return self.save("failed", reason=f"step {step['id']} failed {rec['attempts']} times: {rec.get('note', '')[-200:]}")
@@ -380,11 +468,15 @@ class Task:
                 if not model:
                     until = min(self.limits.until(provider(m)) for m in self.t["models"])
                     return self.save("limited", retry_after=until, reason=self.last_note())
-                self.attempt(step, rec, model, wt)
+                try:
+                    self.attempt(step, rec, model, wt, scope)
+                except Violation as v:
+                    rec["status"] = "failed"
+                    return self.save("failed", reason=str(v))
                 self.save()
         return self.save("done", reason="", retry_after=None)
 
-    def attempt(self, step, rec, model, wt):
+    def attempt(self, step, rec, model, wt, scope):
         prov = provider(model)
         resume = rec.get("session") if rec.get("model") == model and self.state.get("inflight") else None
         rec["model"] = model
@@ -398,8 +490,9 @@ class Task:
         self.limits.count(prov)
         n = rec["attempts"] + 1
         res = run_worker(
-            model, self.prompt(step, rec), wt, self.dir / "runs" / f"{step['id']}-{n}-{prov}.jsonl",
-            resume, float(step.get("timeout_min", 30)) * 60, float(step.get("idle_min", 10)) * 60, remember)
+            model, self.prompt(step, rec, scope), wt, self.dir / "runs" / f"{step['id']}-{n}-{prov}.jsonl",
+            resume, float(step.get("timeout_min", 30)) * 60, float(step.get("idle_min", 10)) * 60, remember,
+            self.protected())
         rec["cost"] = rec.get("cost", 0.0) + res["cost"]
         if res["limited"] or res["auth"] or res["hang"]:
             # Not the model's fault in the sense of an attempt: cool the provider and move on.
@@ -421,6 +514,10 @@ class Task:
             rec["attempts"] += 1
             rec["note"] = f"{model} exited {res['rc']}: {res['error']}"
             return
+        if scope is None:
+            changed = repo_changes(wt, self.state["head0"])
+            if changed:
+                raise Violation("step %s changed the repo before approval: %s" % (step["id"], changed[:300]))
         self.limits.ok(prov)
         self.state["notified"] = None
         rec.update(status="done", note="", finished=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
@@ -432,6 +529,7 @@ def main():
         "root": Path(os.environ["HERMES_TASK_ROOT"]),
         "inbox": Path(os.environ["HERMES_TASK_INBOX"]),
         "status_dir": Path(os.environ["HERMES_TASK_STATUS_DIR"]),
+        "approvals": Path(os.environ["HERMES_TASK_APPROVALS"]) if os.environ.get("HERMES_TASK_APPROVALS") else None,
     }
     limits = Limits(cfg["root"] / "limits.json", json.loads(os.environ.get("HERMES_PROVIDER_CAPS", "{}")))
     for f in sorted(cfg["inbox"].glob("*.md")):
@@ -444,6 +542,8 @@ def main():
                 continue
             t = Task(cfg, task, limits)
             if t.state["status"] in ("done", "failed"):
+                continue
+            if t.state["status"] == "waiting" and t.approval()[0] is None:
                 continue
             t.run()
         except Exception as e:  # one bad task must not stop the others

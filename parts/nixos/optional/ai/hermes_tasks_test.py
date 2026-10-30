@@ -26,7 +26,7 @@ class Pure(unittest.TestCase):
 
     def test_rejections(self):
         for kw in (
-            {"approved": False}, {"sensitivity": "work"}, {"slug": "../x"}, {"models": []},
+            {"sensitivity": "work"}, {"slug": "../x"}, {"models": []},
             {"models": ["opencode-go/muse-spark-1.3-contributor"]}, {"models": ["opencode-go/beam-free"]},
             {"models": ["nvidia/nemotron"], "sensitivity": "personal"}, {"models": ["opencode/big-pickle"]},
             {"steps": [{"id": "a", "prompt": "p"}, {"id": "a", "prompt": "p"}]}, {"repo": ""},
@@ -60,6 +60,8 @@ class EndToEnd(unittest.TestCase):
         self.root, self.status, self.log = t / "ws", t / "status", t / "calls.log"
         self.sessions = t / "sessions.log"
         self.configs = t / "configs.log"
+        self.approvals = t / "approvals"
+        self.approvals.mkdir()
         self.root.mkdir(), self.status.mkdir()
         env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
                "GIT_COMMITTER_EMAIL": "t@t", "HOME": str(t), "PATH": f"{t}/bin:" + os.environ["PATH"]}
@@ -82,13 +84,14 @@ class EndToEnd(unittest.TestCase):
         fake = t / "bin" / "opencode"
         fake.write_text(textwrap.dedent(f"""\
             #!{shutil.which("bash")}
-            while [ $# -gt 0 ]; do case "$1" in -m) m="$2"; shift 2;; --dir) d="$2"; shift 2;; -s) s="$2"; shift 2;; *) shift;; esac; done
+            while [ $# -gt 0 ]; do case "$1" in -m) m="$2"; shift 2;; --dir) d="$2"; shift 2;; -s) s="$2"; shift 2;; *) p="$1"; shift;; esac; done
             echo "${{s:-none}}" >> {self.sessions}
             [ -n "$OPENCODE_CONFIG" ] && cat "$OPENCODE_CONFIG" >> {self.configs} && echo >> {self.configs}
             echo "$m" >> {self.log}
             echo '{{"type":"step_start","sessionID":"ses_'"${{m//\\//_}}"'"}}'
             case "$m" in
               a/*) echo '{{"type":"error","sessionID":"ses_x","error":{{"data":{{"message":"slow down","statusCode":429}}}}}}'; exit 1;;
+              r/*|*/r) case "$p" in *"Approved scope"*) echo ok > "$d/out.txt";; esac; echo '{{"type":"step_finish","part":{{"cost":0.01}}}}';;
               h/*) sleep 30;;
               l/*) echo 'timestamp=t level=ERROR run=x message="stream error" providerID=l error.error="AI_APICallError: Go usage limit exceeded"' >&2; sleep 30;;
               d/*) echo '{{"type":"error","sessionID":"ses_x","error":{{"data":{{"message":"key expired","statusCode":401}}}}}}'; exit 1;;
@@ -97,11 +100,17 @@ class EndToEnd(unittest.TestCase):
             """))
         fake.chmod(0o755)
 
-    def run_task(self, **kw):
+    def approve(self, task, scope="do the job", task_hash=None):
+        (self.approvals / f"{task['slug']}.md").write_text(
+            f"---\napproved: true\nscope: \"{scope}\"\ntask: {task_hash or ht.task_hash(task)}\n---\n")
+
+    def run_task(self, approve=True, **kw):
         task = {"slug": "job", "repo": self.origin, "models": ["a/x", "b/y"], "max_attempts_per_step": 2,
                 "steps": [{"id": "s1", "prompt": "p", "check": "test -f out.txt"}], "body": "ctx"}
         task.update(kw)
-        cfg = {"root": self.root, "inbox": self.root, "status_dir": self.status}
+        if approve:
+            self.approve(task)
+        cfg = {"root": self.root, "inbox": self.root, "status_dir": self.status, "approvals": self.approvals}
         lim = ht.Limits(self.root / "limits.json")
         t = ht.Task(cfg, task, lim)
         t.run()
@@ -188,7 +197,7 @@ class EndToEnd(unittest.TestCase):
         inbox.mkdir()
         (inbox / "bad.md").write_text("---\nrepo: x\napproved: false\n---\n")
         (inbox / "good.md").write_text(
-            f"---\nrepo: {self.origin}\nsensitivity: public\napproved: true\nmodels: [opencode-go/m]\n"
+            f"---\nrepo: {self.origin}\nsensitivity: public\napproved: true\nmodels: [opencode-go/r]\n"
             "steps:\n  - id: s1\n    prompt: p\n---\nctx\n")
         os.environ.update(HERMES_TASK_ROOT=str(self.root), HERMES_TASK_INBOX=str(inbox),
                           HERMES_TASK_STATUS_DIR=str(self.status))
@@ -221,6 +230,82 @@ class EndToEnd(unittest.TestCase):
         self.assertNotIn("model", cfg["agent"]["title"])
         self.assertEqual(cfg["agent"]["title"]["prompt"], "p")
         self.assertIn("mcp", cfg)
+
+    TWO = [{"id": "spec", "prompt": "write the spec"}, {"id": "build", "prompt": "build it", "check": "test -f out.txt"}]
+
+    def test_unapproved_task_runs_step_one_then_waits(self):
+        t, _ = self.run_task(approve=False, models=["r/q"], steps=self.TWO)
+        self.assertEqual(t.state["status"], "waiting")
+        self.assertEqual(t.state["steps"]["spec"]["status"], "done")
+        self.assertNotEqual(t.state["steps"].get("build", {}).get("status"), "done")
+        self.assertEqual(self.calls(), ["r/q"])
+        note = (self.status / "job-status.md").read_text()
+        self.assertIn("Waiting for your approval before step `build`", note)
+        self.assertIn(ht.task_hash(t.t), note)
+        self.assertIn("AI/Approvals/job.md", note)
+
+    def test_approval_lets_the_rest_run_and_the_prompt_carries_the_scope(self):
+        t, _ = self.run_task(approve=False, models=["r/q", "b/y"], steps=self.TWO)
+        self.assertEqual(t.state["status"], "waiting")
+        task = t.t
+        self.approve(task, scope="only the build")
+        t2, _ = self.run_task(approve=False, models=["r/q", "b/y"], steps=self.TWO)
+        self.assertEqual(t2.state["status"], "done")
+        self.assertEqual(self.calls(), ["r/q", "r/q"], "step one ran once, then build ran on the first usable model")
+
+    def test_editing_the_task_voids_the_approval(self):
+        task = {"slug": "job", "repo": self.origin, "models": ["r/q"], "steps": self.TWO, "body": "ctx"}
+        self.approve(task)
+        t, _ = self.run_task(approve=False, models=["r/q"], steps=self.TWO, body="edited after approval")
+        self.assertEqual(t.state["status"], "waiting")
+        self.assertIn("different version", t.state["reason"])
+
+    def test_approval_without_scope_does_not_count(self):
+        task = {"slug": "job", "repo": self.origin, "models": ["r/q"], "steps": self.TWO, "body": "ctx", "max_attempts_per_step": 2}
+        (self.approvals / "job.md").write_text(f"---\napproved: true\ntask: {ht.task_hash(task)}\n---\n")
+        t, _ = self.run_task(approve=False, models=["r/q"], steps=self.TWO)
+        self.assertEqual(t.state["status"], "waiting")
+        self.assertIn("no scope", t.state["reason"])
+
+    def test_task_file_cannot_approve_itself(self):
+        t, _ = self.run_task(approve=False, models=["r/q"], steps=self.TWO, approved=True, scope="trust me")
+        self.assertEqual(t.state["status"], "waiting")
+
+    def test_step_one_that_changes_the_repo_fails_the_task(self):
+        t, _ = self.run_task(approve=False, models=["b/y"], steps=[{"id": "spec", "prompt": "p"}])
+        self.assertEqual(t.state["status"], "failed")
+        self.assertIn("changed the repo before approval", t.state["reason"])
+        self.assertIn("out.txt", t.state["reason"])
+
+    def test_main_skips_a_waiting_task_without_touching_it(self):
+        inbox = self.root / "inbox"
+        inbox.mkdir()
+        (inbox / "w.md").write_text(
+            f"---\nrepo: {self.origin}\nsensitivity: public\nmodels: [opencode-go/r]\n"
+            "steps:\n  - id: a\n    prompt: p\n  - id: b\n    prompt: p\n---\nctx\n")
+        os.environ.update(HERMES_TASK_ROOT=str(self.root), HERMES_TASK_INBOX=str(inbox),
+                          HERMES_TASK_STATUS_DIR=str(self.status), HERMES_TASK_APPROVALS=str(self.approvals))
+        self.addCleanup(os.environ.pop, "HERMES_TASK_APPROVALS")
+        ht.main()
+        self.assertIn("State: **waiting**", (self.status / "w-status.md").read_text())
+        before = len(self.calls())
+        ht.main()
+        self.assertEqual(len(self.calls()), before, "a waiting task is not run again")
+
+    def test_worker_config_denies_pushes_to_default_branches_and_merges(self):
+        base = self.root / "base2.json"
+        base.write_text(json.dumps({"permission": {"edit": "allow", "bash": {"git status*": "allow", "git push*main*": "allow"}}}))
+        os.environ[ht.BASE_CONFIG] = str(base)
+        self.addCleanup(os.environ.pop, ht.BASE_CONFIG)
+        self.run_task(models=["b/y"])
+        cfg = json.loads(self.configs.read_text().strip().splitlines()[0])
+        bash = cfg["permission"]["bash"]
+        rules = list(bash)
+        self.assertEqual(rules[0], "*")
+        self.assertEqual(cfg["permission"]["edit"], "allow")
+        for pat in ("gh pr merge*", "git push --force*", "git push*main*", "git push*master*", "git push*trunk*"):
+            self.assertEqual(bash[pat], "deny", pat)
+            self.assertGreater(rules.index(pat), rules.index("git status*"), "deny rules come last")
 
     def test_worker_env_has_no_secrets(self):
         os.environ["GH_TOKEN"], os.environ["TELEGRAM_BOT_TOKEN"] = "x", "y"
