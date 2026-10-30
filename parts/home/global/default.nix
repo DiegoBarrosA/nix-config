@@ -18,10 +18,6 @@ in
 
   ];
 
-  home.sessionVariables = {
-    NIX_PATH = "$HOME/.nix-defexpr/channels\${NIX_PATH:+:}$NIX_PATH";
-  };
-
   nix = {
     package = lib.mkDefault pkgs.nix;
     settings = {
@@ -49,6 +45,7 @@ in
     stateVersion = lib.mkDefault "26.05";
     sessionPath = [ "$HOME/.local/bin" ];
     sessionVariables = {
+      NIX_PATH = "$HOME/.nix-defexpr/channels\${NIX_PATH:+:}$NIX_PATH";
       NH_FLAKE = "$HOME/Projects/Personal/nix/nix-config";
 
       ADW_DISABLE_PORTAL = "1";
