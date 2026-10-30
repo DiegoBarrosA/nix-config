@@ -23,6 +23,9 @@ import yaml
 
 SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,40}$")
 LIMITED = re.compile(r"rate.?limit|usage limit|FreeUsageLimit|quota|too many requests", re.I)
+AUTH = re.compile(r"expired|unauthori[sz]ed|invalid api key|forbidden", re.I)
+# opencode prints its own errors on stderr as: level=ERROR ... error.error="<message>"
+LOG_ERROR = re.compile(r'level=ERROR .*?error\.error="([^"]*)')
 # Providers a task may use per sensitivity. Free tiers may train on prompts, so personal data
 # stays on the paid OpenCode Go key. Work tasks wait for the Claude tier (not built yet).
 PROVIDERS = {"public": {"opencode-go", "nvidia", "google"}, "personal": {"opencode-go"}}
@@ -30,6 +33,8 @@ WORKER_ENV = (
     "PATH", "HOME", "LANG", "SSL_CERT_FILE", "NIX_SSL_CERT_FILE", "NVIDIA_API_KEY",
     "GOOGLE_GENERATIVE_AI_API_KEY",
 )
+# Written for the worker, never passed through from the runner's own environment.
+BASE_CONFIG = "HERMES_OPENCODE_BASE_CONFIG"
 HANDOFF = (
     "Handoff rules: read .hermes/PLAN.md and .hermes/PROGRESS.md first if they exist. Before you "
     "stop, append to .hermes/PROGRESS.md what you did, what is left, and the output of any failing "
@@ -157,24 +162,45 @@ def worker_env():
     return {k: os.environ[k] for k in WORKER_ENV if k in os.environ}
 
 
+def worker_config(base, model, dest):
+    """Write an opencode config that pins every model to this task's model.
+
+    The host config sets model, small_model and every agent to a free Zen model, and -m only
+    overrides the main one. Titles and summaries would still go to the free tier."""
+    cfg = json.loads(Path(base).read_text())
+    cfg["model"] = cfg["small_model"] = model
+    for agent in (cfg.get("agent") or {}).values():
+        if isinstance(agent, dict):
+            agent.pop("model", None)
+    write_atomic(dest, json.dumps(cfg))
+    return str(dest)
+
+
 def run_worker(model, prompt, cwd, runs_file, session, timeout, idle, on_session):
     """Run one opencode call. Returns a dict: rc, session, cost, limited, auth, hang, error."""
-    cmd = ["opencode", "run", "-m", model, "--format", "json", "--dir", str(cwd)]
+    cmd = ["opencode", "run", "-m", model, "--format", "json", "--print-logs", "--log-level", "ERROR",
+           "--dir", str(cwd)]
     if session:
         cmd += ["-s", session]
     cmd.append(prompt)
     res = {"rc": None, "session": session, "cost": 0.0, "limited": False, "auth": False,
            "hang": False, "error": ""}
     runs_file.parent.mkdir(parents=True, exist_ok=True)
+    env = worker_env()
+    if os.environ.get(BASE_CONFIG):
+        env["OPENCODE_CONFIG"] = worker_config(os.environ[BASE_CONFIG], model, runs_file.with_suffix(".opencode.json"))
 
     def handle(line):
         try:
             ev = json.loads(line)
         except ValueError:
-            # Plain text is stderr. Only a rate-limit message in it counts, not model output.
-            if LIMITED.search(line):
-                res["limited"] = True
-                res["error"] = res["error"] or line.strip()[:300]
+            # Plain text is stderr: opencode's own error log. Model output is JSON, so it never gets here.
+            m = LOG_ERROR.search(line)
+            msg = m.group(1)[:300] if m else (line.strip()[:300] if LIMITED.search(line) else "")
+            if msg:
+                res["error"] = msg
+                res["limited"] |= bool(LIMITED.search(msg))
+                res["auth"] |= bool(AUTH.search(msg))
             return
         if not isinstance(ev, dict):
             return
@@ -194,7 +220,7 @@ def run_worker(model, prompt, cwd, runs_file, session, timeout, idle, on_session
     start = last = now()
     buf = b""
     with open(runs_file, "ab") as out:
-        p = subprocess.Popen(cmd, cwd=cwd, env=worker_env(), stdout=subprocess.PIPE,
+        p = subprocess.Popen(cmd, cwd=cwd, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT, start_new_session=True)
         fd = p.stdout.fileno()
         while True:
@@ -208,6 +234,10 @@ def run_worker(model, prompt, cwd, runs_file, session, timeout, idle, on_session
                 *lines, buf = buf.split(b"\n")
                 for line in lines:
                     handle(line.decode(errors="replace"))
+            if res["limited"] or res["auth"]:
+                # opencode retries a limit or auth error by itself and stays silent. Stop it now.
+                os.killpg(p.pid, signal.SIGKILL)
+                break
             if now() - start > timeout or now() - last > idle:
                 res["hang"] = True
                 res["error"] = res["error"] or ("step timeout" if now() - start > timeout else "no output for %d s" % idle)
@@ -321,6 +351,10 @@ class Task:
              self.t["slug"], st["status"], st.get("branch", ""), extra, rows)
         write_atomic(self.cfg["status_dir"] / f"{self.t['slug']}-status.md", text)
 
+    def last_note(self):
+        notes = [r["note"] for r in self.state["steps"].values() if r.get("note")]
+        return notes[-1][:300] if notes else ""
+
     def pick(self):
         for m in self.t["models"]:
             if self.limits.available(provider(m)):
@@ -345,7 +379,7 @@ class Task:
                 model = self.pick()
                 if not model:
                     until = min(self.limits.until(provider(m)) for m in self.t["models"])
-                    return self.save("limited", retry_after=until, reason="")
+                    return self.save("limited", retry_after=until, reason=self.last_note())
                 self.attempt(step, rec, model, wt)
                 self.save()
         return self.save("done", reason="", retry_after=None)
@@ -374,7 +408,7 @@ class Task:
             return
         if res["rc"] == 0 and step.get("check"):
             try:
-                r = subprocess.run(["bash", "-c", step["check"]], cwd=wt, env=worker_env(), capture_output=True,
+                r = subprocess.run(["bash", "-c", step["check"]], cwd=wt, env=worker_env(), stdin=subprocess.DEVNULL, capture_output=True,
                                    text=True, timeout=int(step.get("check_timeout_min", 30)) * 60)
                 failed, out = r.returncode != 0, r.stdout + r.stderr
             except subprocess.TimeoutExpired:

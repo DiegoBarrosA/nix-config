@@ -258,7 +258,8 @@ in
         exit 1
       fi
       export OPENCODE_API_KEY="$key"
-      export OPENCODE_CONFIG=${hmDiego.xdg.configFile."opencode/opencode.json".source}
+      # The task runner passes its own config (models pinned to the task's model).
+      export OPENCODE_CONFIG="''${OPENCODE_CONFIG:-${hmDiego.xdg.configFile."opencode/opencode.json".source}}"
       ${exportMcpEnv}
       exec ${pkgs.opencode}/bin/opencode "$@"
     '')

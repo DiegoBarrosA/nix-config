@@ -59,6 +59,7 @@ class EndToEnd(unittest.TestCase):
         t = Path(self.tmp.name)
         self.root, self.status, self.log = t / "ws", t / "status", t / "calls.log"
         self.sessions = t / "sessions.log"
+        self.configs = t / "configs.log"
         self.root.mkdir(), self.status.mkdir()
         env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
                "GIT_COMMITTER_EMAIL": "t@t", "HOME": str(t), "PATH": f"{t}/bin:" + os.environ["PATH"]}
@@ -83,11 +84,13 @@ class EndToEnd(unittest.TestCase):
             #!{shutil.which("bash")}
             while [ $# -gt 0 ]; do case "$1" in -m) m="$2"; shift 2;; --dir) d="$2"; shift 2;; -s) s="$2"; shift 2;; *) shift;; esac; done
             echo "${{s:-none}}" >> {self.sessions}
+            [ -n "$OPENCODE_CONFIG" ] && cat "$OPENCODE_CONFIG" >> {self.configs} && echo >> {self.configs}
             echo "$m" >> {self.log}
             echo '{{"type":"step_start","sessionID":"ses_'"${{m//\\//_}}"'"}}'
             case "$m" in
               a/*) echo '{{"type":"error","sessionID":"ses_x","error":{{"data":{{"message":"slow down","statusCode":429}}}}}}'; exit 1;;
               h/*) sleep 30;;
+              l/*) echo 'timestamp=t level=ERROR run=x message="stream error" providerID=l error.error="AI_APICallError: Go usage limit exceeded"' >&2; sleep 30;;
               d/*) echo '{{"type":"error","sessionID":"ses_x","error":{{"data":{{"message":"key expired","statusCode":401}}}}}}'; exit 1;;
               *) echo ok > "$d/out.txt"; echo '{{"type":"step_finish","part":{{"cost":0.01}}}}';;
             esac
@@ -192,6 +195,32 @@ class EndToEnd(unittest.TestCase):
         ht.main()
         self.assertIn("State: **blocked**", (self.status / "bad-status.md").read_text())
         self.assertIn("State: **done**", (self.status / "good-status.md").read_text())
+
+    def test_log_error_limit_stops_the_worker_at_once(self):
+        t0 = ht.now()
+        t, lim = self.run_task(models=["l/q", "b/y"])
+        self.assertLess(ht.now() - t0, 15, "did not wait for the 30 s sleep or the idle timer")
+        self.assertEqual(t.state["status"], "done")
+        self.assertFalse(lim.available("l"))
+
+    def test_all_models_limited_status_names_the_reason(self):
+        t, _ = self.run_task(models=["l/q"])
+        self.assertEqual(t.state["status"], "limited")
+        self.assertIn("Go usage limit exceeded", t.state["reason"])
+        self.assertIn("Go usage limit exceeded", (self.status / "job-status.md").read_text())
+
+    def test_worker_gets_a_config_pinned_to_its_model(self):
+        base = self.root / "base.json"
+        base.write_text(json.dumps({"model": "opencode/big-pickle", "small_model": "opencode/big-pickle",
+                                    "mcp": {"x": {}}, "agent": {"title": {"model": "opencode/big-pickle", "prompt": "p"}}}))
+        os.environ[ht.BASE_CONFIG] = str(base)
+        self.addCleanup(os.environ.pop, ht.BASE_CONFIG)
+        self.run_task(models=["b/y"])
+        cfg = json.loads(self.configs.read_text().strip().splitlines()[0])
+        self.assertEqual((cfg["model"], cfg["small_model"]), ("b/y", "b/y"))
+        self.assertNotIn("model", cfg["agent"]["title"])
+        self.assertEqual(cfg["agent"]["title"]["prompt"], "p")
+        self.assertIn("mcp", cfg)
 
     def test_worker_env_has_no_secrets(self):
         os.environ["GH_TOKEN"], os.environ["TELEGRAM_BOT_TOKEN"] = "x", "y"
