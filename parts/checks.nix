@@ -24,4 +24,21 @@ in
         done
         touch $out
       '';
+
+  # The task runner has no LLM in it, so tests with a fake opencode and a local git origin cover it.
+  flake.checks.x86_64-linux.hermes-tasks-test =
+    pkgs.runCommand "hermes-tasks-test"
+      {
+        nativeBuildInputs = [
+          (pkgs.python3.withPackages (p: [ p.pyyaml ]))
+          pkgs.git
+          pkgs.bash
+        ];
+      }
+      ''
+        cp ${./nixos/optional/ai/hermes_tasks.py} hermes_tasks.py
+        cp ${./nixos/optional/ai/hermes_tasks_test.py} hermes_tasks_test.py
+        python3 -W error::ResourceWarning -m unittest hermes_tasks_test
+        touch $out
+      '';
 }

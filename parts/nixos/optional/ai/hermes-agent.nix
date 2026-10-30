@@ -317,6 +317,37 @@ in
       7. If a run ends with a question, send the question to Diego, then resume with his answer.
       8. If a run fails or stops, report what the JSON says. Do not finish the work yourself.
 
+      ## Long jobs while Diego is away (task inbox)
+
+      For a long job on a public or personal repo, do not start an agent yourself. Write a task file to
+      /srv/media/Obsidian/obsidiana/Hermes/inbox/<slug>.md. A timer on this host starts it within 10 minutes
+      and runs it step by step with opencode. It survives a reboot. You only report. Read
+      /srv/media/Obsidian/obsidiana/Hermes/<slug>-status.md when Diego asks how it is going.
+      Work and customer repos do not use the inbox yet: use the code task flow above.
+
+      ```
+      ---
+      repo: owner/name           # a GitHub repo
+      base: feature-branch       # optional: omit it to use the default branch
+      sensitivity: public        # or personal
+      approved: true             # the runner refuses a task that is not approved
+      models: [opencode-go/kimi-k3]
+      max_attempts_per_step: 2
+      steps:
+        - id: build
+          prompt: "What to do in this step."
+          check: "nix flake check --no-build"   # the step is done only when this passes
+          timeout_min: 40
+      ---
+      Context for every step: goal, constraints, files to read first.
+      ```
+
+      - Take model names from `opencode models`. Models in one opencode-go list share one quota, so a
+        second opencode-go model does not help when the first is limited. Add a model from another
+        provider only if Diego names one.
+      - The slug and step ids use only a to z, 0 to 9 and hyphens.
+      - If the status file says blocked, limited or failed, tell Diego what it says. Do not retry it yourself.
+
       ## Tools
 
       ## Claude Code (one command per account)
@@ -450,7 +481,7 @@ in
     script = ''
       set -eu
       setfacl -m u:${cfg.user}:--x /srv/media /srv/media/Obsidian
-      install -d -o diego -g users -m 0775 ${scratch}
+      install -d -o diego -g users -m 0775 ${scratch} ${scratch}/inbox
       setfacl -R -m u:${cfg.user}:rX ${vault}
       find ${vault} -type d -exec setfacl -m d:u:${cfg.user}:rX {} +
       setfacl -R -m u:${cfg.user}:rwX,u:diego:rwX ${scratch}

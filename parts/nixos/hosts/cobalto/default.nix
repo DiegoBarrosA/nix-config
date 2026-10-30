@@ -82,6 +82,7 @@
 
     ai-opencode-server
     ai-hermes-agent
+    ai-hermes-tasks
 
     apps-zennotes
 
