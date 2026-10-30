@@ -233,7 +233,7 @@
     "d /nix/storage/servarr/radarr 0755 root root -"
     "d /nix/storage/servarr/lidarr 0755 root root -"
     "d /nix/storage/servarr/bazarr 0755 root root -"
-    "d /nix/storage/lazylibrarian 0755 root root -"
+    "d /nix/storage/lazylibrarian 0750 media media -"
 
     "d /srv/media 0755 root media -"
     "d /srv/media/library 0750 media media -"
