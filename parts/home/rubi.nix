@@ -32,8 +32,29 @@
       home.packages = [
         customPkgs.coderabbit-cli
         customPkgs.ekphos
+        pkgs.insync
         pkgs.nodejs_24
       ];
+
+      # Same pattern as OBSIDIAN in syncthing.nix; Insync's folder is set per account (`insync account add -p`)
+      xdg.userDirs.extraConfig.DRIVES = "${config.home.homeDirectory}/Drives";
+
+      systemd.user.services.insync = {
+        Unit = {
+          Description = "Insync";
+          After = [ "graphical-session.target" ];
+          PartOf = [ "graphical-session.target" ];
+        };
+        Service = {
+          # `insync start` daemonizes out of reach of systemd's PID tracking, so keep the unit
+          # active after the launcher exits; otherwise systemd cleans up the cgroup and kills the daemon
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${pkgs.insync}/bin/insync start";
+          ExecStop = "${pkgs.insync}/bin/insync quit";
+        };
+        Install.WantedBy = [ "graphical-session.target" ];
+      };
 
       programs.nushell.shellAliases.hermes-cobalto = "ssh -t cobalto sudo -u hermes /run/current-system/sw/bin/hermes-tui";
 
