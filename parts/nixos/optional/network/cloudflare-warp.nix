@@ -5,7 +5,7 @@
 
 {
   # Cloudflare One client (warp-svc + warp-cli). Enrollment is interactive
-  # (browser SSO), so it is not declared here; see the Work HOWTOs.
+  # (browser SSO), so it is not declared here; see the private notes.
   services.cloudflare-warp = {
     enable = true;
     openFirewall = true;

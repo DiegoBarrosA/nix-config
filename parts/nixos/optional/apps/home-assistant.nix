@@ -8,9 +8,10 @@
   ...
 }:
 let
-  # TCL Google TV "cuarzo" (admin console name; was bedroom-tv, 100.64.82.96).
-  # Reached over Tailscale. If cobalto does not resolve MagicDNS, use the IP.
-  tvHost = "cuarzo.tailnet.ts.net";
+  # TCL Google TV "cuarzo" (admin console name; was bedroom-tv). Reached over
+  # Tailscale by IP: it does not depend on MagicDNS and keeps the tailnet name
+  # out of this public repo.
+  tvHost = "100.64.82.96";
 
   # Power, volume, apps and keys go through the Android TV Remote integration
   # (UI-only, no YAML: add it with host ${tvHost}, enter the code the TV shows,
