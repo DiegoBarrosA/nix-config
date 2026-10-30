@@ -40,9 +40,10 @@ with the dendritic pattern. This file is the source of truth for coding agents. 
 - cobalto: `deploy .#cobalto` (deploy-rs, defined in `parts/deploy.nix`). It builds on cobalto and connects as root to the host `cobalto` over Tailscale. Rollback is off (`magicRollback` and `autoRollback` are false).
 - A failed unit during activation rolls back the whole deploy, even if the unit is unrelated.
 - Do not move the `nixpkgs` pin on cobalto. It must match the Jellyfin database. Add a second pin for a newer package (see `nixpkgs-acp`).
-- A push to `main` also deploys cobalto from CI (`.github/workflows/deploy-cobalto.yml`, over Tailscale SSH as `tag:ci`).
-  CI does not wait for Hermes. A deploy restarts Hermes, so a task running at that moment loses its current step: resume it with `--resume`.
-- Merging a PR to `main` therefore deploys. Do not merge a change that has not built.
+- This repo has no workflows: its Actions logs would be public. The CI deploy lives in the private repo (`nix-private-config`, workflow `deploy-cobalto`).
+  Diego starts it with `gh workflow run deploy-cobalto -R DiegoBarrosA/nix-private-config`, so a merge to `main` does not deploy by itself.
+  It does not wait for Hermes. A deploy restarts Hermes, so a task running at that moment loses its current step: resume it with `--resume`.
+- Do not add `.github/workflows/` here. If a check is needed, run it in the private repo.
 
 ## Hermes
 
