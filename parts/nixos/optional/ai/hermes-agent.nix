@@ -204,6 +204,13 @@ in
       }
     ];
 
+    # Code work goes through the claude-<name> CLI, never through Hermes's own
+    # subagents. A free NIM model drove delegate_task into a failed handover on
+    # 2026-10-29. Lists in settings replace the live ones on deploy, so this is
+    # applied even though config.yaml is merged. Terminal and file tools stay:
+    # this does not stop a shell edit, only the AGENTS.md rules do that.
+    settings.agent.disabled_toolsets = [ "delegation" "code_execution" ];
+
     backend.mode = "dashboard";
 
 
@@ -281,7 +288,8 @@ in
 
       - You are the dispatcher. You do not write code. Never edit, create or delete files in a repo yourself.
       - Never use delegate_task or execute_code to change code. Use a coding agent from the list below.
-      - Start every code task in a fresh session.
+      - Start every code task in a fresh session. Send /new first. A /model switch is kept across
+        restarts and sticks to the session, and /new clears it.
       - If a command fails twice with the same error, stop and tell Diego. Do not retry it again.
       - If every model you can use is rate limited, say so and stop. Do not go on with a weaker model.
       - Never push to a default branch. Never merge. The coding agent opens a PR. Diego merges.
@@ -291,8 +299,11 @@ in
       1. Pick the account by repo owner (see Git access). Personal repos use `claude-personal`.
          Work repos use the account named for the client.
       2. Make a worktree. Do not touch the main checkouts in /var/lib/hermes/workspace.
+         The base is the branch Diego names. If he names none, use the default branch:
+         `git -C /var/lib/hermes/workspace/<repo> symbolic-ref --short refs/remotes/origin/HEAD`
+         Never assume origin/main.
          `git -C /var/lib/hermes/workspace/<repo> fetch origin`
-         `git -C /var/lib/hermes/workspace/<repo> worktree add /var/lib/hermes/workspace/wt/<repo>-<slug> -b hermes/<date>-<slug> origin/main`
+         `git -C /var/lib/hermes/workspace/<repo> worktree add /var/lib/hermes/workspace/wt/<repo>-<slug> -b hermes/<date>-<slug> <base>`
       3. Run the agent from inside the worktree, in the background, and save its JSON output in
          /var/lib/hermes/workspace/runs/. Command shape:
          `claude-<name> -p "<task>" --output-format json --permission-mode acceptEdits --max-budget-usd 3`
@@ -313,8 +324,6 @@ in
     ''
     + lib.concatMapStrings (n: "- `claude-${n} -p \"task\"`\n") (lib.attrNames claudeAccounts)
     + ''
-      - To delegate through ACP instead, call delegate_task with acp_command set to
-        `/run/current-system/sw/bin/hermes-claude-<name>`.
       - Pick the account by name. The names are the client or purpose each account belongs to.
 
       ## Antigravity (Google)
