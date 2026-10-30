@@ -1071,11 +1071,11 @@
         "x-context-mcp": "x-context-mcp"
       },
       "locked": {
-        "lastModified": 1793392815,
-        "narHash": "sha256-PT455QKbmjbh0LKghVvtinIQAqy7NJu817Mnh4aLp1A=",
+        "lastModified": 1793394566,
+        "narHash": "sha256-ChiVWFKlk0fF2JVHnnFVg5m6AxUnh2b7wR/uq1R1AXE=",
         "ref": "employer-cleanup",
-        "rev": "12a0bfb86ff28c2542c611b66d7a00408430601e",
-        "revCount": 135,
+        "rev": "fe41700a3d1845c817247753b72f5aa642edda6a",
+        "revCount": 136,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/nix-private-config.git"
       },
