@@ -48,6 +48,9 @@ in
       EnvironmentFile = config.sops.templates."hermes.env".path;
       ExecStart = "${runner}/bin/hermes-task-run";
       TimeoutStartSec = "infinity";
+      # A killed run (OOM, SIGKILL) resumes from its state file on the next timer tick. Without this
+      # the unit would sit in "failed", and a failed unit rolls back any deploy that finds it.
+      SuccessExitStatus = [ "SIGKILL" ];
       ProtectSystem = "strict";
       ReadWritePaths = [ cfg.stateDir scratch ];
       PrivateTmp = true;
