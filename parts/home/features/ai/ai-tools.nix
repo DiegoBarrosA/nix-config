@@ -60,12 +60,6 @@
   # Antigravity
   programs.antigravity-config.enable = true;
 
-  # MCP servers
-  programs.mcp-config = {
-    enable = true;
-    xContext.enable = true;
-  };
-
   # Skills
   programs.ai-skills = {
     enable = true;
