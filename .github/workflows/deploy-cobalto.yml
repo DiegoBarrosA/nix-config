@@ -1,0 +1,42 @@
+name: Deploy cobalto
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Queue deploys, never cancel one mid-activation.
+concurrency:
+  group: deploy-cobalto
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v25
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      # The flake input private-config is fetched over git+ssh, so eval needs a read-only deploy key.
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.PRIVATE_CONFIG_DEPLOY_KEY }}
+
+      # cobalto runs Tailscale SSH: the tailnet ACL authenticates tag:ci, no SSH key for cobalto.
+      - uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - run: nix flake check --no-build
+
+      # --inputs-from keeps deploy-rs on the nixpkgs pinned in flake.lock.
+      - run: >
+          nix shell --inputs-from . nixpkgs#deploy-rs -c
+          deploy .#cobalto --ssh-opts "-o StrictHostKeyChecking=accept-new"

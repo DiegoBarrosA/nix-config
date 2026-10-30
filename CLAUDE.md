@@ -37,10 +37,12 @@ with the dendritic pattern. This file is the source of truth for coding agents. 
 
 ## Deploy (Diego does this, agents do not)
 
-- cobalto: `nixos-rebuild switch --flake .#cobalto --target-host root@cobalto --build-host root@cobalto`.
+- cobalto: `deploy .#cobalto` (deploy-rs, defined in `parts/deploy.nix`). It builds on cobalto and connects as root to the host `cobalto` over Tailscale. Rollback is off (`magicRollback` and `autoRollback` are false).
 - A failed unit during activation rolls back the whole deploy, even if the unit is unrelated.
 - Do not move the `nixpkgs` pin on cobalto. It must match the Jellyfin database. Add a second pin for a newer package (see `nixpkgs-acp`).
-- A deploy restarts Hermes. Do not deploy while a Hermes task runs.
+- A push to `main` also deploys cobalto from CI (`.github/workflows/deploy-cobalto.yml`, over Tailscale SSH as `tag:ci`).
+  CI does not wait for Hermes. A deploy restarts Hermes, so a task running at that moment loses its current step: resume it with `--resume`.
+- Merging a PR to `main` therefore deploys. Do not merge a change that has not built.
 
 ## Hermes
 
