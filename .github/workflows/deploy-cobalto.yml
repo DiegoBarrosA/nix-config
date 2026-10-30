@@ -38,8 +38,8 @@ jobs:
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:ci
 
-      - run: nix flake check --no-build
-
+      # No separate `nix flake check --no-build`: the config reads a derivation output (hermes uv.lock),
+      # so eval must build on a clean runner. deploy-rs runs its own flake check first.
       # --inputs-from keeps deploy-rs on the nixpkgs pinned in flake.lock.
       - run: >
           nix shell --inputs-from . nixpkgs#deploy-rs -c
