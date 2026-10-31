@@ -111,10 +111,10 @@ stdenv.mkDerivation {
   '';
 
   autoPatchelfIgnoreMissingDeps = [
-    "libEGL_REDACTED.so.0"
-    "libGLESv2_REDACTED.so.2"
-    "libGLX_REDACTED.so.0"
-    "libREDACTED*.so.*"
+    "libEGL_nvidia.so.0"
+    "libGLESv2_nvidia.so.2"
+    "libGLX_nvidia.so.0"
+    "libnvidia*.so.*"
     "libvulkan.so.1"
   ];
 
