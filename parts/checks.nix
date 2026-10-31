@@ -30,7 +30,7 @@ in
   flake.checks.x86_64-linux.hermes-profiles-names =
     let
       names = builtins.attrNames hermes.profiles;
-      bad = builtins.filter (n: builtins.match "[a-z0-9-]+" n == null) names;
+      bad = builtins.filter (n: builtins.match "[a-z0-9][a-z0-9-]*" n == null) names;
       missing = builtins.filter (n: !builtins.pathExists hermes.profiles.${n}.soul) names;
     in
     assert bad == [ ] || throw "bad hermes profile names: ${toString bad}";

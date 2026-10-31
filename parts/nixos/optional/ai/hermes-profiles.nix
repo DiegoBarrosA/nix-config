@@ -11,10 +11,10 @@
 
       script = name: p: ''
         d=${home}/profiles/${name}
-        if [ ! -d "$d" ]; then
-          # shortcut: the CLI may not run before the gateway has started once, so fall back to the bare layout.
-          ${cfg.package}/bin/hermes profile create ${name} --no-skills || install -d -m 0750 "$d"
-        fi
+        # Create fails if the profile exists or the CLI cannot run yet; neither may fail the deploy
+        # (a failed unit rolls it back). install -d then guarantees the layout, and the next run retries create.
+        ${cfg.package}/bin/hermes profile create "${name}" --no-skills || true
+        install -d -m 0750 "$d"
         install -m 0640 ${p.soul} "$d/SOUL.md"
         ${merge} ${pkgs.writeText "hermes-profile-${name}.json" (builtins.toJSON p.settings)} "$d/config.yaml"
       '';
@@ -27,7 +27,7 @@
           options = {
             soul = lib.mkOption { type = lib.types.path; description = "File installed as the profile's SOUL.md."; };
             settings = lib.mkOption { type = lib.types.attrs; default = { }; description = "Deep-merged into the profile's config.yaml."; };
-            readOnly = lib.mkOption { type = lib.types.bool; default = false; description = "Profile may read but not change anything."; };
+            readOnly = lib.mkOption { type = lib.types.bool; default = false; description = "Marker read by flake checks (not an enforced guard): the profile is meant to be read-only."; };
           };
         });
       };
@@ -35,8 +35,8 @@
       # The name type is a separate check so a bad name fails with a clear message.
       config = lib.mkIf (cfg.profiles != { }) {
         assertions = lib.mapAttrsToList (n: _: {
-          assertion = builtins.match "[a-z0-9-]+" n != null;
-          message = "services.hermes-agent.profiles.${n}: name must match [a-z0-9-]+";
+          assertion = builtins.match "[a-z0-9][a-z0-9-]*" n != null;
+          message = "services.hermes-agent.profiles.${n}: name must match ^[a-z0-9][a-z0-9-]*$";
         }) cfg.profiles;
 
         # Runs before the gateway so profiles exist at start. It only writes SOUL.md
