@@ -5,11 +5,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1793298662,
-        "narHash": "sha256-dUBAN0K3uNbhOYrov8E3Pjyo0D8/xbkT8LTy8KK3Vow=",
+        "lastModified": 1793392815,
+        "narHash": "sha256-DKgsJEzAKuX1a3Vtcwq85dfBpqOLz8PQSxhDkGSjlzQ=",
         "owner": "DiegoBarrosA",
         "repo": "nix-ai-tooling",
-        "rev": "bef47abb14f5b47e3d8d2bcfcb2523e0d8a38f3f",
+        "rev": "29f6fd0e0481f70609237382cda8b1886a180c48",
         "type": "github"
       },
       "original": {
@@ -1067,14 +1067,15 @@
         "netsuite-mcp": "netsuite-mcp",
         "nixpkgs": "nixpkgs_7",
         "tempo-mcp-server": "tempo-mcp-server",
-        "trello-cloud-mcp": "trello-cloud-mcp"
+        "trello-cloud-mcp": "trello-cloud-mcp",
+        "x-context-mcp": "x-context-mcp"
       },
       "locked": {
-        "lastModified": 1793323039,
-        "narHash": "sha256-oi7DIlSvZWR1aSY4EEYP84iPHYba9vETBSizwncJTCE=",
+        "lastModified": 1793394566,
+        "narHash": "sha256-ChiVWFKlk0fF2JVHnnFVg5m6AxUnh2b7wR/uq1R1AXE=",
         "ref": "employer-cleanup",
-        "rev": "100ccedb7a43e61461a021cbdf8706e9dc484995",
-        "revCount": 132,
+        "rev": "fe41700a3d1845c817247753b72f5aa642edda6a",
+        "revCount": 136,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/nix-private-config.git"
       },
@@ -1533,6 +1534,19 @@
         "owner": "Miserlou",
         "repo": "VitalPresets",
         "type": "github"
+      }
+    },
+    "x-context-mcp": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793391653,
+        "narHash": "sha256-V0SKndg4n5lwIsXUUjuoGMCdW9Il7fREgzAWYO7QhM0=",
+        "path": "/home/diego/Projects/Personal/x-context-mcp",
+        "type": "path"
+      },
+      "original": {
+        "path": "/home/diego/Projects/Personal/x-context-mcp",
+        "type": "path"
       }
     },
     "zen-browser": {

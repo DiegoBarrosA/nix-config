@@ -32,6 +32,7 @@
       iconLock = u "f023";
       iconServer = u "f233";
       iconSync = u "f021";
+      iconCloud = u "f0c2";
       iconShare = u "f1e0";
       iconCamera = u "f030";
       # State glyphs shared by the cb/tailscale/cobalto/syncthing modules so a
@@ -70,6 +71,25 @@
             ;;
           *)
             printf '{"text":"%s","class":"warning","tooltip":"Tailscale: %s"}\n' "${iconStateWarning}" "$STATE"
+            ;;
+        esac
+      '';
+
+      waybar-warp = pkgs.writeShellScriptBin "waybar-warp" ''
+        OUT=$(${lib.getExe' pkgs.cloudflare-warp "warp-cli"} status 2>&1) || OUT=""
+
+        case "$OUT" in
+          *Connected*)
+            printf '{"text":"%s","class":"ok","tooltip":"WARP connected"}\n' "${iconCloud}"
+            ;;
+          *Disconnected*)
+            printf '{"text":"%s","class":"off","tooltip":"WARP disconnected"}\n' "${iconStateError}"
+            ;;
+          *Registration*Missing*)
+            printf '{"text":"%s","class":"warning","tooltip":"WARP not enrolled"}\n' "${iconStateWarning}"
+            ;;
+          *)
+            printf '{"text":"%s","class":"error","tooltip":"WARP unavailable"}\n' "${iconStateError}"
             ;;
         esac
       '';
@@ -325,6 +345,14 @@
           return-type = "json";
         };
 
+        "custom/warp" = {
+          exec = "${lib.getExe waybar-warp}";
+          interval = 15;
+          return-type = "json";
+          on-click = "sh -c '${lib.getExe' pkgs.cloudflare-warp "warp-cli"} status | grep -q Disconnected && ${lib.getExe' pkgs.cloudflare-warp "warp-cli"} connect || ${lib.getExe' pkgs.cloudflare-warp "warp-cli"} disconnect'";
+          on-click-right = "alacritty --hold -e ${lib.getExe' pkgs.cloudflare-warp "warp-cli"} status";
+        };
+
         "custom/cobalto" = {
           exec = "${lib.getExe waybar-cobalto}";
           interval = 60;
@@ -465,6 +493,7 @@
           modules = [
             "custom/cb"
             "custom/tailscale"
+            "custom/warp"
             "idle_inhibitor"
             "custom/cobalto"
             "custom/syncthing"
@@ -771,6 +800,7 @@
 
           #custom-cb,
           #custom-tailscale,
+          #custom-warp,
           #custom-cobalto,
           #custom-jack,
           #custom-syncthing,
@@ -791,6 +821,7 @@
 
           #custom-cb.ok,
           #custom-tailscale.ok,
+          #custom-warp.ok,
           #custom-cobalto.ok,
           #custom-jack.ok,
           #custom-syncthing.ok {
@@ -799,6 +830,7 @@
 
           #custom-cb.error,
           #custom-tailscale.error,
+          #custom-warp.error,
           #custom-cobalto.error,
           #custom-jack.error,
           #custom-syncthing.error {
@@ -806,11 +838,13 @@
           }
 
           #custom-tailscale.warning,
+          #custom-warp.warning,
           #custom-syncthing.warning {
             color: #${colors.base09};
           }
 
           #custom-tailscale.off,
+          #custom-warp.off,
           #custom-syncthing.off {
             color: #${colors.base03};
           }
@@ -874,6 +908,7 @@
         pkgs.jocalsend
         waybar-cb
         waybar-tailscale
+        waybar-warp
         waybar-cobalto
         waybar-jack
         waybar-syncthing
