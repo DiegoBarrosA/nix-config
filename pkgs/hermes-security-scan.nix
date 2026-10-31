@@ -45,10 +45,10 @@ pkgs.writeShellScriptBin "hermes-security-scan" ''
   # -a and --no-textconv: a -diff attribute or textconv driver in the scanned repo must not hide content.
   if [ "$mode" = diff ]; then
     git rev-parse --verify --quiet "$base^{commit}" >/dev/null || die "unknown base ref"
-    git diff -a -U0 --no-color --no-ext-diff --no-textconv "$base..HEAD" > "$tmp/patch"
+    git -c diff.noprefix=false -c diff.mnemonicPrefix=false diff -a -U0 --no-color --no-ext-diff --no-textconv "$base..HEAD" > "$tmp/patch"
     lopts=(--log-opts "$base..HEAD")
   else
-    git log -p -a -U0 --all --no-color --no-ext-diff --no-textconv --format='commit %H' > "$tmp/patch"
+    git -c diff.noprefix=false -c diff.mnemonicPrefix=false log -p -m -a -U0 --all --no-color --no-ext-diff --no-textconv --format='commit %H' > "$tmp/patch"
     lopts=()
   fi
 
@@ -72,11 +72,14 @@ pkgs.writeShellScriptBin "hermes-security-scan" ''
   cat "$tmp/hits"
 
   # Exit 2 means leaks, so gitleaks's own fatal exit 1 cannot pass as findings.
-  # An empty dir for the ignore path stops a repo .gitleaksignore from hiding secrets.
+  # gitleaks honours a .gitleaksignore found in the worktree or committed in the repo, even with
+  # --gitleaks-ignore-path, so scan a bare clone: it has no worktree, and the clone is by object
+  # content. The empty ignore dir and --ignore-gitleaks-allow cover the rest.
+  git clone -q --bare --no-local . "$tmp/bare" >/dev/null 2>&1 || die "bare clone failed"
   mkdir "$tmp/noignore"
   rc=0
   gitleaks detect --no-banner --redact --exit-code 2 --config ${config} \
-    --gitleaks-ignore-path "$tmp/noignore" --ignore-gitleaks-allow \
+    --gitleaks-ignore-path "$tmp/noignore" --ignore-gitleaks-allow -s "$tmp/bare" \
     "''${lopts[@]}" --report-format json --report-path "$tmp/leaks.json" >/dev/null 2>&1 || rc=$?
   case "$rc" in 0|2) ;; *) die "gitleaks failed with exit $rc" ;; esac
   [ -f "$tmp/leaks.json" ] || die "gitleaks wrote no report"

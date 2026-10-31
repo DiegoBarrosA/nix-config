@@ -161,6 +161,32 @@ in
         git commit -qam del
         run 0 ${scan} diff base
 
+        # A card must not be able to hide a secret from gitleaks. Fake AWS-style pair.
+        mkleak() {
+          git init -q "$1" && cd "$1"
+          printf "base\n" > a.txt
+          git add a.txt && git commit -qm base && git tag base
+          printf 'aws_access_key_id = AKIAIOSFODNN7EXAMPLQ%s\naws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEYQ\n' "$2" > cfg.ini
+          git add cfg.ini && git commit -qm secret
+          leak=$(git rev-parse HEAD)
+        }
+        mkleak ../repo3 ""
+        run 1 ${scan} diff base
+        grep -q "secrets=1" ../out
+        printf '%s:cfg.ini:aws-access-token:1\n' "$leak" > .gitleaksignore
+        git add .gitleaksignore && git commit -qm ignore
+        run 1 ${scan} diff base
+        git reset -q --hard HEAD~1
+        printf '%s:cfg.ini:aws-access-token:1\n' "$leak" > .gitleaksignore
+        run 1 ${scan} diff base
+        mkleak ../repo4 " # gitleaks:allow"
+        run 1 ${scan} diff base
+        mkleak ../repo5 ""
+        printf '[extend]\nuseDefault = true\n[allowlist]\npaths = ["cfg.ini"]\n' > .gitleaks.toml
+        git add .gitleaks.toml && git commit -qm allow
+        run 1 ${scan} diff base
+        cd ../repo2
+
         # Fail closed
         run 3 ${scan} diff no-such-ref
         run 3 ${scanMissing} diff base
