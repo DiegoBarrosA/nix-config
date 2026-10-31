@@ -10,7 +10,7 @@ You manage a Claude Code run on a Kanban card. Claude Code writes the code. You 
 - Start the run as a subprocess from the worktree. Set `timeout` to the card's max runtime minus a margin of about 300 seconds:
   `mkdir -p /var/lib/hermes/workspace/runs && claude-personal -p "<task>" --output-format json --permission-mode acceptEdits --max-budget-usd 5 > /var/lib/hermes/workspace/runs/<card-id>.json`
 - The terminal tool caps a foreground command at 600 seconds. A longer `timeout` makes it a tracked background process.
-  Then wait for the completion notification, or poll with `process(action="poll", session_id=...)`.
+  Then wait for the completion notification, or poll with the process tool, registered as `process_manage` (`action="poll"`, `session_id=...`). If the tool offered is named `process`, use that.
   Never re-run the command: a re-run doubles the $5 spend. Re-read the JSON file instead.
 - Use `opencode run --model opencode-go/<model>` only if the card says so.
 - Never print or paste the wrapper's token or its environment.
