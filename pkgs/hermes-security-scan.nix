@@ -43,15 +43,20 @@ pkgs.writeShellScriptBin "hermes-security-scan" ''
   [ "$n" -ge 1 ] || die "term list is not configured (no patterns)"
 
   # -a and --no-textconv: a -diff attribute or textconv driver in the scanned repo must not hide content.
+  # Fixed prefixes: repo diff.* config must not change the filename parsing below.
+  gitopts=(-c diff.noprefix=false -c diff.mnemonicPrefix=false -c diff.srcPrefix=a/ -c diff.dstPrefix=b/)
   if [ "$mode" = diff ]; then
-    git rev-parse --verify --quiet "$base^{commit}" >/dev/null || die "unknown base ref"
-    git -c diff.noprefix=false -c diff.mnemonicPrefix=false diff -a -U0 --no-color --no-ext-diff --no-textconv "$base..HEAD" > "$tmp/patch"
-    lopts=(--log-opts "$base..HEAD")
+    # SHAs, not names: the mirror clone below is scanned by gitleaks, which exits 0 with
+    # nothing scanned for a range it cannot resolve.
+    basesha=$(git rev-parse --verify --quiet "$base^{commit}") || die "unknown base ref"
+    headsha=$(git rev-parse --verify --quiet HEAD) || die "no HEAD"
+    git merge-base --is-ancestor "$basesha" "$headsha" || die "base is not an ancestor of HEAD"
+    git "''${gitopts[@]}" diff --src-prefix=a/ --dst-prefix=b/ -a -U0 --no-color --no-ext-diff --no-textconv "$basesha..$headsha" > "$tmp/patch"
+    lopts=(--log-opts "$basesha..$headsha")
   else
-    git -c diff.noprefix=false -c diff.mnemonicPrefix=false log -p -m -a -U0 --all --no-color --no-ext-diff --no-textconv --format='commit %H' > "$tmp/patch"
+    git "''${gitopts[@]}" log --src-prefix=a/ --dst-prefix=b/ -p -m -a -U0 --all --no-color --no-ext-diff --no-textconv --format='commit %H' > "$tmp/patch"
     lopts=()
   fi
-
   # Only added lines are matched. Hunk headers give the new line number.
   awk -v mode="$mode" '
     NR == FNR { p[++np] = tolower($0); next }
@@ -74,9 +79,13 @@ pkgs.writeShellScriptBin "hermes-security-scan" ''
   # Exit 2 means leaks, so gitleaks's own fatal exit 1 cannot pass as findings.
   # gitleaks honours a .gitleaksignore found in the worktree or committed in the repo, even with
   # --gitleaks-ignore-path, so scan a bare clone: it has no worktree, and the clone is by object
-  # content. The empty ignore dir and --ignore-gitleaks-allow cover the rest.
-  git clone -q --bare --no-local . "$tmp/bare" >/dev/null 2>&1 || die "bare clone failed"
+  # content (--mirror keeps refs/remotes too). The empty ignore dir and --ignore-gitleaks-allow cover the rest.
+  git clone -q --mirror --no-local . "$tmp/bare" >/dev/null 2>&1 || die "bare clone failed"
   mkdir "$tmp/noignore"
+  # An unscannable range makes gitleaks exit 0 with nothing scanned. An empty range is fine.
+  if [ "$mode" = diff ]; then
+    git -C "$tmp/bare" rev-list "$basesha..$headsha" >/dev/null || die "range is not scannable"
+  fi
   rc=0
   gitleaks detect --no-banner --redact --exit-code 2 --config ${config} \
     --gitleaks-ignore-path "$tmp/noignore" --ignore-gitleaks-allow -s "$tmp/bare" \

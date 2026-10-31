@@ -176,15 +176,33 @@ in
         printf '%s:cfg.ini:aws-access-token:1\n' "$leak" > .gitleaksignore
         git add .gitleaksignore && git commit -qm ignore
         run 1 ${scan} diff base
+        grep -q "secrets=1" ../out
         git reset -q --hard HEAD~1
         printf '%s:cfg.ini:aws-access-token:1\n' "$leak" > .gitleaksignore
         run 1 ${scan} diff base
+        grep -q "secrets=1" ../out
         mkleak ../repo4 " # gitleaks:allow"
         run 1 ${scan} diff base
+        grep -q "secrets=1" ../out
         mkleak ../repo5 ""
         printf '[extend]\nuseDefault = true\n[allowlist]\npaths = ["cfg.ini"]\n' > .gitleaks.toml
         git add .gitleaks.toml && git commit -qm allow
         run 1 ${scan} diff base
+        grep -q "secrets=1" ../out
+
+        # The real base is a remote-tracking ref, which a plain bare clone drops
+        mkleak ../repo6 ""
+        git update-ref refs/remotes/origin/main base
+        run 1 ${scan} diff origin/main
+        grep -q "secrets=1" ../out
+        # A base that is not an ancestor of HEAD scans nothing in gitleaks: fail closed
+        git tag side
+        git checkout -q -b other base
+        printf "y\n" > y.txt && git add y.txt && git commit -qm other
+        run 3 ${scan} diff side
+        # An empty range is clean
+        run 0 ${scan} diff HEAD
+        grep -q "matches=0 secrets=0" ../out
         cd ../repo2
 
         # Fail closed
