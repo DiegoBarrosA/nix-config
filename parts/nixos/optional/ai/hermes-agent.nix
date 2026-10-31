@@ -214,6 +214,15 @@ in
     # this does not stop a shell edit, only the AGENTS.md rules do that.
     settings.agent.disabled_toolsets = [ "delegation" "code_execution" ];
 
+    # Conservative on purpose: one box, free-tier models with rate limits.
+    # The per-profile cap stops fan-out onto a single profile. Review cards are
+    # dispatched so reviewer profiles pick them up.
+    settings.kanban = {
+      review_dispatch = true;
+      max_in_progress = 2;
+      max_in_progress_per_profile = 1;
+    };
+
     backend.mode = "dashboard";
 
 

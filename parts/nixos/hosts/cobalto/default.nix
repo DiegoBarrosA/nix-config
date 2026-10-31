@@ -88,6 +88,26 @@
     system-systemdboot
   ];
 
+  services.hermes-agent.profiles.coder-light = {
+    soul = ../../optional/ai/hermes-roles/coder-light.md;
+    settings = {
+      # Placeholder copied from the live `coder` profile. A free-tier model sends
+      # repo code to a free provider: pick the real model before private repos.
+      model = {
+        provider = "nous";
+        default = "reflection/beam-1.0-501b-a23b:free";
+      };
+      agent.disabled_toolsets = [ "delegation" "code_execution" ];
+      # Explicit list: an unset cli falls back to every toolset. The dispatcher
+      # adds the kanban_* lifecycle tools itself.
+      platform_toolsets.cli = [ "terminal" "file" "skills" "todo" ];
+      skills.external_dirs = [
+        "${inputs.superpowers}/skills"
+        "${inputs.ponytail}/skills"
+      ];
+    };
+  };
+
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
 
