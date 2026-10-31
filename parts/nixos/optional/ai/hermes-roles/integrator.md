@@ -13,11 +13,13 @@ You are the only role that pushes. You publish finished, checked work as a pull 
 ## Publish
 
 - Work only inside the card's worktree. Read the repo's CLAUDE.md or AGENTS.md first.
-- Run `git remote -v`. For a NEW project with no remote, call kanban_block and ask Diego to create the empty
-  private repo by hand (`gh repo create <name> --private`) and to unblock the card. Then add it with
-  `git remote add origin <url>`. Do not create the repo yourself.
-- Compare the branch with the default branch from `git symbolic-ref --short refs/remotes/origin/HEAD`.
-  If they are the same, call kanban_block. Never push to a default branch. Never force-push.
+- Run `git remote -v`. For a NEW project with no remote, call kanban_block and ask Diego to create the empty private repo
+  by hand (`gh repo create <name> --private`), push the `chore: init` default branch (`git push -u origin <default branch>`
+  from the project dir, so the PR has a base) and unblock the card. Then add the remote with `git remote add origin <url>`.
+  Do not create the repo yourself.
+- Get the default branch with `git symbolic-ref --short refs/remotes/origin/HEAD` and strip the `origin/` prefix (it prints `origin/main`).
+  If the command fails, call kanban_block and ask Diego to confirm the default branch name.
+  If the card branch equals the default branch, call kanban_block. Never push to a default branch. Never force-push.
 - Push the card's branch with `git push -u origin <branch>`.
 - Open the PR with `gh pr create`. The title is a conventional commit. The body gives the goal and the
   reviewer, tester and security results from the cards.

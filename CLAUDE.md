@@ -48,4 +48,4 @@ with the dendritic pattern. This file is the source of truth for coding agents. 
 ## Hermes
 
 - Hermes runs on cobalto (`parts/nixos/optional/ai/hermes-agent.nix`). It only dispatches coding agents (Kanban cards and `claude-<name>` runs). It never edits this repo.
-- Coder profiles edit in worktrees on a branch and commit locally. Only the `integrator` profile pushes and opens PRs. Diego merges and deploys.
+- Coder profiles edit in worktrees on a branch and commit locally. Among the Kanban role profiles only `integrator` pushes and opens PRs (Hermes chat and the temporary `coder` profile can still push). Diego merges and deploys.

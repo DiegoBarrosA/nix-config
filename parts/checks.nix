@@ -140,7 +140,7 @@ in
 
         # History mode prints COMMIT:FILE
         run 1 ${scan} history
-        grep -qE '^[0-9a-f]{40}:b.txt$' ../out
+        grep -qE '^[0-9a-f]{7}:b.txt$' ../out
         nofake
 
         # A binary file, with diff disabled by attribute, is still scanned
@@ -253,6 +253,19 @@ in
         run 1 ${scan} diff base
         grep -qE '^COMMIT:[0-9a-f]{7}:committer$' ../out
         nofake
+        # A path that holds a term is term text: the content match must not print it either.
+        mkmeta m6
+        printf "ZZZ-fake-term-one\n" > zzz-fake-term-one.txt
+        printf "plain\nYYY-fake-term-two\n" > ok.txt
+        git add . && git commit -qm "add both"
+        run 1 ${scan} diff base
+        nofake
+        grep -qx "ok.txt:2" ../out
+        grep -qE '^COMMIT:[0-9a-f]{7}:path$' ../out
+        run 1 ${scan} history
+        nofake
+        grep -qE '^[0-9a-f]{7}:ok.txt$' ../out
+
         mkmeta m5
         printf "x\n" > b.txt
         git add . && git commit -qm "add b"

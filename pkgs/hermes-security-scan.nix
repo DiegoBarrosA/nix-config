@@ -60,11 +60,16 @@ pkgs.writeShellScriptBin "hermes-security-scan" ''
   # Only added lines are matched. Hunk headers give the new line number.
   awk -v mode="$mode" '
     NR == FNR { p[++np] = tolower($0); next }
-    /^commit / && mode == "history" { c = substr($0, 8); next }
-    /^diff --git/ { hdr = 1; next }
-    hdr && /^\+\+\+ / { f = substr($0, 5); sub(/^b\//, "", f); if (f == "/dev/null") f = ""; next }
+    /^commit / && mode == "history" { c = substr($0, 8, 7); next }
+    /^diff --git/ { hdr = 1; skip = 0; next }
+    hdr && /^\+\+\+ / {
+      f = substr($0, 5); sub(/^b\//, "", f); if (f == "/dev/null") f = ""
+      # A path holding a term is term text: skip its content, the COMMIT:sha7:path loop below reports it.
+      skip = 0; lf = tolower(f)
+      for (i = 1; i <= np; i++) if (index(lf, p[i])) skip = 1
+      next }
     /^@@/ { hdr = 0; s = $0; sub(/^@@ -[0-9,]+ \+/, "", s); sub(/[ ,].*/, "", s); ln = s + 0; next }
-    /^\+/ {
+    /^\+/ && !skip {
       l = tolower(substr($0, 2))
       for (i = 1; i <= np; i++) if (index(l, p[i])) {
         k = (mode == "history") ? c ":" f : f ":" ln

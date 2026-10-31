@@ -57,8 +57,8 @@
           mode = "0440";
         };
 
-        # Runs before the gateway so profiles exist at start. It only writes SOUL.md
-        # and config.yaml, so kanban.db, sessions and memories are never touched.
+        # Runs before the gateway so profiles exist at start. It only writes SOUL.md, config.yaml
+        # and the optional .env, so kanban.db, sessions and memories are never touched.
         systemd.services.hermes-profiles = {
           wantedBy = [ "multi-user.target" ];
           before = [ "hermes-agent.service" ];
