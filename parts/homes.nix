@@ -20,7 +20,6 @@ let
   ++ [
     inputs.stylix.homeModules.stylix
     inputs.private-config.homeManagerModules.workMcpConfig
-    inputs.private-config.homeManagerModules.personalMcpConfig
   ];
 
   mkHome =

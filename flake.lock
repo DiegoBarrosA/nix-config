@@ -1067,15 +1067,14 @@
         "netsuite-mcp": "netsuite-mcp",
         "nixpkgs": "nixpkgs_7",
         "tempo-mcp-server": "tempo-mcp-server",
-        "trello-cloud-mcp": "trello-cloud-mcp",
-        "x-context-mcp": "x-context-mcp"
+        "trello-cloud-mcp": "trello-cloud-mcp"
       },
       "locked": {
-        "lastModified": 1793394566,
-        "narHash": "sha256-ChiVWFKlk0fF2JVHnnFVg5m6AxUnh2b7wR/uq1R1AXE=",
+        "lastModified": 1793474296,
+        "narHash": "sha256-FHvTFxDboCu0FejHQGOnadfFgnSI69nRt5nE/Xek7I4=",
         "ref": "employer-cleanup",
-        "rev": "fe41700a3d1845c817247753b72f5aa642edda6a",
-        "revCount": 136,
+        "rev": "f7b10149df47bd86643bdf1808931b77835547a8",
+        "revCount": 137,
         "type": "git",
         "url": "ssh://git@github.com/DiegoBarrosA/nix-private-config.git"
       },
@@ -1534,19 +1533,6 @@
         "owner": "Miserlou",
         "repo": "VitalPresets",
         "type": "github"
-      }
-    },
-    "x-context-mcp": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1793391653,
-        "narHash": "sha256-V0SKndg4n5lwIsXUUjuoGMCdW9Il7fREgzAWYO7QhM0=",
-        "path": "/home/diego/Projects/Personal/x-context-mcp",
-        "type": "path"
-      },
-      "original": {
-        "path": "/home/diego/Projects/Personal/x-context-mcp",
-        "type": "path"
       }
     },
     "zen-browser": {
