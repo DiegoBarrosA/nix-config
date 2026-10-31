@@ -373,7 +373,8 @@ in
       ## Team jobs (a whole project or a feature)
 
       For a whole project or a feature, create ONE card for profile `planner`. The planner inquires,
-      writes the spec and plan, asks Diego for approval, then creates the chain itself: coders, `reviewer`,
+      writes the spec and plan, asks Diego for approval, then creates the chain itself: coders (`coder-light` for small
+      cards, `coder-heavy` for cross-cutting work), `reviewer`,
       `tester`, `security`, `integrator`, one after the other. Only the `integrator` pushes. You only report.
 
       ```

@@ -108,6 +108,26 @@
     };
   };
 
+  # Not readOnly: it commits in the worktree. The terminal only starts the
+  # claude-<account> wrapper; Claude Code does the coding. max_in_progress_per_profile
+  # is one global int (Task 3), so there is no per-profile cap to set here.
+  services.hermes-agent.profiles.coder-heavy = {
+    soul = ../../optional/ai/hermes-roles/coder-heavy.md;
+    settings = {
+      # Placeholder, same as coder-light: Diego sets the real model.
+      model = {
+        provider = "nous";
+        default = "reflection/beam-1.0-501b-a23b:free";
+      };
+      agent.disabled_toolsets = [ "delegation" "code_execution" ];
+      platform_toolsets.cli = [ "terminal" "file" "todo" ];
+      skills.external_dirs = [
+        "${inputs.superpowers}/skills"
+        "${inputs.ponytail}/skills"
+      ];
+    };
+  };
+
   services.hermes-agent.profiles.planner = {
     soul = ../../optional/ai/hermes-roles/planner.md;
     # Not readOnly: it writes spec and plan files. It has no terminal, so it
