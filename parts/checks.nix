@@ -44,15 +44,21 @@ in
       lib = inputs.nixpkgs.lib;
       # Read-only profiles that may still list `terminal` (Task 6 adds "security").
       terminalAllowed = [ ];
-      # Every attribute name under a value, at any depth (lists are not walked).
-      keys = v: if builtins.isAttrs v then lib.concatLists (lib.mapAttrsToList (k: x: [ k ] ++ keys x) v) else [ ];
-      # shortcut: plain attrs only, a key hidden inside a list of attrsets is missed; fine for current settings shape.
+      # Every attribute name under a value, at any depth, through lists too (fallback_providers is a list of attrsets).
+      keys = v:
+        if builtins.isAttrs v then lib.concatLists (lib.mapAttrsToList (k: x: [ k ] ++ keys x) v)
+        else if builtins.isList v then lib.concatMap keys v
+        else [ ];
       get = p: path: lib.attrByPath path [ ] hermes.profiles.${p}.settings;
       names = builtins.attrNames hermes.profiles;
       ro = builtins.filter (n: hermes.profiles.${n}.readOnly) names;
+      # An unset cli list falls back to Hermes's hermes-cli preset, which includes terminal.
+      cliOk = n: builtins.isList (lib.attrByPath [ "platform_toolsets" "cli" ] null hermes.profiles.${n}.settings);
       errs =
-        (map (n: "${n}: readOnly profile lists terminal in platform_toolsets.cli")
-          (builtins.filter (n: builtins.elem "terminal" (get n [ "platform_toolsets" "cli" ]) && !builtins.elem n terminalAllowed) ro))
+        (map (n: "${n}: readOnly profile must set platform_toolsets.cli to a list (the default preset includes terminal)")
+          (builtins.filter (n: !cliOk n) ro))
+        ++ (map (n: "${n}: readOnly profile lists terminal in platform_toolsets.cli")
+          (builtins.filter (n: cliOk n && builtins.elem "terminal" (get n [ "platform_toolsets" "cli" ]) && !builtins.elem n terminalAllowed) ro))
         ++ lib.concatMap (n:
           map (t: "${n}: readOnly profile does not disable ${t}")
             (builtins.filter (t: !builtins.elem t (get n [ "agent" "disabled_toolsets" ])) [ "delegation" "code_execution" ])) ro
