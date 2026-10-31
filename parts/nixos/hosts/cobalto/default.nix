@@ -108,6 +108,25 @@
     };
   };
 
+  services.hermes-agent.profiles.planner = {
+    soul = ../../optional/ai/hermes-roles/planner.md;
+    # Not readOnly: it writes spec and plan files. It has no terminal, so it
+    # cannot run git; kanban_create reaches workers without a toolset entry.
+    settings = {
+      # Placeholder, same as coder-light: Diego sets the real model.
+      model = {
+        provider = "nous";
+        default = "reflection/beam-1.0-501b-a23b:free";
+      };
+      agent.disabled_toolsets = [ "delegation" "code_execution" ];
+      platform_toolsets.cli = [ "file" "skills" "todo" "web" ];
+      skills.external_dirs = [
+        "${inputs.superpowers}/skills"
+        "${inputs.ponytail}/skills"
+      ];
+    };
+  };
+
   services.hermes-agent.profiles.reviewer = {
     soul = ../../optional/ai/hermes-roles/reviewer.md;
     # No terminal: the reviewer must not be able to edit or run anything.

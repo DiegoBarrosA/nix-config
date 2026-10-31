@@ -1,7 +1,10 @@
 { config, inputs, ... }:
 let
   pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
+  lib = inputs.nixpkgs.lib;
   hermes = config.flake.nixosConfigurations.cobalto.config.services.hermes-agent;
+  # Closed list of team roles: later tasks declare the rest.
+  roles = [ "planner" "coder-light" "coder-heavy" "reviewer" "tester" "security" "integrator" ];
 in
 {
   # Hermes must have one path for code work: the claude-<name> CLI. A generated
@@ -11,6 +14,7 @@ in
       {
         agentsMd = hermes.documents."AGENTS.md";
         disabled = builtins.toJSON hermes.settings.agent.disabled_toolsets;
+        declared = lib.concatStringsSep "\n" (builtins.attrNames hermes.profiles);
         passAsFile = [ "agentsMd" ];
       }
       ''
@@ -21,6 +25,13 @@ in
         fi
         for t in delegation code_execution; do
           echo "$disabled" | grep -q "\"$t\"" || { echo "agent.disabled_toolsets lacks $t" >&2; exit 1; }
+        done
+        # A role named in backticks that no profile declares sends a card to nobody.
+        for r in ${lib.concatStringsSep " " roles}; do
+          if grep -q "\`$r\`" "$agentsMdPath" && ! echo "$declared" | grep -qx "$r"; then
+            echo "AGENTS.md mentions role $r, which is not a declared profile" >&2
+            exit 1
+          fi
         done
         touch $out
       '';

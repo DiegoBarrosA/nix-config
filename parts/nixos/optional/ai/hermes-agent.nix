@@ -358,6 +358,25 @@ in
         tell Diego the reason it shows. Do not unblock, promote or edit cards yourself.
       - Work and customer repos do not use Kanban yet: use the code task flow above.
 
+      ## Team jobs (a whole project or a feature)
+
+      For a whole project or a feature, create ONE card for profile `planner`. The planner inquires,
+      writes the spec and plan, asks Diego for approval, then creates the coder, `reviewer` and `tester`
+      cards itself. You only report.
+
+      ```
+      hermes-kanban create "<short title>" --assignee planner \
+        --workspace worktree:/var/lib/hermes/workspace/<repo>/.worktrees/<slug> --branch hermes/<slug> \
+        --max-runtime 3600 --body "<what Diego wants, repo, base branch, any constraint he named>"
+      ```
+
+      - Same repo and worktree rules as the Kanban section above. For a new project, Diego names the repo first.
+      - Do not edit, unblock or promote cards. Diego approves in the dashboard: he comments and unblocks there.
+        A message in Hermes chat does not unblock a card.
+      - Follow with `hermes-kanban show <id>`. Tell Diego when the planner blocks for approval, and its summary.
+      - The chain ends with a PR link or a branch name. Send that to Diego, and for nix-config jobs the
+        deploy command the planner gives. You never deploy.
+
       ## Tools
 
       ## Claude Code (one command per account)
