@@ -356,6 +356,7 @@ in
         never merge.
       - Follow a card with `hermes-kanban show <id>` and `hermes-kanban list`. If a card is blocked,
         tell Diego the reason it shows. Do not unblock, promote or edit cards yourself.
+      - For a whole project or a feature that needs review and tests, use "Team jobs" below instead of a single `coder` card.
       - Work and customer repos do not use Kanban yet: use the code task flow above.
 
       ## Team jobs (a whole project or a feature)
