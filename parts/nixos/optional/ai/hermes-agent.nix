@@ -247,6 +247,12 @@ in
       export HERMES_HOME=${cfg.stateDir}/.hermes
       exec ${cfg.package}/bin/hermes --tui "$@"
     '')
+    # Kanban CLI for Hermes's own terminal and for diego via sudo: creates and
+    # reads cards. Workers do not use it, they have the kanban_* tools.
+    (pkgs.writeShellScriptBin "hermes-kanban" ''
+      export HERMES_HOME=${cfg.stateDir}/.hermes
+      exec ${cfg.package}/bin/hermes kanban "$@"
+    '')
   ]
   ++ [ ghWrapper ]
   ++ lib.mapAttrsToList claudeWrapper claudeAccounts
@@ -321,36 +327,27 @@ in
       7. If a run ends with a question, send the question to Diego, then resume with his answer.
       8. If a run fails or stops, report what the JSON says. Do not finish the work yourself.
 
-      ## Long jobs while Diego is away (task inbox)
+      ## Long jobs while Diego is away (Kanban)
 
-      For a long job on a public or personal repo, do not start an agent yourself. Write a task file to
-      /srv/media/Obsidian/obsidiana/Hermes/inbox/<slug>.md. A timer on this host starts it within 10 minutes
-      and runs it step by step with opencode. It survives a reboot. You only report. Read
-      /srv/media/Obsidian/obsidiana/Hermes/<slug>-status.md when Diego asks how it is going.
-      Work and customer repos do not use the inbox yet: use the code task flow above.
+      For a long coding job on a public or personal repo, do not start an agent yourself. Create a Kanban
+      card with `hermes-kanban create` through the terminal. The gateway's dispatcher starts a worker on
+      profile `coder` within a minute, and the card survives a crash or reboot. You only report.
 
       ```
-      ---
-      repo: owner/name           # a GitHub repo
-      base: feature-branch       # optional: omit it to use the default branch
-      sensitivity: public        # or personal
-      approved: true             # the runner refuses a task that is not approved
-      models: [opencode-go/kimi-k3]
-      max_attempts_per_step: 2
-      steps:
-        - id: build
-          prompt: "What to do in this step."
-          check: "nix flake check --no-build"   # the step is done only when this passes
-          timeout_min: 40
-      ---
-      Context for every step: goal, constraints, files to read first.
+      hermes-kanban create "<short title>" --assignee coder \
+        --workspace worktree:/var/lib/hermes/workspace/<repo>/.worktrees/<slug> --branch hermes/<slug> \
+        --max-runtime 3600 --body "<goal, base branch, files to read first, how to check the result>"
       ```
 
-      - Take model names from `opencode models`. Models in one opencode-go list share one quota, so a
-        second opencode-go model does not help when the first is limited. Add a model from another
-        provider only if Diego names one.
-      - The slug and step ids use only a to z, 0 to 9 and hyphens.
-      - If the status file says blocked, limited or failed, tell Diego what it says. Do not retry it yourself.
+      - Clone the repo into /var/lib/hermes/workspace/<repo> first if it is missing. The worktree path
+        must be inside that repo, or the card fails to spawn.
+      - Name the base branch in the body. If Diego names none, use the default branch:
+        `git -C /var/lib/hermes/workspace/<repo> symbolic-ref --short refs/remotes/origin/HEAD`.
+      - Tell the worker in the body: commit, push the branch, open a PR, never push to a default branch,
+        never merge.
+      - Follow a card with `hermes-kanban show <id>` and `hermes-kanban list`. If a card is blocked,
+        tell Diego the reason it shows. Do not unblock, promote or edit cards yourself.
+      - Work and customer repos do not use Kanban yet: use the code task flow above.
 
       ## Tools
 
@@ -485,7 +482,7 @@ in
     script = ''
       set -eu
       setfacl -m u:${cfg.user}:--x /srv/media /srv/media/Obsidian
-      install -d -o diego -g users -m 0775 ${scratch} ${scratch}/inbox
+      install -d -o diego -g users -m 0775 ${scratch}
       setfacl -R -m u:${cfg.user}:rX ${vault}
       find ${vault} -type d -exec setfacl -m d:u:${cfg.user}:rX {} +
       setfacl -R -m u:${cfg.user}:rwX,u:diego:rwX ${scratch}

@@ -81,7 +81,6 @@
     ai-opencode-server
     ai-hermes-agent
     ai-litellm
-    ai-hermes-tasks
 
     apps-zennotes
 
