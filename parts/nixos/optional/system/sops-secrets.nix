@@ -258,9 +258,10 @@ with lib;
 
     # Reviewer and security run in a routed profile home, where Hermes drops keys inherited
     # from hermes.env. Only the provider key they use is copied into their profile .env.
+    # The secret is declared above as hermes-REDACTED-api-key; the variable Hermes reads is NVIDIA_API_KEY.
     templates."hermes-nvidia.env" = {
       content = ''
-        NVIDIA_API_KEY=${config.sops.placeholder."hermes-nvidia-api-key"}
+        NVIDIA_API_KEY=${config.sops.placeholder."hermes-REDACTED-api-key"}
       '';
       owner = "hermes";
       group = "hermes";
