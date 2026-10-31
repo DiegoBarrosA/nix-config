@@ -41,7 +41,8 @@ in
         # shortcut: Gemini free limits are shown only per project in AI Studio,
         # set rpm from aistudio.google.com/rate-limit.
         (free 6 8 "gemini/gemini-3.8-flash" (key "GEMINI_API_KEY"))
-        (free 7 30 "mistral/mistral-large-latest" (key "MISTRAL_API_KEY"))
+        # mistral-large is not on the free tier (403 tier_not_allowed); codestral is.
+        (free 7 30 "mistral/codestral-latest" (key "MISTRAL_API_KEY"))
       ];
       # A failed deployment cools for 30 minutes and the group moves to the next
       # order by itself. num_retries above 0 only re-called the same limited
