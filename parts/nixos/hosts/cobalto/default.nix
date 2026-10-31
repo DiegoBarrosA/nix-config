@@ -108,6 +108,41 @@
     };
   };
 
+  services.hermes-agent.profiles.reviewer = {
+    soul = ../../optional/ai/hermes-roles/reviewer.md;
+    # No terminal: the reviewer must not be able to edit or run anything.
+    readOnly = true;
+    settings = {
+      # Placeholder: Diego sets the real model. A different family from
+      # coder-light so author and reviewer do not share blind spots. NIM is a
+      # hosted free-ish tier, so the provider sees the diff.
+      model = {
+        provider = "nvidia";
+        default = "nvidia/nemotron-3-ultra-550b-a55b";
+      };
+      agent.disabled_toolsets = [ "delegation" "code_execution" ];
+      platform_toolsets.cli = [ "file" "skills" "todo" ];
+      skills.external_dirs = [
+        "${inputs.superpowers}/skills"
+        "${inputs.ponytail}/skills"
+      ];
+    };
+  };
+
+  services.hermes-agent.profiles.tester = {
+    soul = ../../optional/ai/hermes-roles/tester.md;
+    settings = {
+      # Placeholder, same as coder-light: Diego sets the real model.
+      model = {
+        provider = "nous";
+        default = "reflection/beam-1.0-501b-a23b:free";
+      };
+      agent.disabled_toolsets = [ "delegation" "code_execution" ];
+      # terminal runs the checks; no skills, so it cannot drift from the role.
+      platform_toolsets.cli = [ "terminal" "file" "todo" ];
+    };
+  };
+
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
 
