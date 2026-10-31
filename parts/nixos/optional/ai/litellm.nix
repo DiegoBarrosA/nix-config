@@ -40,7 +40,8 @@ in
         (free 5 4 "cerebras/gpt-oss-120b" (key "CEREBRAS_API_KEY"))
         # shortcut: Gemini free limits are shown only per project in AI Studio,
         # set rpm from aistudio.google.com/rate-limit.
-        (free 6 8 "gemini/gemini-3.8-flash" (key "GEMINI_API_KEY"))
+        # 3.6-flash answered on the free tier; 3.8-flash returned 503 high demand.
+        (free 6 8 "gemini/gemini-3.6-flash" (key "GEMINI_API_KEY"))
         # mistral-large is not on the free tier (403 tier_not_allowed); codestral is.
         (free 7 30 "mistral/codestral-latest" (key "MISTRAL_API_KEY"))
       ];
