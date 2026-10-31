@@ -82,4 +82,50 @@ in
     in
     assert errs == [ ] || throw "hermes-profiles-readonly: ${lib.concatStringsSep "; " errs}";
     pkgs.runCommand "hermes-profiles-readonly" { } "touch $out";
+
+  # The security gate is a script because a weak model cannot be trusted to run
+  # shell pipelines. Synthetic terms only: no real term may appear in the repo.
+  flake.checks.x86_64-linux.hermes-security-scan =
+    pkgs.runCommand "hermes-security-scan"
+      { nativeBuildInputs = [ pkgs.git pkgs.gitleaks (import ../pkgs/hermes-security-scan.nix pkgs) ]; }
+      ''
+        export HOME=$PWD GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t
+        git init -q repo && cd repo
+        printf "hello\n" > a.txt
+        git add a.txt && git commit -qm base && git tag base
+        printf "world\n" >> a.txt
+        git commit -qam clean
+        printf "ZZZ-fake-term-one\r\nYYY-fake-term-two\r\n" > ../terms
+        export HERMES_SECURITY_TERMS=$PWD/../terms
+
+        # run NAME EXPECTED_RC ARGS...: output lands in ../out
+        run() {
+          want=$1; shift
+          set +e; hermes-security-scan "$@" > ../out 2>&1; rc=$?; set -e
+          [ "$rc" = "$want" ] || { echo "FAIL: $* gave $rc, wanted $want"; cat ../out; exit 1; }
+        }
+
+        run 0 diff base
+        grep -q "terms=2 matches=0" ../out
+
+        printf "x\nzzz-FAKE-term-ONE here\n" >> a.txt
+        git commit -qam dirty
+        run 1 diff base
+        grep -q "^a.txt:4\$" ../out
+        if grep -qi "fake-term" ../out; then echo "FAIL: term text printed"; exit 1; fi
+
+        # CRLF term (the second one) still matches
+        printf "yyy-fake-TERM-two\n" > b.txt
+        git add b.txt && git commit -qm crlf
+        run 1 diff base
+        grep -q "^b.txt:1\$" ../out
+        run 1 history
+        if grep -qi "fake-term" ../out; then echo "FAIL: term text printed"; exit 1; fi
+
+        run 3 diff no-such-ref
+        HERMES_SECURITY_TERMS=/nonexistent run 3 diff base
+        printf "\n  \r\n\n" > ../blank
+        HERMES_SECURITY_TERMS=$PWD/../blank run 3 diff base
+        touch $out
+      '';
 }
