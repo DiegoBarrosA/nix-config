@@ -80,12 +80,148 @@
 
     ai-opencode-server
     ai-hermes-agent
+    ai-hermes-profiles
     ai-litellm
 
     apps-zennotes
 
     system-systemdboot
   ];
+
+  services.hermes-agent.profiles.coder-light = {
+    soul = ../../optional/ai/hermes-roles/coder-light.md;
+    settings = {
+      # Placeholder copied from the live `coder` profile. A free-tier model sends
+      # repo code to a free provider: pick the real model before private repos.
+      model = {
+        provider = "nous";
+        default = "reflection/beam-1.0-501b-a23b:free";
+      };
+      agent.disabled_toolsets = [ "delegation" "code_execution" ];
+      # Explicit list: an unset cli falls back to every toolset. The dispatcher
+      # adds the kanban_* lifecycle tools itself.
+      platform_toolsets.cli = [ "terminal" "file" "skills" "todo" ];
+      skills.external_dirs = [
+        "${inputs.superpowers}/skills"
+        "${inputs.ponytail}/skills"
+      ];
+    };
+  };
+
+  # Not readOnly: it commits in the worktree. The terminal only starts the
+  # claude-<account> wrapper; Claude Code does the coding. max_in_progress_per_profile
+  # is one global int (Task 3), so there is no per-profile cap to set here.
+  services.hermes-agent.profiles.coder-heavy = {
+    soul = ../../optional/ai/hermes-roles/coder-heavy.md;
+    settings = {
+      # Placeholder, same as coder-light: Diego sets the real model.
+      model = {
+        provider = "nous";
+        default = "reflection/beam-1.0-501b-a23b:free";
+      };
+      agent.disabled_toolsets = [ "delegation" "code_execution" ];
+      platform_toolsets.cli = [ "terminal" "file" "todo" ];
+      skills.external_dirs = [
+        "${inputs.superpowers}/skills"
+        "${inputs.ponytail}/skills"
+      ];
+    };
+  };
+
+  services.hermes-agent.profiles.planner = {
+    soul = ../../optional/ai/hermes-roles/planner.md;
+    # Not readOnly: it writes spec and plan files. It has no terminal, so it
+    # cannot run git; kanban_create reaches workers without a toolset entry.
+    settings = {
+      # Placeholder, same as coder-light: Diego sets the real model.
+      model = {
+        provider = "nous";
+        default = "reflection/beam-1.0-501b-a23b:free";
+      };
+      agent.disabled_toolsets = [ "delegation" "code_execution" ];
+      platform_toolsets.cli = [ "file" "skills" "todo" "web" ];
+      skills.external_dirs = [
+        "${inputs.superpowers}/skills"
+        "${inputs.ponytail}/skills"
+      ];
+    };
+  };
+
+  services.hermes-agent.profiles.reviewer = {
+    soul = ../../optional/ai/hermes-roles/reviewer.md;
+    envFile = config.sops.templates."hermes-nvidia.env".path;
+    # No terminal: the reviewer must not be able to edit or run anything.
+    readOnly = true;
+    settings = {
+      # Placeholder: Diego sets the real model. A different family from
+      # coder-light so author and reviewer do not share blind spots. NIM is a
+      # hosted free-ish tier, so the provider sees the files it reads and the summary.
+      model = {
+        provider = "nvidia";
+        default = "nvidia/nemotron-3-ultra-550b-a55b";
+      };
+      agent.disabled_toolsets = [ "delegation" "code_execution" ];
+      platform_toolsets.cli = [ "file" "skills" "todo" ];
+      skills.external_dirs = [
+        "${inputs.superpowers}/skills"
+        "${inputs.ponytail}/skills"
+      ];
+    };
+  };
+
+  services.hermes-agent.profiles.tester = {
+    soul = ../../optional/ai/hermes-roles/tester.md;
+    settings = {
+      # Placeholder, same as coder-light: Diego sets the real model.
+      model = {
+        provider = "nous";
+        default = "reflection/beam-1.0-501b-a23b:free";
+      };
+      agent.disabled_toolsets = [ "delegation" "code_execution" ];
+      # terminal runs the checks; no skills, so it cannot drift from the role.
+      platform_toolsets.cli = [ "terminal" "file" "todo" ];
+    };
+  };
+
+  services.hermes-agent.profiles.security = {
+    soul = ../../optional/ai/hermes-roles/security.md;
+    envFile = config.sops.templates."hermes-nvidia.env".path;
+    # Reads only. No file tool: it could read the term file. terminal is allowed by the readonly check for this profile alone,
+    # to run the scan and three read-only git commands; the prompt forbids anything else.
+    readOnly = true;
+    settings = {
+      # Placeholder, same family as the reviewer so it differs from the coders.
+      model = {
+        provider = "nvidia";
+        default = "nvidia/nemotron-3-ultra-550b-a55b";
+      };
+      agent.disabled_toolsets = [ "delegation" "code_execution" ];
+      platform_toolsets.cli = [ "terminal" ];
+      skills.external_dirs = [
+        "${inputs.superpowers}/skills"
+        "${inputs.ponytail}/skills"
+      ];
+    };
+  };
+
+  services.hermes-agent.profiles.integrator = {
+    soul = ../../optional/ai/hermes-roles/integrator.md;
+    # Not readOnly: it adds the remote. It is the only role the push guardrail
+    # (pushProfiles) lets get a git credential.
+    settings = {
+      # Placeholder, same as coder-light: Diego sets the real model.
+      model = {
+        provider = "nous";
+        default = "reflection/beam-1.0-501b-a23b:free";
+      };
+      agent.disabled_toolsets = [ "delegation" "code_execution" ];
+      platform_toolsets.cli = [ "terminal" "file" "todo" ];
+      skills.external_dirs = [
+        "${inputs.superpowers}/skills"
+        "${inputs.ponytail}/skills"
+      ];
+    };
+  };
 
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [

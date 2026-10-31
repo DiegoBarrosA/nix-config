@@ -1,5 +1,7 @@
 # Rules for AI-driven development (Hermes-launched coding agents)
 
+If the task says the spec is approved, or a Kanban card launched you, skip the spec stop below, do not push and do not open a PR: commit only.
+
 Source: Diego's vault notes `AI/Skills/dev-rules` and `AI/Prompts/System/Writing Style Rules`, adapted for
 headless runs on cobalto. If the vault notes change, update this file. The build passes it to every
 Hermes-launched `claude-<name>` run with `--append-system-prompt-file`.

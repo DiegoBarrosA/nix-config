@@ -99,6 +99,9 @@ let
   # (Contents + Pull requests write only; "branches and PRs only" is a ruleset
   # on each repo, not something the token enforces). The token is picked by
   # host and repo owner. An owner that is in neither list gets no credentials.
+  # Only the profiles in services.hermes-agent.pushProfiles (the integrator, default
+  # for Hermes chat, and the temporary legacy coder exemption) get
+  # a credential; a coder's `git push` fails at the helper.
   # No token enters an environment variable of the agent's shell: git reads
   # it through a credential helper, and gh gets it inside its own wrapper.
   gitAccess = lib.recursiveUpdate {
@@ -114,21 +117,13 @@ let
   gitTable = lib.concatStringsSep "\n" (
     lib.concatMap (a: map (o: "${a.host} ${o} ${a.user} ${a.tokenFile}") a.owners) gitEntries
   );
-  # Prints "<user> <token>" for a host and owner, or exits 1.
-  gitToken = pkgs.writeShellScript "hermes-git-token" ''
-    host="$1" owner="''${2,,}"
-    while read -r h o u f; do
-      [ "$h" = "$host" ] && [ "$o" = "$owner" ] || continue
-      # A missing or empty token file means no credential, not a blank password.
-      token="$(${pkgs.coreutils}/bin/tr -d '[:space:]' < "$f" 2>/dev/null)" || exit 1
-      [ -n "$token" ] || exit 1
-      printf '%s %s' "$u" "$token"
-      exit 0
-    done <<'MAP'
-    ${gitTable}
-    MAP
-    exit 1
-  '';
+  # Script and push guardrail live in pkgs/hermes-push-guard.nix so the check can test them.
+  pushGuard = import ../../../../pkgs/hermes-push-guard.nix {
+    inherit pkgs;
+    profiles = cfg.pushProfiles;
+    table = gitTable;
+  };
+  gitToken = pushGuard.token;
   gitCredential = pkgs.writeShellScript "git-credential-hermes" ''
     [ "''${1:-}" = get ] || exit 0
     host="" path=""
@@ -165,11 +160,28 @@ let
   claudeCli = name: claudeBin "claude-${name}" "${pkgs.claude-code}/bin/claude" claudeCliArgs name;
 in
 {
-  imports = [ inputs.hermes-agent.nixosModules.default ];
+  imports = [
+    inputs.hermes-agent.nixosModules.default
+    {
+      options.services.hermes-agent.pushProfiles = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ "integrator" "default" "coder" ];
+        description = ''
+          Hermes profiles whose shell may get git and gh credentials. An unset
+          HERMES_PROFILE (Hermes chat) is always allowed. "coder" is a TEMPORARY
+          legacy exemption: it is the undeclared live profile Diego uses today.
+          Remove it when he retires `coder`. A guardrail, not a boundary.
+        '';
+      };
+    }
+  ];
 
   services.hermes-agent = {
     enable = true;
     environmentFiles = [ config.sops.templates."hermes.env".path ];
+
+    # The security profile scans with gitleaks through hermes-security-scan.
+    extraPackages = [ pkgs.gitleaks (import ../../../../pkgs/hermes-security-scan.nix { inherit pkgs; }) ];
 
     # Not a secret, so it may live in the Nix store. A non-loopback public URL
     # turns on the dashboard login gate (basic auth, set in hermes.env) even
@@ -213,6 +225,15 @@ in
     # applied even though config.yaml is merged. Terminal and file tools stay:
     # this does not stop a shell edit, only the AGENTS.md rules do that.
     settings.agent.disabled_toolsets = [ "delegation" "code_execution" ];
+
+    # Conservative on purpose: one box, free-tier models with rate limits.
+    # The per-profile cap stops fan-out onto a single profile. Review cards are
+    # dispatched so reviewer profiles pick them up.
+    settings.kanban = {
+      review_dispatch = true;
+      max_in_progress = 2;
+      max_in_progress_per_profile = 1;
+    };
 
     backend.mode = "dashboard";
 
@@ -347,7 +368,36 @@ in
         never merge.
       - Follow a card with `hermes-kanban show <id>` and `hermes-kanban list`. If a card is blocked,
         tell Diego the reason it shows. Do not unblock, promote or edit cards yourself.
+      - For a whole project or a feature that needs review and tests, use "Team jobs" below instead of a single `coder` card.
       - Work and customer repos do not use Kanban yet: use the code task flow above.
+
+      ## Team jobs (a whole project or a feature)
+
+      For a whole project or a feature, create ONE card for profile `planner`. The planner inquires,
+      writes the spec and plan, asks Diego for approval, then creates the chain itself: coders (`coder-light` for small
+      cards, `coder-heavy` for cross-cutting work; each hands its own card to `reviewer`),
+      `tester`, `security`, `integrator`, one after the other. Only the `integrator` pushes. You only report.
+
+      ```
+      hermes-kanban create "<short title>" --assignee planner \
+        --workspace worktree:/var/lib/hermes/workspace/<repo>/.worktrees/<slug> --branch hermes/<slug> \
+        --max-runtime 3600 --body "<what Diego wants, repo, base branch, any constraint he named>"
+      ```
+
+      - Same repo and worktree rules as the Kanban section above.
+      - For a NEW project, set it up first (a setup step like cloning, it edits no files): create
+        `/var/lib/hermes/workspace/<project>`, run `git init` and `git commit --allow-empty -m "chore: init"` there,
+        then create the planner card with the worktree inside that repo. The `integrator` blocks until Diego
+        creates the private remote by hand and unblocks it.
+      - If a card is blocked with "escalate to coder-heavy", tell Diego and give him this command to run himself:
+        `hermes-kanban reassign <id> coder-heavy`. The card stays blocked after that, so he also unblocks it
+        (`hermes-kanban unblock <id>` or the dashboard). You never run either.
+      - Do not edit, unblock or promote cards. Diego approves in the dashboard: he comments and unblocks there.
+        A message in Hermes chat does not unblock a card.
+      - Follow with `hermes-kanban show <id>`. Tell Diego when the planner blocks for approval, and its summary.
+      - A blocked `tester` or `security` card has stopped the chain. Tell Diego its reason; for `security` that is FILE:LINE only, never matched text.
+      - The `integrator` pushes the branch and opens the PR. The chain ends with its PR link. Send that to Diego, and for nix-config jobs the
+        deploy command the `integrator` gives. You never deploy.
 
       ## Tools
 
@@ -368,6 +418,7 @@ in
 
       ## Git access
       - `git push` and `gh` work without any login step. Credentials depend on the repo owner.
+      - In Team jobs only the `integrator` profile gets credentials (services.hermes-agent.pushProfiles). A coder's push fails.
       - Personal repos (DiegoBarrosA): full access.
       - Work repos: create branches and open PRs only. Never push to the default branch,
         never merge. Open a PR and leave the merge to Diego.
