@@ -1,7 +1,7 @@
 # The security gate as one script: a weak model must not assemble grep pipelines.
 # Imported by hermes-agent.nix (PATH of the agent) and parts/checks.nix (the test).
 # It lives outside parts/ because import-tree would load every .nix there as a module.
-# It never prints a matched term, a pattern or a content line, only FILE:LINE.
+# It never prints a matched term, a pattern or a content line, only FILE:LINE and COMMIT:sha7:field.
 # The term path is a Nix argument, not an env var: an env override would let the
 # agent point the scan at its own one-term file and pass.
 {
@@ -73,6 +73,26 @@ pkgs.writeShellScriptBin "hermes-security-scan" ''
       }
       ln++
     }' "$tmp/terms" "$tmp/patch" > "$tmp/hits"
+  # Terms can also sit in file names and commit metadata. Same terms, same fixed-string
+  # case-insensitive match (grep -iF), but print only COMMIT:<sha7>:<field>, never the text.
+  # shortcut: one git call per commit, fine for card-sized repos; batch if history scans get slow.
+  hasterm() { grep -aqiFf "$tmp/terms" "$tmp/field"; }
+  # A git failure must die, not read as "no match".
+  chk() { # chk <sha7> <field> <git args...>
+    id=$1 field=$2; shift 2
+    git "$@" > "$tmp/field" || die "git failed reading commit metadata"
+    if hasterm; then echo "COMMIT:$id:$field" >> "$tmp/hits"; fi
+  }
+  if [ "$mode" = diff ]; then revs=("$basesha..$headsha"); else revs=(--all); fi
+  git rev-list "''${revs[@]}" > "$tmp/shas" || die "cannot list commits"
+  while read -r sha; do
+    id=''${sha:0:7}
+    chk "$id" message log -1 --format=%B "$sha"
+    chk "$id" author log -1 --format='%an%n%ae' "$sha"
+    chk "$id" committer log -1 --format='%cn%n%ce' "$sha"
+    # -z so odd names are not quoted into escapes; -m so merges list their files too.
+    chk "$id" path diff-tree -r -m --root --no-commit-id --name-only -z "$sha"
+  done < "$tmp/shas"
   matches=$(wc -l < "$tmp/hits")
   cat "$tmp/hits"
 

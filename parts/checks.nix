@@ -219,6 +219,48 @@ in
         grep -q "secrets=1" ../out || { cat ../out; exit 1; }
         cd ../repo2
 
+        # Term text in a path or in commit metadata must be caught and named by identifier only.
+        mkmeta() {
+          git init -q "../$1" && cd "../$1"
+          printf "base\n" > a.txt
+          git add a.txt && git commit -qm base && git tag base
+        }
+        mkmeta m1
+        printf "x\n" > zzz-fake-term-one.txt
+        git add . && git commit -qm "add file"
+        run 1 ${scan} diff base
+        grep -qE '^COMMIT:[0-9a-f]{7}:path$' ../out
+        grep -q "matches=1" ../out
+        nofake
+        mkmeta m2
+        printf "x\n" > b.txt
+        git add . && git commit -qm "note about ZZZ-fake-term-one"
+        run 1 ${scan} diff base
+        grep -qE '^COMMIT:[0-9a-f]{7}:message$' ../out
+        nofake
+        mkmeta m3
+        printf "x\n" > b.txt
+        git add . && git commit -q --author="YYY-fake-term-two <a@b.c>" -m "add b"
+        run 1 ${scan} diff base
+        grep -qE '^COMMIT:[0-9a-f]{7}:author$' ../out
+        nofake
+        run 1 ${scan} history
+        grep -qE '^COMMIT:[0-9a-f]{7}:author$' ../out
+        nofake
+        mkmeta m4
+        printf "x\n" > b.txt
+        git add . && GIT_COMMITTER_EMAIL=dev@zzz-fake-term-one.test git commit -qm "add b"
+        run 1 ${scan} diff base
+        grep -qE '^COMMIT:[0-9a-f]{7}:committer$' ../out
+        nofake
+        mkmeta m5
+        printf "x\n" > b.txt
+        git add . && git commit -qm "add b"
+        run 0 ${scan} diff base
+        grep -q "matches=0 secrets=0" ../out
+        run 0 ${scan} history
+        nofake
+
         # Fail closed
         run 3 ${scan} diff no-such-ref
         run 3 ${scanMissing} diff base
