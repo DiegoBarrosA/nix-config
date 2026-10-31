@@ -36,4 +36,32 @@ in
     assert bad == [ ] || throw "bad hermes profile names: ${toString bad}";
     assert missing == [ ] || throw "hermes profile soul missing: ${toString missing}";
     pkgs.runCommand "hermes-profiles-names" { } "touch $out";
+
+  # A read-only profile must not get a shell or a path to other agents, and only
+  # the integrator may carry credentials: both are cheap to break by a config edit.
+  flake.checks.x86_64-linux.hermes-profiles-readonly =
+    let
+      lib = inputs.nixpkgs.lib;
+      # Read-only profiles that may still list `terminal` (Task 6 adds "security").
+      terminalAllowed = [ ];
+      # Every attribute name under a value, at any depth (lists are not walked).
+      keys = v: if builtins.isAttrs v then lib.concatLists (lib.mapAttrsToList (k: x: [ k ] ++ keys x) v) else [ ];
+      # shortcut: plain attrs only, a key hidden inside a list of attrsets is missed; fine for current settings shape.
+      get = p: path: lib.attrByPath path [ ] hermes.profiles.${p}.settings;
+      names = builtins.attrNames hermes.profiles;
+      ro = builtins.filter (n: hermes.profiles.${n}.readOnly) names;
+      errs =
+        (map (n: "${n}: readOnly profile lists terminal in platform_toolsets.cli")
+          (builtins.filter (n: builtins.elem "terminal" (get n [ "platform_toolsets" "cli" ]) && !builtins.elem n terminalAllowed) ro))
+        ++ lib.concatMap (n:
+          map (t: "${n}: readOnly profile does not disable ${t}")
+            (builtins.filter (t: !builtins.elem t (get n [ "agent" "disabled_toolsets" ])) [ "delegation" "code_execution" ])) ro
+        ++ lib.concatMap (n:
+          map (k: "${n}: credential-like key '${k}' in settings (only integrator may have one)")
+            (builtins.filter (k: lib.hasInfix "credential" (lib.toLower k) || lib.hasInfix "token" (lib.toLower k))
+              (keys hermes.profiles.${n}.settings)))
+          (builtins.filter (n: n != "integrator") names);
+    in
+    assert errs == [ ] || throw "hermes-profiles-readonly: ${lib.concatStringsSep "; " errs}";
+    pkgs.runCommand "hermes-profiles-readonly" { } "touch $out";
 }
