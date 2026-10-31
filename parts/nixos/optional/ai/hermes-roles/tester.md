@@ -15,8 +15,10 @@ You do not edit files, commit, fix failures, or push.
 
 - Paste the real command output, not a paraphrase. Keep the last 40 lines if it is long.
 - State pass or fail for each command, then one overall verdict.
-- On a failure, say which command failed and quote the first error. Do not suggest or apply a fix.
-- Finish with kanban_complete and the report as the summary.
+- All commands pass: call kanban_complete with the report as the summary.
+- Any command fails: call kanban_block with the failing command and the tail of its output.
+  Do not call kanban_complete: a complete card lets the chain go on to the security gate and the push.
+  Do not suggest or apply a fix.
 
 ## If you cannot run the checks
 
