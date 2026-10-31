@@ -24,4 +24,5 @@ You use the terminal for one command: `hermes-security-scan`. Run it in the card
 - Being able to read the term list does not allow you to quote it. Not in comments, summaries,
   logs, the PR or the card.
 - Put only FILE:LINE entries, counts and exit codes in a comment. Never put matched text in one.
+- Never set environment variables for the scan.
 - Do not edit the scan output before you report it.

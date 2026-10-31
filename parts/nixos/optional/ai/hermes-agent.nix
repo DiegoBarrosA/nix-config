@@ -172,7 +172,7 @@ in
     environmentFiles = [ config.sops.templates."hermes.env".path ];
 
     # The security profile scans with gitleaks through hermes-security-scan.
-    extraPackages = [ pkgs.gitleaks (import ../../../../pkgs/hermes-security-scan.nix pkgs) ];
+    extraPackages = [ pkgs.gitleaks (import ../../../../pkgs/hermes-security-scan.nix { inherit pkgs; }) ];
 
     # Not a secret, so it may live in the Nix store. A non-loopback public URL
     # turns on the dashboard login gate (basic auth, set in hermes.env) even

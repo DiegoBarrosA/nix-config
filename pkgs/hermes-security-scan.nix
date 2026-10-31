@@ -2,10 +2,30 @@
 # Imported by hermes-agent.nix (PATH of the agent) and parts/checks.nix (the test).
 # It lives outside parts/ because import-tree would load every .nix there as a module.
 # It never prints a matched term, a pattern or a content line, only FILE:LINE.
-pkgs:
+# The term path is a Nix argument, not an env var: an env override would let the
+# agent point the scan at its own one-term file and pass.
+{
+  pkgs,
+  terms ? "/run/secrets/hermes-security-terms",
+  gitleaks ? pkgs.gitleaks,
+}:
+let
+  # The repo's own .gitleaks.toml would let a card allowlist its secrets, so pin a config.
+  config = pkgs.writeText "gitleaks.toml" ''
+    [extend]
+    useDefault = true
+  '';
+in
 pkgs.writeShellScriptBin "hermes-security-scan" ''
   set -euo pipefail
-  export PATH=${pkgs.lib.makeBinPath [ pkgs.git pkgs.gitleaks pkgs.gawk pkgs.coreutils ]}:$PATH
+  export PATH=${pkgs.lib.makeBinPath [ pkgs.git gitleaks pkgs.gawk pkgs.coreutils pkgs.jq ]}:$PATH
+  # Env that gitleaks reads would weaken the scan.
+  unset GITLEAKS_CONFIG GITLEAKS_CONFIG_TOML
+
+  # Every death exits 3. Only the two explicit statuses below may be 0 or 1.
+  final=3
+  tmp=
+  trap 'rm -rf "$tmp"; exit $final' EXIT
   die() { echo "hermes-security-scan: $1" >&2; exit 3; }
 
   mode=''${1:-}
@@ -14,23 +34,21 @@ pkgs.writeShellScriptBin "hermes-security-scan" ''
     history) base= ;;
     *) die "usage: hermes-security-scan diff <base-ref> | history" ;;
   esac
-  command -v git >/dev/null || die "git is missing"
-  command -v gitleaks >/dev/null || die "gitleaks is missing"
 
-  # Env override exists only for the flake check.
-  terms=''${HERMES_SECURITY_TERMS:-/run/secrets/hermes-security-terms}
-  tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
-  [ -r "$terms" ] || die "term list is not configured (missing or unreadable)"
-  awk '{ gsub(/\r/, "") } NF' "$terms" > "$tmp/terms" || die "cannot read the term list"
+  tmp=$(mktemp -d)
+  [ -r ${terms} ] || die "term list is not configured (missing or unreadable)"
+  # Strip CR, trim each term, drop blank lines.
+  awk '{ gsub(/\r/, ""); gsub(/^[ \t]+|[ \t]+$/, "") } NF' ${terms} > "$tmp/terms"
   n=$(wc -l < "$tmp/terms")
   [ "$n" -ge 1 ] || die "term list is not configured (no patterns)"
 
+  # -a and --no-textconv: a -diff attribute or textconv driver in the scanned repo must not hide content.
   if [ "$mode" = diff ]; then
     git rev-parse --verify --quiet "$base^{commit}" >/dev/null || die "unknown base ref"
-    git diff -U0 --no-color --no-ext-diff "$base..HEAD" > "$tmp/patch" || die "git diff failed"
+    git diff -a -U0 --no-color --no-ext-diff --no-textconv "$base..HEAD" > "$tmp/patch"
     lopts=(--log-opts "$base..HEAD")
   else
-    git log -p -U0 --all --no-color --no-ext-diff --format='commit %H' > "$tmp/patch" || die "git log failed"
+    git log -p -a -U0 --all --no-color --no-ext-diff --no-textconv --format='commit %H' > "$tmp/patch"
     lopts=()
   fi
 
@@ -53,11 +71,19 @@ pkgs.writeShellScriptBin "hermes-security-scan" ''
   matches=$(wc -l < "$tmp/hits")
   cat "$tmp/hits"
 
+  # Exit 2 means leaks, so gitleaks's own fatal exit 1 cannot pass as findings.
+  # An empty dir for the ignore path stops a repo .gitleaksignore from hiding secrets.
+  mkdir "$tmp/noignore"
   rc=0
-  gitleaks detect --no-banner --redact "''${lopts[@]}" --report-format json --report-path "$tmp/leaks.json" || rc=$?
-  case "$rc" in 0|1) ;; *) die "gitleaks failed with exit $rc" ;; esac
-  secrets=$(grep -o '"RuleID"' "$tmp/leaks.json" | wc -l || true)
+  gitleaks detect --no-banner --redact --exit-code 2 --config ${config} \
+    --gitleaks-ignore-path "$tmp/noignore" --ignore-gitleaks-allow \
+    "''${lopts[@]}" --report-format json --report-path "$tmp/leaks.json" >/dev/null 2>&1 || rc=$?
+  case "$rc" in 0|2) ;; *) die "gitleaks failed with exit $rc" ;; esac
+  [ -f "$tmp/leaks.json" ] || die "gitleaks wrote no report"
+  jq -e 'type == "array"' "$tmp/leaks.json" >/dev/null || die "gitleaks report is not valid JSON"
+  secrets=$(jq length "$tmp/leaks.json")
 
   echo "terms=$n matches=$matches secrets=$secrets"
-  [ "$matches" -eq 0 ] && [ "$secrets" -eq 0 ] || exit 1
+  if [ "$matches" -eq 0 ] && [ "$secrets" -eq 0 ]; then final=0; else final=1; fi
+  exit $final
 ''

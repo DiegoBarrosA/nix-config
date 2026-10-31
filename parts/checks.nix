@@ -85,47 +85,88 @@ in
 
   # The security gate is a script because a weak model cannot be trusted to run
   # shell pipelines. Synthetic terms only: no real term may appear in the repo.
+  # Each variant bakes in its own term file, like the shipped binary does.
   flake.checks.x86_64-linux.hermes-security-scan =
+    let
+      scanWith = args: "${import ../pkgs/hermes-security-scan.nix ({ inherit pkgs; } // args)}/bin/hermes-security-scan";
+      # Padding, CRLF, a blank and a whitespace-only line, and a regex-special term.
+      terms = pkgs.writeText "terms" "  ZZZ-fake-term-one  \r\nYYY-fake-term-two\r\n\r\n   \r\nq.w\\e*[r\r\n";
+      blank = pkgs.writeText "blank" "\n  \r\n\n";
+      scan = scanWith { inherit terms; };
+      scanBlank = scanWith { terms = blank; };
+      scanMissing = scanWith { terms = "/nonexistent"; };
+      # A gitleaks that exits 1 without a report, like a fatal error does.
+      scanBadLeaks = scanWith { inherit terms; gitleaks = pkgs.writeShellScriptBin "gitleaks" "exit 1"; };
+    in
     pkgs.runCommand "hermes-security-scan"
-      { nativeBuildInputs = [ pkgs.git pkgs.gitleaks (import ../pkgs/hermes-security-scan.nix pkgs) ]; }
+      { nativeBuildInputs = [ pkgs.git ]; }
       ''
         export HOME=$PWD GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t
+
+        # run WANT SCAN ARGS...: output lands in ../out
+        run() {
+          want=$1; s=$2; shift 2
+          set +e; "$s" "$@" > ../out 2>&1; rc=$?; set -e
+          [ "$rc" = "$want" ] || { echo "FAIL: $* gave $rc, wanted $want"; cat ../out; exit 1; }
+        }
+        # The output must never carry term text.
+        nofake() { if grep -qiE 'fake-term|q.w.e' ../out; then echo "FAIL: term text printed"; cat ../out; exit 1; fi; }
+
         git init -q repo && cd repo
         printf "hello\n" > a.txt
         git add a.txt && git commit -qm base && git tag base
         printf "world\n" >> a.txt
         git commit -qam clean
-        printf "ZZZ-fake-term-one\r\nYYY-fake-term-two\r\n" > ../terms
-        export HERMES_SECURITY_TERMS=$PWD/../terms
+        run 0 ${scan} diff base
+        grep -q "terms=3 matches=0 secrets=0" ../out
 
-        # run NAME EXPECTED_RC ARGS...: output lands in ../out
-        run() {
-          want=$1; shift
-          set +e; hermes-security-scan "$@" > ../out 2>&1; rc=$?; set -e
-          [ "$rc" = "$want" ] || { echo "FAIL: $* gave $rc, wanted $want"; cat ../out; exit 1; }
-        }
-
-        run 0 diff base
-        grep -q "terms=2 matches=0" ../out
-
+        # Mixed case and padded term
         printf "x\nzzz-FAKE-term-ONE here\n" >> a.txt
         git commit -qam dirty
-        run 1 diff base
-        grep -q "^a.txt:4\$" ../out
-        if grep -qi "fake-term" ../out; then echo "FAIL: term text printed"; exit 1; fi
+        run 1 ${scan} diff base
+        grep -qx "a.txt:4" ../out
+        nofake
 
-        # CRLF term (the second one) still matches
+        # CRLF term still matches; regex characters match as fixed text only
         printf "yyy-fake-TERM-two\n" > b.txt
-        git add b.txt && git commit -qm crlf
-        run 1 diff base
-        grep -q "^b.txt:1\$" ../out
-        run 1 history
-        if grep -qi "fake-term" ../out; then echo "FAIL: term text printed"; exit 1; fi
+        printf '%s\n' 'xQ.W\E*[R' > c.txt
+        printf "qXwe\n" > d.txt
+        git add . && git commit -qm more
+        run 1 ${scan} diff base
+        grep -qx "b.txt:1" ../out
+        grep -qx "c.txt:1" ../out
+        if grep -q "^d.txt" ../out; then echo "FAIL: regex decoy matched"; exit 1; fi
+        nofake
 
-        run 3 diff no-such-ref
-        HERMES_SECURITY_TERMS=/nonexistent run 3 diff base
-        printf "\n  \r\n\n" > ../blank
-        HERMES_SECURITY_TERMS=$PWD/../blank run 3 diff base
+        # History mode prints COMMIT:FILE
+        run 1 ${scan} history
+        grep -qE '^[0-9a-f]{40}:b.txt$' ../out
+        nofake
+
+        # A binary file, with diff disabled by attribute, is still scanned
+        git checkout -q -b bin base
+        printf '*.bin -diff\n' > .gitattributes
+        printf 'ab\0zzz-fake-term-one\0cd\n' > x.bin
+        git add . && git commit -qm bin
+        run 1 ${scan} diff base
+        grep -q "x.bin" ../out
+        nofake
+        git checkout -q master 2>/dev/null || git checkout -q main
+
+        # A deleted line holding a term is not a match
+        git init -q ../repo2 && cd ../repo2
+        printf "ok\nZZZ-fake-term-one\n" > a.txt
+        git add a.txt && git commit -qm base && git tag base
+        printf "ok\n" > a.txt
+        git commit -qam del
+        run 0 ${scan} diff base
+
+        # Fail closed
+        run 3 ${scan} diff no-such-ref
+        run 3 ${scanMissing} diff base
+        run 3 ${scanBlank} diff base
+        run 3 ${scanBadLeaks} diff base
+        run 3 ${scan}
         touch $out
       '';
 }
