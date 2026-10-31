@@ -32,12 +32,26 @@
         });
       };
 
+      # Off until the key exists: a declared sops secret with no key in the file
+      # breaks the build. Diego adds the key `hermes-security-terms` to
+      # hosts/cobalto/secrets.yaml, then sets this to true.
+      options.services.hermes-agent.securityTermsSecret = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Declare the sops secret hermes-security-terms read by the security profile.";
+      };
+
       # The name type is a separate check so a bad name fails with a clear message.
       config = lib.mkIf (cfg.profiles != { }) {
         assertions = lib.mapAttrsToList (n: _: {
           assertion = builtins.match "[a-z0-9][a-z0-9-]*" n != null;
           message = "services.hermes-agent.profiles.${n}: name must match ^[a-z0-9][a-z0-9-]*$";
         }) cfg.profiles;
+
+        sops.secrets.hermes-security-terms = lib.mkIf cfg.securityTermsSecret {
+          group = "hermes";
+          mode = "0440";
+        };
 
         # Runs before the gateway so profiles exist at start. It only writes SOUL.md
         # and config.yaml, so kanban.db, sessions and memories are never touched.

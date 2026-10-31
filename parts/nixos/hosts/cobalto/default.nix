@@ -162,6 +162,26 @@
     };
   };
 
+  services.hermes-agent.profiles.security = {
+    soul = ../../optional/ai/hermes-roles/security.md;
+    # Reads only. terminal is allowed by the readonly check for this profile alone,
+    # to run gitleaks and grep; the prompt forbids anything else.
+    readOnly = true;
+    settings = {
+      # Placeholder, same family as the reviewer so it differs from the coders.
+      model = {
+        provider = "nvidia";
+        default = "nvidia/nemotron-3-ultra-550b-a55b";
+      };
+      agent.disabled_toolsets = [ "delegation" "code_execution" ];
+      platform_toolsets.cli = [ "terminal" "file" ];
+      skills.external_dirs = [
+        "${inputs.superpowers}/skills"
+        "${inputs.ponytail}/skills"
+      ];
+    };
+  };
+
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
 

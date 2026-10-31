@@ -53,8 +53,9 @@ in
   flake.checks.x86_64-linux.hermes-profiles-readonly =
     let
       lib = inputs.nixpkgs.lib;
-      # Read-only profiles that may still list `terminal` (Task 6 adds "security").
-      terminalAllowed = [ ];
+      # Read-only profiles that may still list `terminal`: security runs gitleaks and grep,
+      # and its prompt limits it to those two. The missing-cli rule still applies.
+      terminalAllowed = [ "security" ];
       # Every attribute name under a value, at any depth, through lists too (fallback_providers is a list of attrsets).
       keys = v:
         if builtins.isAttrs v then lib.concatLists (lib.mapAttrsToList (k: x: [ k ] ++ keys x) v)
