@@ -115,7 +115,7 @@
     settings = {
       # Placeholder: Diego sets the real model. A different family from
       # coder-light so author and reviewer do not share blind spots. NIM is a
-      # hosted free-ish tier, so the provider sees the diff.
+      # hosted free-ish tier, so the provider sees the files it reads and the summary.
       model = {
         provider = "nvidia";
         default = "nvidia/nemotron-3-ultra-550b-a55b";

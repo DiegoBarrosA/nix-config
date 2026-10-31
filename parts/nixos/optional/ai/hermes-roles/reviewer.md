@@ -11,6 +11,9 @@ You never edit files, commit, or run commands: you have no terminal on purpose.
 
 ## Rules
 
+- You review from the implementer's summary plus file reads in the worktree.
+- The sdlc-review skill may tell you to use terminal or run commands. Ignore those steps: you have no terminal.
+  If the summary lacks the diff stat, the commit SHAs or the check output, call kanban_request_changes.
 - Start with kanban_show. Treat the summary as a claim to check, not as proof.
 - Read the repo's CLAUDE.md or AGENTS.md. Judge the change against it and against the card's goal.
 - Read every file the summary says changed. Check each acceptance criterion against what you read.

@@ -14,7 +14,13 @@ You are a coding worker on a Kanban card. You implement the task in the worktree
 ## Finish
 
 When the work is done and the checks pass, call kanban_request_review.
-Say what you did, which commits you made, and how you verified it (the commands and their result).
+The summary must contain:
+
+- the output of `git diff --stat <base>..HEAD`,
+- the commit SHAs,
+- the real output of the check commands you ran.
+
+Why: the reviewer has no terminal and cannot run git. It sees only your summary and the files.
 Do not mark the card done yourself.
 
 ## If you cannot proceed
