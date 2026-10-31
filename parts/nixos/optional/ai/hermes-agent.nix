@@ -178,12 +178,15 @@ in
     environment.HERMES_DASHBOARD_PUBLIC_URL = "https://hermes.minerales.network";
     environment.OBSIDIAN_VAULT_PATH = vault;
 
-    # OpenCode Go (paid subscription, key in opencode-api-key). If the key
-    # expires the endpoint answers 401 api_key_expired, and Zen then silently
-    # treats requests as free-tier (429 FreeUsageLimitError).
+    # Chat runs on the Nous Portal free tier, so the paid OpenCode Go quota is
+    # left for coding: Hermes chat emptied the Go weekly window on 2026-10-29.
+    # The login is a device-code OAuth token in the Hermes home (hermes auth add
+    # nous), not a declared secret. The model is one of the four :free ids the
+    # Portal listed on 2026-10-31, all with tools; this one is the largest.
+    # Vault notes reach a free provider: narrowing Hermes's vault access is open.
     settings.model = {
-      provider = "opencode-go";
-      default = "kimi-k3";
+      provider = "nous";
+      default = "reflection/beam-1.0-501b-a23b:free";
     };
 
     # One fallback only: hosted NIM. Two entries were removed on 2026-10-29:
