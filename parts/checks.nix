@@ -24,4 +24,16 @@ in
         done
         touch $out
       '';
+
+  # Profile names become directory names and CLI arguments, and each soul is
+  # copied at boot: a bad name or missing file must fail at build time.
+  flake.checks.x86_64-linux.hermes-profiles-names =
+    let
+      names = builtins.attrNames hermes.profiles;
+      bad = builtins.filter (n: builtins.match "[a-z0-9-]+" n == null) names;
+      missing = builtins.filter (n: !builtins.pathExists hermes.profiles.${n}.soul) names;
+    in
+    assert bad == [ ] || throw "bad hermes profile names: ${toString bad}";
+    assert missing == [ ] || throw "hermes profile soul missing: ${toString missing}";
+    pkgs.runCommand "hermes-profiles-names" { } "touch $out";
 }
