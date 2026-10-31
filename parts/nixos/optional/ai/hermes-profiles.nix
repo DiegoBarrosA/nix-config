@@ -13,10 +13,13 @@
         d=${home}/profiles/${name}
         # Create fails if the profile exists or the CLI cannot run yet; neither may fail the deploy
         # (a failed unit rolls it back). install -d then guarantees the layout, and the next run retries create.
-        ${cfg.package}/bin/hermes profile create "${name}" --no-skills || true
+        ${cfg.package}/bin/hermes profile create "${name}" --no-skills || echo "hermes-profiles: profile create failed for ${name}, continuing" >&2
         install -d -m 0750 "$d"
         install -m 0640 ${p.soul} "$d/SOUL.md"
         ${merge} ${pkgs.writeText "hermes-profile-${name}.json" (builtins.toJSON p.settings)} "$d/config.yaml"
+      '' + lib.optionalString (p.envFile != null) ''
+        # A profile home does not inherit the default .env, so its provider key is installed here.
+        install -m 0640 ${lib.escapeShellArg p.envFile} "$d/.env"
       '';
     in
     {
@@ -27,6 +30,7 @@
           options = {
             soul = lib.mkOption { type = lib.types.path; description = "File installed as the profile's SOUL.md."; };
             settings = lib.mkOption { type = lib.types.attrs; default = { }; description = "Deep-merged into the profile's config.yaml."; };
+            envFile = lib.mkOption { type = lib.types.nullOr lib.types.path; default = null; description = "File installed as the profile's .env (0640): Hermes strips keys inherited from the default .env in a profile home, so a provider key goes here."; };
             readOnly = lib.mkOption { type = lib.types.bool; default = false; description = "Marker read by flake checks (not an enforced guard): the profile is meant to be read-only."; };
           };
         });

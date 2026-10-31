@@ -149,6 +149,7 @@
 
   services.hermes-agent.profiles.reviewer = {
     soul = ../../optional/ai/hermes-roles/reviewer.md;
+    envFile = config.sops.templates."hermes-nvidia.env".path;
     # No terminal: the reviewer must not be able to edit or run anything.
     readOnly = true;
     settings = {
@@ -184,8 +185,9 @@
 
   services.hermes-agent.profiles.security = {
     soul = ../../optional/ai/hermes-roles/security.md;
-    # Reads only. terminal is allowed by the readonly check for this profile alone,
-    # to run gitleaks and grep; the prompt forbids anything else.
+    envFile = config.sops.templates."hermes-nvidia.env".path;
+    # Reads only. No file tool: it could read the term file. terminal is allowed by the readonly check for this profile alone,
+    # to run the scan and three read-only git commands; the prompt forbids anything else.
     readOnly = true;
     settings = {
       # Placeholder, same family as the reviewer so it differs from the coders.
@@ -194,7 +196,7 @@
         default = "nvidia/nemotron-3-ultra-550b-a55b";
       };
       agent.disabled_toolsets = [ "delegation" "code_execution" ];
-      platform_toolsets.cli = [ "terminal" "file" ];
+      platform_toolsets.cli = [ "terminal" ];
       skills.external_dirs = [
         "${inputs.superpowers}/skills"
         "${inputs.ponytail}/skills"

@@ -256,6 +256,18 @@ with lib;
       restartUnits = [ "hermes-agent.service" "hermes-backend.service" ];
     };
 
+    # Reviewer and security run in a routed profile home, where Hermes drops keys inherited
+    # from hermes.env. Only the provider key they use is copied into their profile .env.
+    templates."hermes-nvidia.env" = {
+      content = ''
+        NVIDIA_API_KEY=${config.sops.placeholder."hermes-nvidia-api-key"}
+      '';
+      owner = "hermes";
+      group = "hermes";
+      mode = "0400";
+      restartUnits = [ "hermes-profiles.service" ];
+    };
+
     templates."restic.env" = {
       content = ''
         RESTIC_LOCAL_PASSWORD=${config.sops.placeholder."restic-local-password"}

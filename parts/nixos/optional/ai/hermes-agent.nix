@@ -99,7 +99,8 @@ let
   # (Contents + Pull requests write only; "branches and PRs only" is a ruleset
   # on each repo, not something the token enforces). The token is picked by
   # host and repo owner. An owner that is in neither list gets no credentials.
-  # Only the profiles in services.hermes-agent.pushProfiles (the integrator) get
+  # Only the profiles in services.hermes-agent.pushProfiles (the integrator, default
+  # for Hermes chat, and the temporary legacy coder exemption) get
   # a credential; a coder's `git push` fails at the helper.
   # No token enters an environment variable of the agent's shell: git reads
   # it through a credential helper, and gh gets it inside its own wrapper.
@@ -374,7 +375,7 @@ in
 
       For a whole project or a feature, create ONE card for profile `planner`. The planner inquires,
       writes the spec and plan, asks Diego for approval, then creates the chain itself: coders (`coder-light` for small
-      cards, `coder-heavy` for cross-cutting work), `reviewer`,
+      cards, `coder-heavy` for cross-cutting work; each hands its own card to `reviewer`),
       `tester`, `security`, `integrator`, one after the other. Only the `integrator` pushes. You only report.
 
       ```
@@ -383,13 +384,18 @@ in
         --max-runtime 3600 --body "<what Diego wants, repo, base branch, any constraint he named>"
       ```
 
-      - Same repo and worktree rules as the Kanban section above. For a new project, Diego names the repo first.
+      - Same repo and worktree rules as the Kanban section above.
+      - For a NEW project, set it up first (a setup step like cloning, it edits no files): create
+        `/var/lib/hermes/workspace/<project>`, run `git init` and `git commit --allow-empty -m "chore: init"` there,
+        then create the planner card with the worktree inside that repo. The `integrator` blocks until Diego
+        creates the private remote by hand and unblocks it.
       - If a card is blocked with "escalate to coder-heavy", tell Diego and give him this command to run himself:
         `hermes-kanban reassign <id> coder-heavy`. The card stays blocked after that, so he also unblocks it
         (`hermes-kanban unblock <id>` or the dashboard). You never run either.
       - Do not edit, unblock or promote cards. Diego approves in the dashboard: he comments and unblocks there.
         A message in Hermes chat does not unblock a card.
       - Follow with `hermes-kanban show <id>`. Tell Diego when the planner blocks for approval, and its summary.
+      - A blocked `tester` or `security` card has stopped the chain. Tell Diego its reason; for `security` that is FILE:LINE only, never matched text.
       - The `integrator` pushes the branch and opens the PR. The chain ends with its PR link. Send that to Diego, and for nix-config jobs the
         deploy command the `integrator` gives. You never deploy.
 

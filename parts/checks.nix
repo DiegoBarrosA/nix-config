@@ -53,8 +53,8 @@ in
   flake.checks.x86_64-linux.hermes-profiles-readonly =
     let
       lib = inputs.nixpkgs.lib;
-      # Read-only profiles that may still list `terminal`: security runs gitleaks and grep,
-      # and its prompt limits it to those two. The missing-cli rule still applies.
+      # Read-only profiles that may still list `terminal`: security runs the scan and three read-only git commands,
+      # and its prompt limits it to those. The missing-cli rule still applies.
       terminalAllowed = [ "security" ];
       # Every attribute name under a value, at any depth, through lists too (fallback_providers is a list of attrsets).
       keys = v:
@@ -289,6 +289,8 @@ in
       ok HERMES_PROFILE=
       for p in integrator default coder; do ok HERMES_PROFILE=$p; done
       for p in coder-light coder-heavy reviewer tester planner security unknown; do no HERMES_PROFILE=$p; done
+      # Exact match only: case, suffix, space, glob and newline variants of an allowed name are denied.
+      for p in INTEGRATOR integrator-evil 'integrator evil' '*' $'integrator\n' $'integrator\nx'; do no "HERMES_PROFILE=$p"; done
 
       # The credential helper path: token for an allowed profile, nothing for a denied one.
       got=$(env HERMES_PROFILE=integrator ${guard.token} github.com FakeOwner)

@@ -47,5 +47,5 @@ with the dendritic pattern. This file is the source of truth for coding agents. 
 
 ## Hermes
 
-- Hermes runs on cobalto (`parts/nixos/optional/ai/hermes-agent.nix`). It only dispatches coding agents. It never edits this repo.
-- Coding agents work on a branch and open a PR. Diego merges.
+- Hermes runs on cobalto (`parts/nixos/optional/ai/hermes-agent.nix`). It only dispatches coding agents (Kanban cards and `claude-<name>` runs). It never edits this repo.
+- Coder profiles edit in worktrees on a branch and commit locally. Only the `integrator` profile pushes and opens PRs. Diego merges and deploys.
