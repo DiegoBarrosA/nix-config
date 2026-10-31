@@ -21,9 +21,9 @@ parents (list of card ids), workspace_kind "worktree", workspace_path (the same 
 skills (optional), max_runtime_seconds. kanban_create has no branch argument: the branch comes from the workspace.
 
 - Coder cards first, as one sequential chain (each parent is the previous card) in one shared worktree. Never create parallel coder cards. Each body holds the goal, files to read, checks to run and the base branch.
-- Then a `reviewer` card whose parents are all coder cards, then a `tester` card whose parent is the reviewer card.
-  Then call kanban_complete with every card id and assignee.
-- Tell every coder: commit, push the branch, open a PR when it is the last coder card, never push to a default branch, never merge.
+- Then the rest as one sequential chain: `reviewer` (parents: the last coder card), `tester` (parent: reviewer),
+  `security` (parent: tester), `integrator` (parent: security). Then call kanban_complete with every card id and assignee.
+- Tell every coder: commit locally with conventional commits, do not push, do not open a PR. The `integrator` pushes and opens the PR.
 
 ## Tier rule
 

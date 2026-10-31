@@ -99,6 +99,8 @@ let
   # (Contents + Pull requests write only; "branches and PRs only" is a ruleset
   # on each repo, not something the token enforces). The token is picked by
   # host and repo owner. An owner that is in neither list gets no credentials.
+  # Only the profiles in services.hermes-agent.pushProfiles (the integrator) get
+  # a credential; a coder's `git push` fails at the helper.
   # No token enters an environment variable of the agent's shell: git reads
   # it through a credential helper, and gh gets it inside its own wrapper.
   gitAccess = lib.recursiveUpdate {
@@ -114,21 +116,13 @@ let
   gitTable = lib.concatStringsSep "\n" (
     lib.concatMap (a: map (o: "${a.host} ${o} ${a.user} ${a.tokenFile}") a.owners) gitEntries
   );
-  # Prints "<user> <token>" for a host and owner, or exits 1.
-  gitToken = pkgs.writeShellScript "hermes-git-token" ''
-    host="$1" owner="''${2,,}"
-    while read -r h o u f; do
-      [ "$h" = "$host" ] && [ "$o" = "$owner" ] || continue
-      # A missing or empty token file means no credential, not a blank password.
-      token="$(${pkgs.coreutils}/bin/tr -d '[:space:]' < "$f" 2>/dev/null)" || exit 1
-      [ -n "$token" ] || exit 1
-      printf '%s %s' "$u" "$token"
-      exit 0
-    done <<'MAP'
-    ${gitTable}
-    MAP
-    exit 1
-  '';
+  # Script and push guardrail live in pkgs/hermes-push-guard.nix so the check can test them.
+  pushGuard = import ../../../../pkgs/hermes-push-guard.nix {
+    inherit pkgs;
+    profiles = cfg.pushProfiles;
+    table = gitTable;
+  };
+  gitToken = pushGuard.token;
   gitCredential = pkgs.writeShellScript "git-credential-hermes" ''
     [ "''${1:-}" = get ] || exit 0
     host="" path=""
@@ -165,7 +159,21 @@ let
   claudeCli = name: claudeBin "claude-${name}" "${pkgs.claude-code}/bin/claude" claudeCliArgs name;
 in
 {
-  imports = [ inputs.hermes-agent.nixosModules.default ];
+  imports = [
+    inputs.hermes-agent.nixosModules.default
+    {
+      options.services.hermes-agent.pushProfiles = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ "integrator" "default" "coder" ];
+        description = ''
+          Hermes profiles whose shell may get git and gh credentials. An unset
+          HERMES_PROFILE (Hermes chat) is always allowed. "coder" is a TEMPORARY
+          legacy exemption: it is the undeclared live profile Diego uses today.
+          Remove it when he retires `coder`. A guardrail, not a boundary.
+        '';
+      };
+    }
+  ];
 
   services.hermes-agent = {
     enable = true;
@@ -365,8 +373,8 @@ in
       ## Team jobs (a whole project or a feature)
 
       For a whole project or a feature, create ONE card for profile `planner`. The planner inquires,
-      writes the spec and plan, asks Diego for approval, then creates the coder, `reviewer` and `tester`
-      cards itself. You only report.
+      writes the spec and plan, asks Diego for approval, then creates the chain itself: coders, `reviewer`,
+      `tester`, `security`, `integrator`, one after the other. Only the `integrator` pushes. You only report.
 
       ```
       hermes-kanban create "<short title>" --assignee planner \
@@ -378,8 +386,8 @@ in
       - Do not edit, unblock or promote cards. Diego approves in the dashboard: he comments and unblocks there.
         A message in Hermes chat does not unblock a card.
       - Follow with `hermes-kanban show <id>`. Tell Diego when the planner blocks for approval, and its summary.
-      - The chain ends with a PR link or a branch name. Send that to Diego, and for nix-config jobs the
-        deploy command the planner gives. You never deploy.
+      - The `integrator` pushes the branch and opens the PR. The chain ends with its PR link. Send that to Diego, and for nix-config jobs the
+        deploy command the `integrator` gives. You never deploy.
 
       ## Tools
 
@@ -400,6 +408,7 @@ in
 
       ## Git access
       - `git push` and `gh` work without any login step. Credentials depend on the repo owner.
+      - In Team jobs only the `integrator` profile gets credentials (services.hermes-agent.pushProfiles). A coder's push fails.
       - Personal repos (DiegoBarrosA): full access.
       - Work repos: create branches and open PRs only. Never push to the default branch,
         never merge. Open a PR and leave the merge to Diego.

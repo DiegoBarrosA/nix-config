@@ -227,4 +227,34 @@ in
         run 3 ${scan}
         touch $out
       '';
+
+  # Only the integrator (and Hermes chat, which leaves HERMES_PROFILE unset) may
+  # get a git credential. Tests the real script built from the real option value.
+  flake.checks.x86_64-linux.hermes-push-guard =
+    let
+      guard = import ../pkgs/hermes-push-guard.nix {
+        inherit pkgs;
+        profiles = hermes.pushProfiles;
+        # A fake token in the store, so the credential path runs without secrets.
+        table = "github.com fakeowner x-access-token ${pkgs.writeText "fake-token" "ghp_fake\n"}";
+      };
+    in
+    pkgs.runCommand "hermes-push-guard" { } ''
+      # want EXIT CMD...: HERMES_PROFILE is set by the caller via env
+      ok() { env "$@" ${guard.allowed} || { echo "FAIL: $* denied, wanted allowed"; exit 1; }; }
+      no() { if env "$@" ${guard.allowed}; then echo "FAIL: $* allowed, wanted denied"; exit 1; fi; }
+      env -u HERMES_PROFILE ${guard.allowed}
+      ok HERMES_PROFILE=
+      for p in integrator default coder; do ok HERMES_PROFILE=$p; done
+      for p in coder-light coder-heavy reviewer tester planner security unknown; do no HERMES_PROFILE=$p; done
+
+      # The credential helper path: token for an allowed profile, nothing for a denied one.
+      got=$(env HERMES_PROFILE=integrator ${guard.token} github.com FakeOwner)
+      [ "$got" = "x-access-token ghp_fake" ] || { echo "FAIL: got '$got'"; exit 1; }
+      if got=$(env HERMES_PROFILE=coder-light ${guard.token} github.com fakeowner); then
+        echo "FAIL: denied profile got a credential"; exit 1
+      fi
+      [ -z "$got" ] || { echo "FAIL: denied profile printed '$got'"; exit 1; }
+      touch "$out"
+    '';
 }

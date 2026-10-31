@@ -182,6 +182,25 @@
     };
   };
 
+  services.hermes-agent.profiles.integrator = {
+    soul = ../../optional/ai/hermes-roles/integrator.md;
+    # Not readOnly: it adds the remote. It is the only role the push guardrail
+    # (pushProfiles) lets get a git credential.
+    settings = {
+      # Placeholder, same as coder-light: Diego sets the real model.
+      model = {
+        provider = "nous";
+        default = "reflection/beam-1.0-501b-a23b:free";
+      };
+      agent.disabled_toolsets = [ "delegation" "code_execution" ];
+      platform_toolsets.cli = [ "terminal" "file" "todo" ];
+      skills.external_dirs = [
+        "${inputs.superpowers}/skills"
+        "${inputs.ponytail}/skills"
+      ];
+    };
+  };
+
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
 
