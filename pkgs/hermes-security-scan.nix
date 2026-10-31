@@ -52,10 +52,10 @@ pkgs.writeShellScriptBin "hermes-security-scan" ''
     headsha=$(git rev-parse --verify --quiet HEAD) || die "no HEAD"
     git merge-base --is-ancestor "$basesha" "$headsha" || die "base is not an ancestor of HEAD"
     git "''${gitopts[@]}" diff --src-prefix=a/ --dst-prefix=b/ -a -U0 --no-color --no-ext-diff --no-textconv "$basesha..$headsha" > "$tmp/patch"
-    lopts=(--log-opts "$basesha..$headsha")
+    lopts=(--log-opts "-m $basesha..$headsha")
   else
     git "''${gitopts[@]}" log --src-prefix=a/ --dst-prefix=b/ -p -m -a -U0 --all --no-color --no-ext-diff --no-textconv --format='commit %H' > "$tmp/patch"
-    lopts=()
+    lopts=(--log-opts "-m --all")
   fi
   # Only added lines are matched. Hunk headers give the new line number.
   awk -v mode="$mode" '
@@ -89,11 +89,17 @@ pkgs.writeShellScriptBin "hermes-security-scan" ''
   rc=0
   gitleaks detect --no-banner --redact --exit-code 2 --config ${config} \
     --gitleaks-ignore-path "$tmp/noignore" --ignore-gitleaks-allow -s "$tmp/bare" \
-    "''${lopts[@]}" --report-format json --report-path "$tmp/leaks.json" >/dev/null 2>&1 || rc=$?
+    "''${lopts[@]}" --report-format json --report-path "$tmp/leaks.json" >"$tmp/gitleaks.log" 2>&1 || rc=$?
   case "$rc" in 0|2) ;; *) die "gitleaks failed with exit $rc" ;; esac
   [ -f "$tmp/leaks.json" ] || die "gitleaks wrote no report"
+  # A range with commits must show as scanned: gitleaks exits 0 having scanned nothing for a range it misreads.
+  if [ "$mode" = diff ] && [ "$(git -C "$tmp/bare" rev-list --count "$basesha..$headsha")" -gt 0 ]; then
+    scanned=$(grep -Eo "[0-9]+ commits scanned" "$tmp/gitleaks.log" | head -1 | cut -d" " -f1)
+    [ "''${scanned:-0}" -gt 0 ] || die "gitleaks scanned no commits"
+  fi
   jq -e 'type == "array"' "$tmp/leaks.json" >/dev/null || die "gitleaks report is not valid JSON"
-  secrets=$(jq length "$tmp/leaks.json")
+  # -m reports a merge commit once per parent: count each fingerprint once.
+  secrets=$(jq "[.[].Fingerprint] | unique | length" "$tmp/leaks.json")
 
   echo "terms=$n matches=$matches secrets=$secrets"
   if [ "$matches" -eq 0 ] && [ "$secrets" -eq 0 ]; then final=0; else final=1; fi

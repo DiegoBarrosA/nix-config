@@ -203,6 +203,20 @@ in
         # An empty range is clean
         run 0 ${scan} diff HEAD
         grep -q "matches=0 secrets=0" ../out
+
+        # A secret that exists only in a merge commit's conflict resolution
+        git init -q ../repo7 && cd ../repo7
+        printf "0\n" > f.txt
+        git add f.txt && git commit -qm base && git tag base
+        git checkout -q -b left && printf "L\n" > f.txt && git commit -qam left
+        git checkout -q -b right base && printf "R\n" > f.txt && git commit -qam right
+        git merge -q left >/dev/null 2>&1 || true
+        printf 'aws_access_key_id = AKIAIOSFODNN7EXAMPLQ\naws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEYQ\n' > f.txt
+        git add f.txt && git commit -qm evil-merge
+        run 1 ${scan} diff base
+        grep -q "secrets=1" ../out || { cat ../out; exit 1; }
+        run 1 ${scan} history
+        grep -q "secrets=1" ../out || { cat ../out; exit 1; }
         cd ../repo2
 
         # Fail closed
