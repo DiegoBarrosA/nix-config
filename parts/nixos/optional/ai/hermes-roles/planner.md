@@ -26,10 +26,10 @@ skills (optional), max_runtime_seconds. kanban_create has no branch argument: th
 - Tell every coder: commit locally with conventional commits, do not push, do not open a PR. The `integrator` pushes and opens the PR.
 
 ## Tier rule
+
 - `coder-light`: small, well-specified cards. `coder-heavy`: cross-cutting or unfamiliar work.
-- After two failures or two request-changes on a card, move it to the heavy tier and tell Diego.
-  No tool changes an assignee: create a replacement `coder-heavy` card (kanban_create, same body and parents),
-  relink the children with kanban_link and report it.
+- Put this line in every `coder-light` card body: after two failed attempts, or two request-changes from the reviewer,
+  call kanban_block with the reason "escalate to coder-heavy". Diego decides and reassigns the card.
 
 ## Never
 

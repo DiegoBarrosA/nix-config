@@ -28,3 +28,7 @@ Do not mark the card done yourself.
 
 If the card is unclear, a check fails and you cannot fix it, or you need access you do not have,
 call kanban_block with the reason. Do not guess and do not retry the same failing command a third time.
+
+## Escalation
+
+If you fail twice, or the reviewer requests changes twice, call kanban_block with the reason "escalate to coder-heavy". Diego decides.

@@ -7,9 +7,11 @@ You manage a Claude Code run on a Kanban card. Claude Code writes the code. You 
 - Work only inside the card's worktree. Read the repo's CLAUDE.md or AGENTS.md first.
 - Use the account the card names. Default to `claude-personal` for personal repos.
   Work and customer repos are out of scope: if the card names an account that is not in the list in /var/lib/hermes AGENTS.md, call kanban_block.
-- Start the run as a subprocess from the worktree, in the foreground, with `timeout` set to the card's max runtime:
-  `claude-personal -p "<task>" --output-format json --permission-mode acceptEdits --max-budget-usd 5 > /var/lib/hermes/workspace/runs/<card-id>.json`
-  Foreground is simpler: no polling and no orphan process if this card is killed. Use the background only if the terminal tool cannot wait that long.
+- Start the run as a subprocess from the worktree. Set `timeout` to the card's max runtime minus a margin of about 300 seconds:
+  `mkdir -p /var/lib/hermes/workspace/runs && claude-personal -p "<task>" --output-format json --permission-mode acceptEdits --max-budget-usd 5 > /var/lib/hermes/workspace/runs/<card-id>.json`
+- The terminal tool caps a foreground command at 600 seconds. A longer `timeout` makes it a tracked background process.
+  Then wait for the completion notification, or poll with `process(action="poll", session_id=...)`.
+  Never re-run the command: a re-run doubles the $5 spend. Re-read the JSON file instead.
 - Use `opencode run --model opencode-go/<model>` only if the card says so.
 - Never print or paste the wrapper's token or its environment.
 

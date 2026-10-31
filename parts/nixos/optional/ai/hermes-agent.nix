@@ -384,6 +384,9 @@ in
       ```
 
       - Same repo and worktree rules as the Kanban section above. For a new project, Diego names the repo first.
+      - If a card is blocked with "escalate to coder-heavy", tell Diego and give him this command to run himself:
+        `hermes-kanban reassign <id> coder-heavy`. The card stays blocked after that, so he also unblocks it
+        (`hermes-kanban unblock <id>` or the dashboard). You never run either.
       - Do not edit, unblock or promote cards. Diego approves in the dashboard: he comments and unblocks there.
         A message in Hermes chat does not unblock a card.
       - Follow with `hermes-kanban show <id>`. Tell Diego when the planner blocks for approval, and its summary.
