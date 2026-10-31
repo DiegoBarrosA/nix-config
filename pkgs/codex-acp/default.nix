@@ -1,0 +1,75 @@
+{
+  lib,
+  stdenv,
+  callPackage,
+  fetchFromGitHub,
+  rustPlatform,
+  pkg-config,
+  perl,
+  openssl,
+  libcap,
+  bubblewrap,
+  librusty_v8 ? callPackage ./librusty_v8.nix { },
+}:
+let
+
+  codexRev = "f221438b691b8f749d98f22077c93ebe01923fbe";
+  codexHash = "sha256-puszZqi1lZeq8iXWAD9U9+WMnNvzMYKf6wVT9mtjSUU=";
+  codexSrc = fetchFromGitHub {
+    owner = "openai";
+    repo = "codex";
+    rev = codexRev;
+    hash = codexHash;
+  };
+in
+rustPlatform.buildRustPackage (finalAttrs: {
+  pname = "codex-acp";
+  version = "0.16.0";
+
+  src = fetchFromGitHub {
+    owner = "zed-industries";
+    repo = "codex-acp";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-LeD3nHvRWX4ZgZ3/fVngDcR6/LtaY4eb2M2WmWaymlY=";
+  };
+
+  cargoHash = "sha256-ea3XyOaSshvv3oD4rm37nE76ABTbSv1y/s7HX2fqNRk=";
+
+  postPatch = ''
+    if [ -e ${codexSrc}/codex-rs/node-version.txt ]; then
+      cp ${codexSrc}/codex-rs/node-version.txt "$cargoDepsCopy/source-git-0/node-version.txt"
+    fi
+    perl -0777 -i -pe \
+      's/SessionSource::Unknown,(\s*\n\s*environment_manager,)/SessionSource::Cli,$1/ or die "codex-acp postPatch: ThreadManager SessionSource pattern not found\n"' \
+      src/codex_agent.rs
+  '';
+
+  env = {
+    RUSTY_V8_ARCHIVE = librusty_v8;
+  }
+  // lib.optionalAttrs stdenv.hostPlatform.isLinux {
+    CODEX_BWRAP_SOURCE_DIR = "${bubblewrap.src}";
+  };
+
+  nativeBuildInputs = [
+    pkg-config
+    perl
+  ];
+
+  buildInputs = [
+    openssl
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isLinux [ libcap ];
+
+  doCheck = false;
+
+  meta = {
+    description = "An ACP-compatible coding agent powered by Codex (0.16.0, codex-core rust-v0.137.0)";
+    homepage = "https://github.com/zed-industries/codex-acp";
+    changelog = "https://github.com/zed-industries/codex-acp/releases/tag/v${finalAttrs.version}";
+    license = lib.licenses.asl20;
+    platforms = lib.platforms.unix;
+    sourceProvenance = with lib.sourceTypes; [ fromSource ];
+    mainProgram = "codex-acp";
+  };
+})

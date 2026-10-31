@@ -1,0 +1,74 @@
+services:
+  - Media:
+      - Jellyfin:
+          href: https://jellyfin.minerales.network
+          description: Media server with hardware acceleration
+          icon: jellyfin.png
+          widget:
+            type: jellyfin
+            url: http://localhost:8096
+            key: {{HOMEPAGE_VAR_JELLYFIN_API_KEY}}
+
+      - Jellyseerr:
+          href: https://jellyseerr.minerales.network
+          description: Media request portal
+          icon: jellyseerr.png
+          widget:
+            type: jellyseerr
+            url: http://localhost:5055
+            key: {{HOMEPAGE_VAR_JELLYSEERR_API_KEY}}
+
+  - Transcoding:
+      - Tdarr:
+          href: https://tdarr.minerales.network
+          description: Transcoding automation
+          icon: tdarr.png
+          widget:
+            type: tdarr
+            url: http://localhost:8265
+            key: {{HOMEPAGE_VAR_TDARR_API_KEY}}
+
+  - Downloads:
+      - qBittorrent:
+          href: https://transmission.minerales.network
+          description: Torrent client
+          icon: qbittorrent.png
+          widget:
+            type: qbittorrent
+            url: http://localhost:8080
+            user: admin
+            password: {{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}
+
+      - Aria2:
+          href: https://aria2.minerales.network
+          description: Download server
+          icon: aria2.png
+          widget:
+            type: aria2
+            url: http://localhost:6800
+            secret: {{HOMEPAGE_VAR_ARIA2_RPC_SECRET}}
+
+- Synchronization:
+      - Syncthing:
+          href: https://syncthing.minerales.network
+          description: File synchronization
+          icon: syncthing.png
+          widget:
+            type: syncthing
+            url: http://localhost:8384
+
+  - AI/ML:
+      - LLM Hub:
+          href: https://llm.minerales.network
+          description: Large Language Models interface
+          icon: openai.png
+
+      - Text Generation:
+          href: https://textgen.minerales.network
+          description: Advanced text generation WebUI
+          icon: huggingface.png
+
+      - Jupyter Lab:
+          href: https://jupyter.minerales.network
+          description: Machine Learning notebooks
+          icon: jupyter.png

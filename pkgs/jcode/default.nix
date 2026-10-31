@@ -1,0 +1,48 @@
+{
+  lib,
+  stdenv,
+  fetchurl,
+  autoPatchelfHook,
+  openssl,
+  zlib,
+}:
+
+let
+  version = "0.56.0";
+  sha256 = "sha256-2RGQZnFivnl6IvEmxZ/e8z17CRY4Qk927r9kC7cmHGs=";
+in
+stdenv.mkDerivation {
+  pname = "jcode";
+  inherit version;
+
+  src = fetchurl {
+    url = "https://github.com/1jehuang/jcode/releases/download/v${version}/jcode-linux-x86_64.tar.gz";
+    inherit sha256;
+  };
+
+  nativeBuildInputs = [ autoPatchelfHook ];
+  buildInputs = [
+    openssl
+    zlib
+    stdenv.cc.cc.lib
+  ];
+  autoPatchelfIgnoreMissing = [ "libgcc_s.so.1" ];
+
+  sourceRoot = ".";
+
+  installPhase = ''
+    runHook preInstall
+    install -Dm755 jcode-linux-x86_64 $out/bin/jcode
+    install -Dm755 jcode-linux-x86_64.bin $out/bin/jcode-linux-x86_64.bin
+    runHook postInstall
+  '';
+
+  meta = {
+    description = "The most RAM efficient AI coding harness";
+    homepage = "https://jcode.sh";
+    license = lib.licenses.mit;
+    platforms = [ "x86_64-linux" ];
+    mainProgram = "jcode";
+    sourceProvenance = with lib.sourceTypes; [ binaryNativeCode ];
+  };
+}
