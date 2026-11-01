@@ -219,7 +219,7 @@ with lib;
 
     secrets."hermes-dashboard-password" = { };
     secrets."hermes-dashboard-secret" = { };
-    secrets."hermes-REDACTED-api-key" = { };
+    secrets."hermes-nvidia-api-key" = { };
     # Same value as rubi's opencode-api-key (Zen and Go share one key).
     # Group hermes can read it so the `opencode` wrapper in hermes-agent.nix can export it.
     secrets."opencode-api-key" = {
@@ -242,7 +242,7 @@ with lib;
         HERMES_DASHBOARD_BASIC_AUTH_USERNAME=diego
         HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=${config.sops.placeholder."hermes-dashboard-password"}
         HERMES_DASHBOARD_BASIC_AUTH_SECRET=${config.sops.placeholder."hermes-dashboard-secret"}
-        REDACTED_API_KEY=${config.sops.placeholder."hermes-REDACTED-api-key"}
+        NVIDIA_API_KEY=${config.sops.placeholder."hermes-nvidia-api-key"}
         OPENCODE_ZEN_API_KEY=${config.sops.placeholder."opencode-api-key"}
         OPENCODE_GO_API_KEY=${config.sops.placeholder."opencode-api-key"}
         TELEGRAM_BOT_TOKEN=${config.sops.placeholder."telegram-bot-token"}
@@ -258,10 +258,9 @@ with lib;
 
     # Reviewer and security run in a routed profile home, where Hermes drops keys inherited
     # from hermes.env. Only the provider key they use is copied into their profile .env.
-    # The secret is declared above as hermes-REDACTED-api-key; the variable Hermes reads is NVIDIA_API_KEY.
     templates."hermes-nvidia.env" = {
       content = ''
-        NVIDIA_API_KEY=${config.sops.placeholder."hermes-REDACTED-api-key"}
+        NVIDIA_API_KEY=${config.sops.placeholder."hermes-nvidia-api-key"}
       '';
       owner = "hermes";
       group = "hermes";

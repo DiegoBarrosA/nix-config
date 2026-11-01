@@ -214,8 +214,8 @@ in
     # retry once capped.
     settings.fallback_providers = [
       {
-        provider = "REDACTED";
-        model = "REDACTED/nemotron-3-ultra-550b-a55b";
+        provider = "nvidia";
+        model = "nvidia/nemotron-3-ultra-550b-a55b";
       }
     ];
 

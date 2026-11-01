@@ -30,8 +30,8 @@ in
         # two together stay under it.
         (free 1 9 "openrouter/cohere/north-mini-code:free" (key "OPENROUTER_API_KEY"))
         (free 2 9 "openrouter/google/gemma-4-31b-it:free" (key "OPENROUTER_API_KEY"))
-        (free 3 20 "openai/REDACTED/nemotron-3-ultra-550b-a55b" (key "REDACTED_API_KEY" // {
-          api_base = "https://integrate.api.REDACTED.com/v1";
+        (free 3 20 "openai/nvidia/nemotron-3-ultra-550b-a55b" (key "NVIDIA_API_KEY" // {
+          api_base = "https://integrate.api.nvidia.com/v1";
         }))
         # shortcut: the Groq rpm is a guess below the usual free limit, set it
         # from the console's limits page.
@@ -73,7 +73,7 @@ in
   sops.templates."litellm.env" = {
     content = ''
       LITELLM_MASTER_KEY=${config.sops.placeholder."litellm-master-key"}
-      REDACTED_API_KEY=${config.sops.placeholder."hermes-REDACTED-api-key"}
+      NVIDIA_API_KEY=${config.sops.placeholder."hermes-nvidia-api-key"}
       GEMINI_API_KEY=${config.sops.placeholder."gemini-api-key"}
       OPENROUTER_API_KEY=${config.sops.placeholder."openrouter-api-key"}
       GROQ_API_KEY=${config.sops.placeholder."groq-api-key"}
